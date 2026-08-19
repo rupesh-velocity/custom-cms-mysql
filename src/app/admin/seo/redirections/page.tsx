@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, X, ExternalLink } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { BASE_PATH } from '@/lib/config';
 
 type Redirection = {
   id: number;
@@ -49,7 +50,7 @@ export default function RedirectionsPage() {
   const fetchRedirections = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch('/api/redirections');
+      const res = await fetch(`${BASE_PATH}/api/redirections`);
       const data = await res.json();
       setRedirections(data);
     } catch (err) {
@@ -122,7 +123,7 @@ export default function RedirectionsPage() {
     if (!window.confirm('Are you sure you want to move this to trash?')) return;
     
     try {
-      const res = await fetch(`/api/redirections/${id}`, {
+      const res = await fetch(`${BASE_PATH}/api/redirections/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isTrashed: true })
@@ -141,7 +142,7 @@ export default function RedirectionsPage() {
 
   const handleRestore = async (id: number) => {
     try {
-      const res = await fetch(`/api/redirections/${id}`, {
+      const res = await fetch(`${BASE_PATH}/api/redirections/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isTrashed: false })
@@ -159,7 +160,7 @@ export default function RedirectionsPage() {
     if (!window.confirm('Are you sure you want to permanently delete this redirection?')) return;
     
     try {
-      const res = await fetch(`/api/redirections/${id}`, { method: 'DELETE' });
+      const res = await fetch(`${BASE_PATH}/api/redirections/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Failed to delete');
       
       toast.success('Redirection deleted permanently');
@@ -171,7 +172,7 @@ export default function RedirectionsPage() {
 
   const handleToggleStatus = async (redir: Redirection) => {
     try {
-      const res = await fetch(`/api/redirections/${redir.id}`, {
+      const res = await fetch(`${BASE_PATH}/api/redirections/${redir.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...redir, status: !redir.status })
@@ -191,27 +192,27 @@ export default function RedirectionsPage() {
     try {
       for (const id of selectedIds) {
         if (bulkAction === 'trash') {
-          await fetch(`/api/redirections/${id}`, {
+          await fetch(`${BASE_PATH}/api/redirections/${id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ isTrashed: true })
           });
         } else if (bulkAction === 'restore') {
-          await fetch(`/api/redirections/${id}`, {
+          await fetch(`${BASE_PATH}/api/redirections/${id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ isTrashed: false })
           });
         } else if (bulkAction === 'delete_permanently') {
-          await fetch(`/api/redirections/${id}`, { method: 'DELETE' });
+          await fetch(`${BASE_PATH}/api/redirections/${id}`, { method: 'DELETE' });
         } else if (bulkAction === 'activate') {
-          await fetch(`/api/redirections/${id}`, {
+          await fetch(`${BASE_PATH}/api/redirections/${id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ status: true })
           });
         } else if (bulkAction === 'deactivate') {
-          await fetch(`/api/redirections/${id}`, {
+          await fetch(`${BASE_PATH}/api/redirections/${id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ status: false })

@@ -7,6 +7,7 @@ import MediaModal from '@/components/MediaModal';
 import LocalSeoTab from '@/components/seo/LocalSeoTab';
 import SeoVariableInput from '@/components/seo/SeoVariableInput';
 import SearchableSelect from '@/components/SearchableSelect';
+import { BASE_PATH } from '@/lib/config';
 
 const schemaOptions = [
   { value: "", label: "None (Click here to set one)" },
@@ -145,7 +146,7 @@ export default function TitlesAndMetaSettings() {
     if (typeof window !== 'undefined' && window.location.hash) {
       setActiveTab(window.location.hash.replace('#', ''));
     }
-    fetch('/api/settings/seo')
+    fetch(`${BASE_PATH}/api/settings/seo`)
       .then((res) => res.json())
       .then((data) => {
         setSettings((prev) => ({ ...prev, ...data }));
@@ -185,7 +186,7 @@ export default function TitlesAndMetaSettings() {
         return;
       }
 
-      const res = await fetch('/api/settings/seo', {
+      const res = await fetch(`${BASE_PATH}/api/settings/seo`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(changedSettings)

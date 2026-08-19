@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { BASE_PATH } from '@/lib/config';
 
 declare global {
   interface Window {
@@ -18,7 +19,7 @@ export default function FrontendForm({ id }: { id: string }) {
   const [honeypot, setHoneypot] = useState('');
 
   useEffect(() => {
-    fetch(`/api/forms/${id}`)
+    fetch(`${BASE_PATH}/api/forms/${id}`)
       .then(res => res.json())
       .then(data => {
         if (!data.error) {
@@ -118,7 +119,7 @@ export default function FrontendForm({ id }: { id: string }) {
 
   const submitData = async (recaptchaToken?: string) => {
     try {
-      const res = await fetch('/api/forms/submit', {
+      const res = await fetch(`${BASE_PATH}/api/forms/submit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ formId: id, data: formData, recaptchaToken, pageUrl: window.location.href })
@@ -256,7 +257,7 @@ export default function FrontendForm({ id }: { id: string }) {
                     const uploadData = new FormData();
                     uploadData.append('file', file);
                     try {
-                      const res = await fetch('/api/upload', { method: 'POST', body: uploadData });
+                      const res = await fetch(`${BASE_PATH}/api/upload`, { method: 'POST', body: uploadData });
                       const data = await res.json();
                       if (data.url) {
                          setFormData({...formData, [field.id]: data.url});

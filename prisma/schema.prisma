@@ -11,9 +11,9 @@ model Post {
   id                Int        @id @default(autoincrement())
   title             String
   slug              String     @unique
-  contentHtml       String
-  contentText       String
-  metaDescription   String
+  contentHtml       String @db.LongText
+  contentText       String @db.LongText
+  metaDescription   String @db.LongText
   focusKeyword      String
   seoTitle          String?
   redirectUrl       String?
@@ -24,7 +24,7 @@ model Post {
   status            String     @default("Draft")
   visibility        String     @default("Public")
   password          String?
-  schemaJson        String?
+  schemaJson        String? @db.LongText
   seoScore          Int        @default(0)
   isPillar          Boolean    @default(false)
   authorId          Int?
@@ -41,9 +41,9 @@ model Page {
   id                Int       @id @default(autoincrement())
   title             String
   slug              String    @unique
-  contentHtml       String
-  contentText       String
-  metaDescription   String
+  contentHtml       String @db.LongText
+  contentText       String @db.LongText
+  metaDescription   String @db.LongText
   focusKeyword      String
   seoTitle          String?
   redirectUrl       String?
@@ -55,13 +55,13 @@ model Page {
   visibility        String    @default("Public")
   password          String?
   hideTitle         Boolean   @default(false)
-  schemaJson        String?
+  schemaJson        String? @db.LongText
   seoScore          Int       @default(0)
   isPillar          Boolean   @default(false)
   authorId          Int?
   author            User?     @relation(fields: [authorId], references: [id])
   featuredImage     String?
-  heroDescription   String?
+  heroDescription   String? @db.LongText
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
   publishedAt       DateTime?
@@ -90,10 +90,10 @@ model Course {
   id              Int                @id @default(autoincrement())
   title           String
   slug            String             @unique
-  contentHtml     String?
-  contentText     String?
+  contentHtml     String? @db.LongText
+  contentText     String? @db.LongText
   videos          Json?              @default("[]")
-  metaDescription String?
+  metaDescription String? @db.LongText
   focusKeyword    String?
   status          String             @default("Draft")
   price           Float              @default(0)
@@ -120,7 +120,7 @@ model UserCourseAccess {
 
 model Setting {
   key       String   @id
-  value     String?
+  value     String? @db.LongText
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -160,9 +160,9 @@ model Media {
 
 model Redirection {
   id             Int       @id @default(autoincrement())
-  sourceUrl      String
+  sourceUrl      String @db.LongText
   ignoreCase     Boolean   @default(false)
-  destinationUrl String
+  destinationUrl String @db.LongText
   redirectType   String    @default("301") // 301, 302, 307, 410, 451
   status         Boolean   @default(true) // Active (true) or Deactivated (false)
   hits           Int       @default(0)
@@ -186,7 +186,7 @@ model Category {
   id          Int        @id @default(autoincrement())
   name        String
   slug        String     @unique
-  description String?    @db.Text
+  description String? @db.LongText
   parentId    Int?
   parent      Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
   children    Category[] @relation("CategoryHierarchy")
@@ -199,7 +199,7 @@ model Tag {
   id          Int      @id @default(autoincrement())
   name        String
   slug        String   @unique
-  description String?  @db.Text
+  description String? @db.LongText
   posts       Post[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -211,8 +211,8 @@ model Product {
   id               Int      @id @default(autoincrement())
   title            String
   slug             String   @unique
-  description      String?  @db.Text
-  shortDescription String?  @db.Text
+  description      String? @db.LongText
+  shortDescription String? @db.LongText
   type             String   @default("SIMPLE") // SIMPLE or VARIABLE
   price            Float    @default(0)
   salePrice        Float?
@@ -221,7 +221,7 @@ model Product {
   stockQuantity    Int      @default(0)
   status           String   @default("Draft") // Draft, Published
   featuredImage    String?
-  galleryImages    String? // JSON string of image URLs
+  galleryImages    String? @db.LongText // JSON string of image URLs
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
   authorId         Int?
@@ -239,7 +239,7 @@ model ProductCategory {
   id          Int               @id @default(autoincrement())
   name        String
   slug        String            @unique
-  description String?           @db.Text
+  description String? @db.LongText
   parentId    Int?
   parent      ProductCategory?  @relation("ProductCategoryHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
   children    ProductCategory[] @relation("ProductCategoryHierarchy")
@@ -253,7 +253,7 @@ model ProductAttribute {
   productId Int
   product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
   name      String // e.g., "Size", "Color"
-  options   String // JSON string array of options e.g. ["Small", "Medium", "Large"]
+  options   String @db.LongText // JSON string array of options e.g. ["Small", "Medium", "Large"]
   visible   Boolean @default(true) // Visible on the product page
   variation Boolean @default(false) // Used for variations
   isGlobal  Boolean @default(false) // Whether this was imported from a Global Attribute
@@ -274,7 +274,7 @@ model GlobalAttributeTerm {
   attribute   GlobalAttribute @relation(fields: [attributeId], references: [id], onDelete: Cascade)
   name        String
   slug        String          @unique
-  description String?
+  description String? @db.LongText
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
 }
@@ -283,7 +283,7 @@ model ProductVariation {
   id            Int         @id @default(autoincrement())
   productId     Int
   product       Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
-  attributes    String // JSON string mapping attribute names to selected options e.g. {"Size": "Large", "Color": "Red"}
+  attributes    String @db.LongText // JSON string mapping attribute names to selected options e.g. {"Size": "Large", "Color": "Red"}
   price         Float
   salePrice     Float?
   sku           String?     @unique
@@ -303,8 +303,8 @@ model Order {
   customerId    Int?
   customer      User?  @relation(fields: [customerId], references: [id], onDelete: SetNull)
 
-  billingAddress  String // JSON string
-  shippingAddress String // JSON string
+  billingAddress  String @db.LongText // JSON string
+  shippingAddress String @db.LongText // JSON string
 
   paymentMethod String? // "STRIPE", "PAYPAL", "COD"
   paymentId     String? // Transaction ID from gateway
@@ -340,7 +340,7 @@ model OrderNote {
   id             Int      @id @default(autoincrement())
   orderId        Int
   order          Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  content        String   @db.Text
+  content        String @db.LongText
   isCustomerNote Boolean  @default(false) // If true, customer can see it
   createdAt      DateTime @default(now())
 }
@@ -348,7 +348,7 @@ model OrderNote {
 model ShippingZone {
   id        Int              @id @default(autoincrement())
   name      String
-  regions   String // JSON string of country/state codes
+  regions   String @db.LongText // JSON string of country/state codes
   methods   ShippingMethod[]
   createdAt DateTime         @default(now())
   updatedAt DateTime         @updatedAt
@@ -361,7 +361,7 @@ model ShippingMethod {
   name       String // "Flat Rate", "Free Shipping"
   type       String // "FLAT_RATE", "FREE_SHIPPING"
   cost       Float        @default(0)
-  conditions String? // JSON string for free shipping thresholds, etc.
+  conditions String? @db.LongText // JSON string for free shipping thresholds, etc.
   enabled    Boolean      @default(true)
 }
 
@@ -383,8 +383,8 @@ model Form {
   id                Int              @id @default(autoincrement())
   title             String
   shortcode         String           @unique
-  fields            String           @db.Text // JSON string representing fields
-  settings          String?          @db.Text // JSON string for form-level settings
+  fields            String @db.LongText // JSON string representing fields
+  settings          String? @db.LongText // JSON string for form-level settings
   notificationEmail String?
   status            String           @default("Published")
   createdAt         DateTime         @default(now())
@@ -398,7 +398,7 @@ model FormSubmission {
   id        Int      @id @default(autoincrement())
   formId    Int
   form      Form     @relation(fields: [formId], references: [id], onDelete: Cascade)
-  data      String   @db.Text // JSON string of submitted data
+  data      String @db.LongText // JSON string of submitted data
   status    String   @default("Active") // Active, Spam, Trash
   isRead    Boolean  @default(false)
   isStarred Boolean  @default(false)
@@ -408,7 +408,7 @@ model FormSubmission {
 model SchemaTemplate {
   id        Int      @id @default(autoincrement())
   name      String
-  schema    String   @db.Text
+  schema    String @db.LongText
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

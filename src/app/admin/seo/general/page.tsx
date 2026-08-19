@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Save, AlertCircle, Image as ImageIcon, Link as LinkIcon, Settings, Globe, FileText, Code } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { BASE_PATH } from '@/lib/config';
 
 export default function SeoGeneralSettings() {
   const [activeTab, setActiveTab] = useState('links');
@@ -66,7 +67,7 @@ export default function SeoGeneralSettings() {
   });
 
   useEffect(() => {
-    fetch('/api/settings/seo')
+    fetch(`${BASE_PATH}/api/settings/seo`)
       .then((res) => res.json())
       .then((data) => {
         setSettings((prev) => ({ ...prev, ...data }));
@@ -90,7 +91,7 @@ export default function SeoGeneralSettings() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const res = await fetch('/api/settings/seo', {
+      const res = await fetch(`${BASE_PATH}/api/settings/seo`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(settings)

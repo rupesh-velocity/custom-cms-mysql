@@ -3,13 +3,14 @@
 import { User, Bell, LogOut } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { BASE_PATH } from '@/lib/config';
 
 export default function Header() {
   const router = useRouter();
   const [userName, setUserName] = useState('Admin User');
 
   useEffect(() => {
-    fetch('/api/auth/me')
+    fetch(`${BASE_PATH}/api/auth/me`)
       .then(res => res.json())
       .then(data => {
         if (data.user) {
@@ -23,7 +24,7 @@ export default function Header() {
   }, []);
 
   const handleLogout = async () => {
-    await fetch('/api/auth/logout', { method: 'POST' });
+    await fetch(`${BASE_PATH}/api/auth/logout`, { method: 'POST' });
     router.push('/login');
     router.refresh();
   };

@@ -15,9 +15,9 @@ export async function GET() {
     const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback_super_secret_key_change_in_production');
     const { payload } = await jwtVerify(token, secret);
     
-    if (payload.role !== 'Admin') {
-      return new NextResponse('Forbidden', { status: 403 });
-    }
+    if (payload.role !== 'Administrator') {
+  return new NextResponse('Forbidden', { status: 403 });
+}
 
     const orders = await prisma.order.findMany({
       orderBy: { createdAt: 'desc' }

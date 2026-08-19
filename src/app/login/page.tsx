@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import { BASE_PATH } from '@/lib/config';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -17,7 +18,7 @@ export default function LoginPage() {
     setError('');
 
     try {
-      const res = await fetch('/api/auth/login', {
+      const res = await fetch(`${BASE_PATH}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
@@ -44,7 +45,7 @@ export default function LoginPage() {
         <div className="flex flex-col items-center">
           <div className="mb-6 flex justify-center">
             <Image 
-              src="/velocity-logo.png" 
+              src={`${BASE_PATH}/velocity-logo.png`} 
               alt="Velocity Consultancy Logo" 
               width={120} 
               height={48} 

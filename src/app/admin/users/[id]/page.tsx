@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import UserForm from '@/components/UserForm';
 import toast from 'react-hot-toast';
+import { BASE_PATH } from '@/lib/config';
 
 export default function EditUserPage() {
   const router = useRouter();
@@ -14,7 +15,7 @@ export default function EditUserPage() {
   useEffect(() => {
     if (!params?.id) return;
     
-    fetch(`/api/users/${params?.id}`)
+    fetch(`${BASE_PATH}/api/users/${params?.id}`)
       .then(res => res.json())
       .then(data => {
         if (data.error) {

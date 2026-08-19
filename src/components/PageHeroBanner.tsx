@@ -10,7 +10,7 @@ export default function PageHeroBanner({
 }: { 
   title: string; 
   image?: string | null;
-  description?: string | null;
+  description?: string | React.ReactNode | null;
   hideTitle?: boolean;
   breadcrumbSettings?: any;
 }) {
@@ -52,9 +52,9 @@ export default function PageHeroBanner({
 
         {/* Description Field under Title */}
         {description && (
-          <p className="inner-hero-subtitle max-w-2xl mb-2">
+          <div className="inner-hero-subtitle max-w-2xl mb-2">
             {description}
-          </p>
+          </div>
         )}
 
         {/* Breadcrumbs under Description */}

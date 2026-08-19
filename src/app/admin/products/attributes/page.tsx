@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Loader2 } from 'lucide-react';
+import { BASE_PATH } from '@/lib/config';
 
 export default function AttributesPage() {
   const [attributes, setAttributes] = useState<any[]>([]);
@@ -18,7 +19,7 @@ export default function AttributesPage() {
 
   const fetchAttributes = async () => {
     try {
-      const res = await fetch('/api/products/attributes');
+      const res = await fetch(`${BASE_PATH}/api/products/attributes`);
       const data = await res.json();
       setAttributes(data);
     } catch (e) {
@@ -32,7 +33,7 @@ export default function AttributesPage() {
     e.preventDefault();
     setIsSaving(true);
     try {
-      const res = await fetch('/api/products/attributes', {
+      const res = await fetch(`${BASE_PATH}/api/products/attributes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, slug })
@@ -55,7 +56,7 @@ export default function AttributesPage() {
   const handleDelete = async (id: number) => {
     if (!confirm('Are you sure you want to delete this attribute and all its terms?')) return;
     try {
-      const res = await fetch(`/api/products/attributes/${id}`, { method: 'DELETE' });
+      const res = await fetch(`${BASE_PATH}/api/products/attributes/${id}`, { method: 'DELETE' });
       if (res.ok) {
         await fetchAttributes();
       } else {

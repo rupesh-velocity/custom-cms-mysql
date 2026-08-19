@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Upload, Trash2, Image as ImageIcon, Search, CheckSquare, Square, FileText } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { BASE_PATH } from '@/lib/config';
 
 interface Media {
   id: number;
@@ -28,7 +29,7 @@ export default function MediaLibrary() {
 
   const fetchMedia = useCallback(async () => {
     try {
-      const res = await fetch('/api/media');
+      const res = await fetch(`${BASE_PATH}/api/media`);
       if (res.ok) {
         const data = await res.json();
         setMedia(data);
@@ -76,7 +77,7 @@ export default function MediaLibrary() {
       formData.append('file', file);
 
       try {
-        const res = await fetch('/api/upload', {
+        const res = await fetch(`${BASE_PATH}/api/upload`, {
           method: 'POST',
           body: formData,
         });
@@ -99,7 +100,7 @@ export default function MediaLibrary() {
     if (!confirm('Are you sure you want to delete this file? This action cannot be undone.')) return;
     
     try {
-      const res = await fetch(`/api/media/${id}`, { method: 'DELETE' });
+      const res = await fetch(`${BASE_PATH}/api/media/${id}`, { method: 'DELETE' });
       if (res.ok) {
         toast.success('Media deleted');
         if (selectedMedia?.id === id) setSelectedMedia(null);
@@ -121,7 +122,7 @@ export default function MediaLibrary() {
     
     for (const id of selectedMediaIds) {
       try {
-        const res = await fetch(`/api/media/${id}`, { method: 'DELETE' });
+        const res = await fetch(`${BASE_PATH}/api/media/${id}`, { method: 'DELETE' });
         if (res.ok) successCount++;
       } catch (error) {
         console.error('Failed to delete', id);
@@ -156,7 +157,7 @@ export default function MediaLibrary() {
     
     setIsUpdating(true);
     try {
-      const res = await fetch(`/api/media/${selectedMedia.id}`, {
+      const res = await fetch(`${BASE_PATH}/api/media/${selectedMedia.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

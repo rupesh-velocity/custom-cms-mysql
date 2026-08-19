@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { loadStripe, Stripe } from '@stripe/stripe-js';
 import { Elements, PaymentElement, AddressElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { BASE_PATH } from '@/lib/config';
 
 interface ItemData {
   id: number;
@@ -50,6 +51,7 @@ function CheckoutForm({ item, isAuthenticated, initialEmail, initialName, client
         elements,
         confirmParams: {
           receipt_email: formData.email || undefined,
+          return_url: window.location.href, // Added this back in securely!
         },
         redirect: 'if_required'
       });
@@ -60,7 +62,7 @@ function CheckoutForm({ item, isAuthenticated, initialEmail, initialName, client
 
       if (paymentIntent && paymentIntent.status === 'succeeded') {
         // 2. Fulfill the order locally
-        const res = await fetch('/api/checkout/fulfill', {
+        const res = await fetch(`${BASE_PATH}/api/checkout/fulfill`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
@@ -93,15 +95,15 @@ function CheckoutForm({ item, isAuthenticated, initialEmail, initialName, client
   };
 
   return (
-    <div className="flex flex-col lg:flex-row gap-8">
+    <div className="flex flex-col lg:flex-row gap-8 !mt-6">
       {/* Checkout Form */}
       <div className="w-full lg:w-2/3 bg-white p-8 rounded-xl shadow-sm border border-gray-200">
-        <h2 className="text-xl font-bold text-gray-900 mb-6">Payment Details</h2>
+        <h2 className="!text-2xl font-bold text-gray-900 !mb-6">Payment Details</h2>
         <form onSubmit={handleCheckout} className="space-y-6">
           
           {/* Account Details */}
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">Account Information</h3>
+            <h3 className="!text-sm font-semibold text-gray-700 uppercase tracking-wider !mb-4">Account Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
@@ -142,7 +144,7 @@ function CheckoutForm({ item, isAuthenticated, initialEmail, initialName, client
           {item.type === 'product' && (
             <>
               <div className="space-y-4">
-                <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">Shipping Address</h3>
+                <h3 className="!text-sm font-semibold text-gray-700 uppercase tracking-wider !mb-4">Shipping Address</h3>
                 <div className="p-4 border border-gray-200 rounded-lg bg-gray-50">
                   <AddressElement 
                     options={{ 
@@ -165,7 +167,7 @@ function CheckoutForm({ item, isAuthenticated, initialEmail, initialName, client
 
           {/* Payment Details */}
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">Payment Details</h3>
+            <h3 className="!text-sm font-semibold text-gray-700 uppercase tracking-wider !mb-4">Payment Details</h3>
             <div className="p-4 border border-gray-200 rounded-lg bg-gray-50">
               <PaymentElement />
             </div>
@@ -183,17 +185,17 @@ function CheckoutForm({ item, isAuthenticated, initialEmail, initialName, client
       {/* Order Summary */}
       <div className="w-full lg:w-1/3">
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 sticky top-24">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">Order Summary</h2>
+          <h2 className="!text-xl font-bold text-gray-900 !mb-4">Order Summary</h2>
           <div className="flex gap-4 items-start mb-6">
-            <div className="w-20 h-20 bg-gray-100 rounded-md flex-shrink-0 overflow-hidden relative">
+            <div className="w-20 h-20 bg-gray-100 rounded-md flex-shrink-0 overflow-hidden relative border border-gray-200">
               {item.image ? (
                 <img src={item.image} alt={item.title} className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-xs text-gray-400">No Image</div>
               )}
             </div>
-            <div>
-              <h3 className="font-semibold text-gray-900">{item.title}</h3>
+            <div className="flex-1 min-w-0">
+              <h3 className="!text-base font-semibold text-gray-900 break-words">{item.title}</h3>
               <p className="text-[#5e3fde] font-bold mt-1">${item.price}</p>
             </div>
           </div>
@@ -218,7 +220,7 @@ export default function CheckoutClient(props: CheckoutClientProps) {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    fetch('/api/checkout/stripe', {
+    fetch(`${BASE_PATH}/api/checkout/stripe`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ itemId: props.item.id, type: props.item.type })

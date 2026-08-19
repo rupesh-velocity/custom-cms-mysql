@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Plus, Search, Edit2, Trash2, Package, Image as ImageIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { BASE_PATH } from '@/lib/config';
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<any[]>([]);
@@ -15,7 +16,7 @@ export default function ProductsPage() {
 
   useEffect(() => {
     fetchProducts();
-    fetch('/api/auth/me')
+    fetch(`${BASE_PATH}/api/auth/me`)
       .then(res => res.json())
       .then(data => {
         if (data.user) {
@@ -30,7 +31,7 @@ export default function ProductsPage() {
 
   const fetchProducts = async () => {
     try {
-      const res = await fetch('/api/products');
+      const res = await fetch(`${BASE_PATH}/api/products`);
       const data = await res.json();
       setProducts(data);
     } catch (error) {
@@ -52,7 +53,7 @@ export default function ProductsPage() {
 
   const handleTrash = async (id: string) => {
     try {
-      const res = await fetch(`/api/products/${id}`, {
+      const res = await fetch(`${BASE_PATH}/api/products/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'Trash' })
@@ -68,7 +69,7 @@ export default function ProductsPage() {
 
   const handleRestore = async (id: string) => {
     try {
-      const res = await fetch(`/api/products/${id}`, {
+      const res = await fetch(`${BASE_PATH}/api/products/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'Draft' })
@@ -86,7 +87,7 @@ export default function ProductsPage() {
     if (!window.confirm('Are you sure you want to permanently delete this product?')) return;
     
     try {
-      const res = await fetch(`/api/products/${id}`, { method: 'DELETE' });
+      const res = await fetch(`${BASE_PATH}/api/products/${id}`, { method: 'DELETE' });
       if (res.ok) {
         toast.success('Product deleted permanently');
         fetchProducts();
@@ -115,7 +116,7 @@ export default function ProductsPage() {
       if (!window.confirm(`Are you sure you want to move ${selectedIds.length} products to Trash?`)) return;
       try {
         await Promise.all(selectedIds.map(id => 
-          fetch(`/api/products/${id}`, {
+          fetch(`${BASE_PATH}/api/products/${id}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ status: 'Trash' })
@@ -130,7 +131,7 @@ export default function ProductsPage() {
     } else if (bulkAction === 'restore') {
       try {
         await Promise.all(selectedIds.map(id => 
-          fetch(`/api/products/${id}`, {
+          fetch(`${BASE_PATH}/api/products/${id}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ status: 'Draft' })
@@ -146,7 +147,7 @@ export default function ProductsPage() {
       if (!window.confirm(`Are you sure you want to permanently delete ${selectedIds.length} products?`)) return;
       try {
         await Promise.all(selectedIds.map(id => 
-          fetch(`/api/products/${id}`, { method: 'DELETE' })
+          fetch(`${BASE_PATH}/api/products/${id}`, { method: 'DELETE' })
         ));
         toast.success(`Deleted ${selectedIds.length} products`);
         setSelectedIds([]);

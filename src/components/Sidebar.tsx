@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { LayoutDashboard, FileText, Files, Users, Settings, ChevronDown, ChevronRight, Menu as MenuIcon, Image as ImageIcon, BarChart2, ShoppingCart, Package, FormInput } from 'lucide-react';
 import clsx from 'clsx';
+import { BASE_PATH } from '@/lib/config';
 
 export default function Sidebar({ enableProducts = false }: { enableProducts?: boolean }) {
   const pathname = usePathname() || '';
@@ -18,7 +19,7 @@ export default function Sidebar({ enableProducts = false }: { enableProducts?: b
     <aside className="w-64 bg-white border-r border-gray-100 text-gray-600 flex flex-col h-screen sticky top-0 shadow-sm">
       {/* Brand */}
       <div className="p-6 mb-2 flex items-center gap-3">
-        <img src="/velocity-logo.png" alt="Velocity Logo" className="h-8 w-auto object-contain" />
+        <img src={`${BASE_PATH}/velocity-logo.png`} alt="Velocity Logo" className="h-8 w-auto object-contain" />
         <h1 className="text-xl font-bold text-gray-900 tracking-tight">Velocity CMS</h1>
       </div>
       

@@ -5,6 +5,7 @@ import { Save, Upload, Loader2, Image as ImageIcon, Plus, Trash2, FileImage } fr
 import Image from 'next/image';
 import toast from 'react-hot-toast';
 import MediaModal from '@/components/MediaModal';
+import { BASE_PATH } from '@/lib/config';
 
 interface SocialIcon {
   id: string;
@@ -35,7 +36,7 @@ export default function GeneralSettings() {
   const [activeSocialId, setActiveSocialId] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch('/api/settings')
+    fetch(`${BASE_PATH}/api/settings`)
       .then(res => res.json())
       .then(data => {
         setSettings({
@@ -95,7 +96,7 @@ export default function GeneralSettings() {
     };
     
     try {
-      const res = await fetch('/api/settings', {
+      const res = await fetch(`${BASE_PATH}/api/settings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -179,7 +180,7 @@ export default function GeneralSettings() {
           <div className="flex items-start gap-6">
             <div className="flex flex-col items-center justify-center w-32 h-32 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 overflow-hidden relative group">
               {settings.site_icon ? (
-                <Image src={settings.site_icon} alt="Site Icon" fill className="object-cover" />
+                <img src={settings.site_icon} alt="Site Icon" className="w-full h-full object-cover" />
               ) : (
                 <ImageIcon className="text-gray-300" size={48} />
               )}
@@ -209,7 +210,7 @@ export default function GeneralSettings() {
           <div className="flex items-start gap-6">
             <div className="flex flex-col items-center justify-center w-64 h-32 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 overflow-hidden relative group">
               {settings.site_logo ? (
-                <Image src={settings.site_logo} alt="Site Logo" fill className="object-contain p-4" />
+                <img src={settings.site_logo} alt="Site Logo" className="w-full h-full object-contain p-4" />
               ) : (
                 <ImageIcon className="text-gray-300" size={48} />
               )}
@@ -239,7 +240,7 @@ export default function GeneralSettings() {
           <div className="flex items-start gap-6">
             <div className="flex flex-col items-center justify-center w-64 h-32 border-2 border-dashed border-gray-300 rounded-lg bg-slate-800 overflow-hidden relative group">
               {settings.footer_logo ? (
-                <Image src={settings.footer_logo} alt="Footer Logo" fill className="object-contain p-4" />
+                <img src={settings.footer_logo} alt="Footer Logo" className="w-full h-full object-contain p-4" />
               ) : (
                 <ImageIcon className="text-gray-500" size={48} />
               )}
@@ -304,7 +305,7 @@ export default function GeneralSettings() {
                       title="Click to select icon from Media Library"
                     >
                       {icon.iconUrl ? (
-                        <Image src={icon.iconUrl} alt="Social Icon" width={24} height={24} className="object-contain" />
+                        <img src={icon.iconUrl} alt="Social Icon" className="w-6 h-6 object-contain" />
                       ) : (
                         <ImageIcon size={20} className="text-gray-400 group-hover:text-blue-500" />
                       )}

@@ -6,6 +6,7 @@ import ClassicEditor from '@/components/ClassicEditor';
 import ClassicSidebar from '@/components/ClassicSidebar';
 import SeoAnalyzer from '@/components/SeoAnalyzer';
 import toast from 'react-hot-toast';
+import { BASE_PATH } from '@/lib/config';
 
 export default function EditCourse({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
@@ -33,7 +34,7 @@ export default function EditCourse({ params }: { params: Promise<{ id: string }>
   const [featuredImage, setFeaturedImage] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch(`/api/courses/${id}`)
+    fetch(`${BASE_PATH}/api/courses/${id}`)
       .then(res => res.json())
       .then(data => {
         if (data.error) {
@@ -82,7 +83,7 @@ export default function EditCourse({ params }: { params: Promise<{ id: string }>
     setIsSaving(true);
     const finalStatus = overrideStatus || status;
     try {
-      const res = await fetch(`/api/courses/${id}`, {
+      const res = await fetch(`${BASE_PATH}/api/courses/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

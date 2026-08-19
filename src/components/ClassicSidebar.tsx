@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { ChevronUp, ChevronDown, MapPin, Eye, Calendar, HelpCircle } from 'lucide-react';
 import MediaModal from './MediaModal';
+import { BASE_PATH } from '@/lib/config';
 
 interface ClassicSidebarProps {
   status: string;
@@ -65,10 +66,10 @@ export default function ClassicSidebar({
 
   useEffect(() => {
     if (isPost) {
-      fetch('/api/categories').then(res => res.json()).then(data => {
+      fetch(`${BASE_PATH}/api/categories`).then(res => res.json()).then(data => {
         if (Array.isArray(data)) setCategories(data);
       });
-      fetch('/api/tags').then(res => res.json()).then(data => {
+      fetch(`${BASE_PATH}/api/tags`).then(res => res.json()).then(data => {
         if (Array.isArray(data)) setTags(data);
       });
     }
@@ -78,7 +79,7 @@ export default function ClassicSidebar({
     if (!newCategoryName.trim()) return;
     setIsCreatingCategory(true);
     try {
-      const res = await fetch('/api/categories', {
+      const res = await fetch(`${BASE_PATH}/api/categories`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: newCategoryName })
@@ -124,7 +125,7 @@ export default function ClassicSidebar({
       } else {
         // Create new tag
         try {
-          const res = await fetch('/api/tags', {
+          const res = await fetch(`${BASE_PATH}/api/tags`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name: tagName })

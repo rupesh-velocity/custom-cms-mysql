@@ -27,7 +27,7 @@ export async function GET(req: Request, context: any) {
   }
 }
 
-export async function PATCH(req: Request, context: any) {
+export async function POST(req: Request, context: any) {
   try {
     const params = await context.params;
     const data = await req.json();

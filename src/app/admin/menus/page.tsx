@@ -20,6 +20,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import toast from 'react-hot-toast';
+import { BASE_PATH } from '@/lib/config';
 
 function SortableMenuItem({ item, index, onRemove, onIndent, onOutdent, canIndent, onUpdateLabel, onUpdateUrl, moveUp, moveDown, isFirst, isLast, pages, posts }: any) {
   const [expanded, setExpanded] = useState(false);
@@ -190,9 +191,9 @@ export default function MenusPage() {
   const fetchData = async () => {
     setIsLoading(true);
     const [menusRes, pagesRes, postsRes] = await Promise.all([
-      fetch('/api/menus').then(r => r.json()),
-      fetch('/api/pages').then(r => r.json()),
-      fetch('/api/posts').then(r => r.json())
+      fetch(`${BASE_PATH}/api/menus`).then(r => r.json()),
+      fetch(`${BASE_PATH}/api/pages`).then(r => r.json()),
+      fetch(`${BASE_PATH}/api/posts`).then(r => r.json())
     ]);
     setMenus(Array.isArray(menusRes) ? menusRes : []);
     setPages(Array.isArray(pagesRes) ? pagesRes : []);
@@ -225,7 +226,7 @@ export default function MenusPage() {
     // Auto-generate slug from name
     const slug = newMenuName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 
-    const res = await fetch('/api/menus', {
+    const res = await fetch(`${BASE_PATH}/api/menus`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name: newMenuName, slug })
@@ -244,7 +245,7 @@ export default function MenusPage() {
     if (!activeMenuId) return;
     if (!confirm('Are you sure you want to delete this entire menu?')) return;
     
-    const res = await fetch(`/api/menus/${activeMenuId}`, {
+    const res = await fetch(`${BASE_PATH}/api/menus/${activeMenuId}`, {
       method: 'DELETE'
     });
     if (res.ok) {
@@ -361,7 +362,7 @@ export default function MenusPage() {
     setIsSaving(true);
     
     try {
-      const res = await fetch(`/api/menus/${activeMenuId}`, {
+      const res = await fetch(`${BASE_PATH}/api/menus/${activeMenuId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ items: menuItems }),

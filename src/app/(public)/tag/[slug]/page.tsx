@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import { cookies } from 'next/headers';
 import BlogSidebar from '@/components/BlogSidebar';
+import PageHeroBanner from '@/components/PageHeroBanner';
 import { Metadata } from 'next';
 
 export const dynamic = 'force-dynamic';
@@ -91,19 +92,13 @@ export default async function TagPage(props: { params: Promise<{ slug: string }>
   const totalPages = Math.ceil(totalPosts / limit);
 
   return (
-    <div className="min-h-screen bg-[#f8f9fa] w-full font-sans pt-8 pb-16">
-      <div className="max-w-[1200px] mx-auto px-4 mb-12">
-        <div className="bg-gradient-to-br from-[#5e3fde] to-[#8a72ec] rounded-3xl p-10 md:p-14 text-center lg:text-left shadow-lg relative overflow-hidden">
-          {/* Decorative shapes */}
-          <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-white opacity-10 rounded-full blur-2xl"></div>
-          <div className="absolute bottom-0 left-0 -mb-10 -ml-10 w-32 h-32 bg-white opacity-10 rounded-full blur-xl"></div>
-          
-          <div className="text-white/80 font-bold tracking-wide uppercase mb-2 text-sm relative z-10">Tag</div>
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-white tracking-tight font-outfit relative z-10">{tag.name}</h1>
-        </div>
-      </div>
+    <div className="min-h-screen w-full font-sans pb-16">
+      <PageHeroBanner 
+        title={tag.name} 
+        description="Tag"
+      />
 
-      <div className="max-w-[1200px] mx-auto px-4 flex flex-col lg:flex-row gap-12">
+      <div className="max-w-[1200px] mx-auto px-4 flex flex-col lg:flex-row gap-12 mt-12">
         <div className="flex-1 min-w-0">
           {posts.length === 0 ? (
             <div className="bg-white p-12 rounded-2xl shadow-sm text-center border border-gray-100">
@@ -112,57 +107,53 @@ export default async function TagPage(props: { params: Promise<{ slug: string }>
           ) : (
             <div className="space-y-10">
               {posts.map((post: any) => (
-                <article key={post.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow flex flex-col sm:flex-row overflow-hidden group/card">
-                  {post.featuredImage && (
-                    <Link href={`/${post.slug}`} className="block w-full sm:w-1/3 lg:w-[30%] shrink-0 overflow-hidden relative">
-                      <div className="absolute inset-0">
-                        <img src={post.featuredImage} alt={post.title} className="w-full h-full object-cover group-hover/card:scale-105 transition-transform duration-700" />
-                      </div>
-                      {/* Placeholder to maintain minimum aspect ratio on mobile, but let it stretch on desktop */}
-                      <div className="w-full pb-[56.25%] sm:pb-0"></div>
-                    </Link>
-                  )}
-                  <div className="flex-1 min-w-0 p-6 sm:p-8 flex flex-col justify-center">
-                    <div className="flex flex-wrap items-center gap-2 text-sm text-[#5e3fde] font-semibold mb-2">
-                      {post.tags?.map((t: any, i: number) => (
-                        <span key={t.id}>
-                          <Link href={`/tag/${t.slug}`} className="hover:underline">{t.name}</Link>
-                          {i < post.tags.length - 1 ? ' • ' : ''}
-                        </span>
-                      ))}
-                    </div>
-                    <Link href={`/${post.slug}`} className="block group">
-                      <h2 className="text-2xl font-bold text-gray-900 group-hover:text-[#5e3fde] transition-colors mb-3 font-outfit leading-tight">
-                        {post.title}
-                      </h2>
-                    </Link>
-                    <div className="flex items-center gap-3 text-sm text-gray-500 mb-4 font-medium">
-                      {post.author?.firstName && <span>By {post.author.firstName} {post.author.lastName}</span>}
-                      {post.author?.firstName && <span>•</span>}
-                      <span>
-                        {new Date(post.publishedAt || post.createdAt).toLocaleDateString('en-US', {
-                          year: 'numeric', month: 'long', day: 'numeric'
-                        })}
-                      </span>
-                    </div>
-                    
-                    {post.visibility === 'Password Protected' && cookieStore.get(`post_pass_${post.id}`)?.value !== post.password ? (
-                      <div className="prose prose-blue max-w-none text-gray-600">
-                        <p>This content is password protected.</p>
-                        <Link href={`/${post.slug}`} className="text-[#5e3fde] font-medium hover:underline mt-4 inline-flex items-center gap-1">
-                          Enter Password &rarr;
+                 <article key={post.id} className="blog-post-card">
+                      {post.featuredImage && (
+                        <Link href={`/${post.slug}`} className="blog-post-img-wrap">
+                          <img src={post.featuredImage} alt={post.title} className="blog-post-img" />
+                          <div className="blog-post-img-spacer"></div>
                         </Link>
-                      </div>
-                    ) : (
-                      <div className="prose prose-blue max-w-none text-gray-700 text-sm md:text-base">
-                        <p>{(post.contentText || '').substring(0, 180)}...</p>
-                        <Link href={`/${post.slug}`} className="text-[#5e3fde] font-medium hover:underline mt-3 inline-flex items-center gap-1">
-                          Read more &rarr;
+                      )}
+                      <div className="blog-post-content">
+                        <div className="blog-post-category">
+                          {post.categories?.map((cat: any, i: number) => (
+                            <span key={cat.id}>
+                              <Link href={`/category/${cat.slug}`}>{cat.name}</Link>
+                            </span>
+                          ))}
+                        </div>
+                        <Link href={`/${post.slug}`} className="block group">
+                          <h2 className="blog-post-title">
+                            {post.title}
+                          </h2>
                         </Link>
+                        <div className="blog-post-meta">
+                          {post.author?.firstName && <span>By {post.author.firstName} {post.author.lastName}</span>}
+                          {post.author?.firstName && <span>•</span>}
+                          <span>
+                            {new Date(post.publishedAt || post.createdAt).toLocaleDateString('en-US', {
+                              year: 'numeric', month: 'long', day: 'numeric'
+                            })}
+                          </span>
+                        </div>
+                        
+                        {post.visibility === 'Password Protected' && cookieStore.get(`post_pass_${post.id}`)?.value !== post.password ? (
+                          <div className="blog-post-excerpt">
+                            <p>This content is password protected.</p>
+                            <Link href={`/${post.slug}`} className="blog-post-read-more">
+                              Enter Password &rarr;
+                            </Link>
+                          </div>
+                        ) : (
+                          <div className="blog-post-excerpt">
+                            <p>{(post.contentText || '').substring(0, 180)}...</p>
+                            <Link href={`/${post.slug}`} className="blog-post-read-more">
+                              Read more &rarr;
+                            </Link>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                </article>
+                    </article>
               ))}
 
               {totalPages > 1 && (

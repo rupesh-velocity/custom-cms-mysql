@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Save, Settings, Image as ImageIcon, FileText, File, List, Users, Paperclip, Briefcase, Folder, Tag, MapPin } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { BASE_PATH } from '@/lib/config';
 
 export default function SitemapSettings() {
   const [activeTab, setActiveTab] = useState('general');
@@ -37,7 +38,7 @@ export default function SitemapSettings() {
       setActiveTab(window.location.hash.replace('#', ''));
     }
     setOrigin(window.location.origin);
-    fetch('/api/settings/seo')
+    fetch(`${BASE_PATH}/api/settings/seo`)
       .then((res) => res.json())
       .then((data) => {
         setSettings((prev) => ({ ...prev, ...data }));
@@ -50,7 +51,7 @@ export default function SitemapSettings() {
         setIsLoading(false);
       });
 
-    fetch('/api/pages')
+    fetch(`${BASE_PATH}/api/pages`)
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) setPagesList(data);
@@ -82,7 +83,7 @@ export default function SitemapSettings() {
         return;
       }
 
-      const res = await fetch('/api/settings/seo', {
+      const res = await fetch(`${BASE_PATH}/api/settings/seo`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(changedSettings)

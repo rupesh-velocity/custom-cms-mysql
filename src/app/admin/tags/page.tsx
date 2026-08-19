@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { Trash2, Edit2 } from 'lucide-react';
+import { BASE_PATH } from '@/lib/config';
 
 interface Tag {
   id: number;
@@ -30,7 +31,7 @@ export default function TagsPage() {
   const fetchTags = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch('/api/tags');
+      const res = await fetch(`${BASE_PATH}/api/tags`);
       if (res.ok) {
         const data = await res.json();
         setTags(data);
@@ -104,7 +105,7 @@ export default function TagsPage() {
     if (!confirm('Are you sure you want to delete this tag?')) return;
     
     try {
-      const res = await fetch(`/api/tags/${id}`, { method: 'DELETE' });
+      const res = await fetch(`${BASE_PATH}/api/tags/${id}`, { method: 'DELETE' });
       if (res.ok) {
         toast.success('Tag deleted');
         fetchTags();

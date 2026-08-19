@@ -8,6 +8,7 @@ import ClassicSidebar from '@/components/ClassicSidebar';
 import LinkSuggestionsSidebar from '@/components/LinkSuggestionsSidebar';
 import SeoAnalyzer from '@/components/SeoAnalyzer';
 import toast from 'react-hot-toast';
+import { BASE_PATH } from '@/lib/config';
 
 export default function EditPage() {
   const router = useRouter();
@@ -48,7 +49,7 @@ export default function EditPage() {
   useEffect(() => {
     if (!params?.id) return;
     
-    fetch(`/api/pages/${params?.id}`)
+    fetch(`${BASE_PATH}/api/pages/${params?.id}`)
       .then(res => res.json())
       .then(data => {
         if (data.error) {
@@ -80,7 +81,7 @@ export default function EditPage() {
         setHeroDescription(data.heroDescription || '');
         
         // Check if this is the homepage
-        fetch('/api/settings')
+        fetch(`${BASE_PATH}/api/settings`)
           .then(res => res.json())
           .then(settings => {
             if (settings.homepage_displays === 'static_page' && settings.homepage_page_id === params?.id) {
@@ -91,7 +92,7 @@ export default function EditPage() {
           .catch(() => setIsLoading(false));
           
         // Fetch global settings
-        fetch('/api/settings')
+        fetch(`${BASE_PATH}/api/settings`)
           .then(res => res.json())
           .then(data => {
             if (!data.error) {
@@ -118,7 +119,7 @@ export default function EditPage() {
 
 
     try {
-      const res = await fetch(`/api/pages/${params?.id}`, {
+      const res = await fetch(`${BASE_PATH}/api/pages/${params?.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

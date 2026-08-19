@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Trash2, AlertCircle, RefreshCw, Plus } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
+import { BASE_PATH } from '@/lib/config';
 
 type NotFoundLog = {
   id: number;
@@ -25,7 +26,7 @@ export default function NotFoundMonitorPage() {
   const fetchLogs = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch('/api/seo/not-found-logs');
+      const res = await fetch(`${BASE_PATH}/api/seo/not-found-logs`);
       const data = await res.json();
       setLogs(data);
     } catch (err) {
@@ -38,7 +39,7 @@ export default function NotFoundMonitorPage() {
   const handleDelete = async (id: number) => {
     if (!window.confirm('Delete this log entry?')) return;
     try {
-      const res = await fetch(`/api/seo/not-found-logs/${id}`, { method: 'DELETE' });
+      const res = await fetch(`${BASE_PATH}/api/seo/not-found-logs/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Failed to delete');
       toast.success('Log entry deleted');
       fetchLogs();
@@ -50,7 +51,7 @@ export default function NotFoundMonitorPage() {
   const handleClearAll = async () => {
     if (!window.confirm('Are you sure you want to clear all 404 logs? This cannot be undone.')) return;
     try {
-      const res = await fetch('/api/seo/not-found-logs?clearAll=true', { method: 'DELETE' });
+      const res = await fetch(`${BASE_PATH}/api/seo/not-found-logs?clearAll=true`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Failed to clear logs');
       toast.success('All logs cleared');
       fetchLogs();

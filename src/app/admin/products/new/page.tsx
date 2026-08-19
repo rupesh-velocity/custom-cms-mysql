@@ -8,6 +8,7 @@ import toast from 'react-hot-toast';
 import TipTapEditor from '@/components/TipTapEditor';
 import MediaModal from '@/components/MediaModal';
 import { Accordion } from '@/components/ClassicSidebar';
+import { BASE_PATH } from '@/lib/config';
 
 export default function NewProductPage() {
   const router = useRouter();
@@ -35,12 +36,12 @@ export default function NewProductPage() {
     if (typeof window !== 'undefined') {
       setOrigin(window.location.origin);
     }
-    fetch('/api/products/attributes')
+    fetch(`${BASE_PATH}/api/products/attributes`)
       .then(res => res.json())
       .then(data => setGlobalAttributes(data))
       .catch(console.error);
       
-    fetch('/api/courses')
+    fetch(`${BASE_PATH}/api/courses`)
       .then(res => res.json())
       .then(data => setCourses(data))
       .catch(console.error);
@@ -88,7 +89,7 @@ export default function NewProductPage() {
     setIsSaving(true);
     const finalStatus = overrideStatus || product.status;
     try {
-      const res = await fetch('/api/products/new', {
+      const res = await fetch(`${BASE_PATH}/api/products/new`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...product, status: finalStatus, createdAt: publishDate || undefined })

@@ -1,6 +1,6 @@
 'use client';
-
 import { useState } from 'react';
+import PageHeroBanner from '@/components/PageHeroBanner';
 
 interface Video {
   title: string;
@@ -24,19 +24,16 @@ export default function CourseViewerClient({ course }: CourseViewerClientProps) 
   return (
     <main className="flex-1 w-full flex flex-col font-sans bg-gray-50 pb-24">
       {/* Hero Banner */}
-      <div className="bg-[#111827] text-white pt-16 pb-32 px-6 border-b-8 border-[#5e3fde] relative overflow-hidden shrink-0">
-        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(#5e3fde 1px, transparent 1px)', backgroundSize: '24px 24px' }}></div>
-        <div className="max-w-6xl mx-auto relative z-10 flex flex-col">
-          <div className="inline-block px-4 py-1.5 rounded-full bg-[#5e3fde]/20 text-[#a5b4fc] font-bold text-sm mb-4 border border-[#5e3fde]/30 uppercase tracking-widest w-max">
+      <PageHeroBanner
+        title={course.title}
+        description={
+          <div className="inline-block px-4 py-1.5 rounded-full bg-[#5e3fde]/20 text-[#a5b4fc] font-bold text-sm mt-4 border border-[#5e3fde]/30 uppercase tracking-widest w-max">
             My Course
           </div>
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight font-outfit mb-2 leading-tight">
-            {course.title}
-          </h1>
-        </div>
-      </div>
+        }
+      />
 
-      <div className="max-w-6xl mx-auto w-full px-4 sm:px-6 -mt-16 relative z-20 flex flex-col lg:flex-row gap-8">
+      <div className="max-w-6xl mx-auto w-full px-4 sm:px-6 mt-12 relative z-20 flex flex-col lg:flex-row gap-8">
         {/* Left Col - Video & Description */}
         <div className="flex-1 min-w-0">
         
@@ -59,8 +56,8 @@ export default function CourseViewerClient({ course }: CourseViewerClientProps) 
           <div className="absolute inset-0 pointer-events-none shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1)] rounded-xl"></div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-          <h2 className="text-xl font-bold text-gray-900 mb-4 pb-4 border-b border-gray-100">About this Course</h2>
+        <div className="section-about-course rounded-3xl shadow-xl border border-gray-100 p-8 md:p-12 lg:p-16">
+          <h2 className="">About this Course</h2>
           <div 
             className="prose prose-purple max-w-none text-gray-600 leading-relaxed"
             dangerouslySetInnerHTML={{ __html: course.contentHtml || '' }}
@@ -71,9 +68,9 @@ export default function CourseViewerClient({ course }: CourseViewerClientProps) 
       {/* Right Col - Sidebar Playlist */}
       <div className="w-full lg:w-80 shrink-0">
         <div className="bg-white/70 backdrop-blur-md rounded-xl shadow-sm border border-gray-200 p-6 sticky top-24">
-          <h3 className="font-bold text-gray-900 mb-4">Course Curriculum</h3>
+          <h3 className="font-bold text-gray-900 !mb-4">Course Curriculum</h3>
           
-          <div className="space-y-3 mb-6 max-h-[500px] overflow-y-auto pr-2">
+          <div className="space-y-3 !mb-6 max-h-[500px] overflow-y-auto pr-2">
             {videos.length === 0 && (
               <div className="text-sm text-gray-500 italic">No videos added yet.</div>
             )}

@@ -15,9 +15,9 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback_super_secret_key_change_in_production');
     const { payload } = await jwtVerify(token, secret);
     
-    if (payload.role !== 'Admin') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
+  if (payload.role !== 'Administrator') {
+  return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+}
     
     const resolvedParams = await params;
     const orderId = parseInt(resolvedParams.id);

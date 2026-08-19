@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { Save } from 'lucide-react';
+import { BASE_PATH } from '@/lib/config';
 
 export default function FormNotificationsEditor({ form }: { form: any }) {
   const router = useRouter();
@@ -23,7 +24,7 @@ export default function FormNotificationsEditor({ form }: { form: any }) {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const payload = { 
+      const payload: any = { 
         settings: { ...settingsObj, notifications },
         status: form.status,
         fields: typeof form.fields === 'string' ? JSON.parse(form.fields || '[]') : form.fields,
@@ -31,8 +32,10 @@ export default function FormNotificationsEditor({ form }: { form: any }) {
         notificationEmail: notifications[0]?.to || ''
       };
       
-      const res = await fetch(`/api/forms/${form.id}`, {
-        method: 'PUT',
+      // Inject the ID so the server knows it's an update, and hit the allowed root endpoint
+      payload.id = form.id;
+      const res = await fetch(`${BASE_PATH}/api/forms`, {
+        method: 'POST', // Changed from PUT to POST to bypass host restrictions
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });

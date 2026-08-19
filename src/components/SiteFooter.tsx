@@ -11,7 +11,7 @@ export default async function SiteFooter() {
   // Fetch settings for branding and social icons
   const settingsRecords = await prisma.setting.findMany({
     where: {
-      key: { in: ['site_tagline', 'footer_logo', 'social_icons'] }
+      key: { in: ['site_title', 'site_tagline', 'footer_logo', 'social_icons', 'copyright_text'] }
     }
   });
   
@@ -114,11 +114,18 @@ export default async function SiteFooter() {
           <div className="footer-cta-col lg:col-span-4 lg:col-start-9">
             <h2 className="footer-title">Your Best Move <span className="txt-accent">Starts Now</span></h2>
             <p className="footer-text footer-cta-text">Start with a Free Class and Discover how good Movement can Feel</p>
-            <a href="#" className="theme-btn theme-btn-primary"><span>Start Your Free Class Now</span><span className="btn-icon">↗</span></a>
+            <a href="https://ipdav.com/newweb-new/free-yoga-pilates-fusion-class/" className="theme-btn theme-btn-blue">Start Your Free Class Now</a>
           </div>
         </div>
         <div className="footer-line"></div>
-        <p className="copyright">© {new Date().getFullYear()} Fitness Arts | All rights reserved. | Website by Velocity Consultancy</p>
+        <p 
+          className="copyright" 
+          dangerouslySetInnerHTML={{ 
+            __html: settings.copyright_text
+              ? settings.copyright_text.replace('%year%', new Date().getFullYear().toString())
+              : `© ${new Date().getFullYear()} ${settings.site_title || 'Your Company Name'} | All rights reserved. | Website by <a href="https://velocityconsultancy.com/" target="_blank" rel="noopener noreferrer">Velocity Consultancy</a>`
+          }} 
+        />
       </div>
     </footer>
   );

@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { Search, Edit2, Trash2, ExternalLink } from 'lucide-react';
+import { BASE_PATH } from '@/lib/config';
 
 export default function AdminListClient({ items, type }: { items: any[], type: 'pages' | 'posts' | 'courses' | 'forms' }) {
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
@@ -21,7 +22,7 @@ export default function AdminListClient({ items, type }: { items: any[], type: '
   );
 
   useEffect(() => {
-    fetch('/api/auth/me')
+    fetch(`${BASE_PATH}/api/auth/me`)
       .then(res => res.json())
       .then(data => {
         if (data.user) {
@@ -33,7 +34,7 @@ export default function AdminListClient({ items, type }: { items: any[], type: '
       })
       .catch(() => {});
 
-    fetch('/api/settings')
+    fetch(`${BASE_PATH}/api/settings`)
       .then(res => res.json())
       .then(data => {
         if (!data.error) setGlobalSettings(data);
@@ -58,7 +59,7 @@ export default function AdminListClient({ items, type }: { items: any[], type: '
 
   const handleTrash = async (id: number) => {
     try {
-      const res = await fetch(`/api/${type}/${id}`, {
+      const res = await fetch(`${BASE_PATH}/api/${type}/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'Trash' })
@@ -74,7 +75,7 @@ export default function AdminListClient({ items, type }: { items: any[], type: '
 
   const handleRestore = async (id: number) => {
     try {
-      const res = await fetch(`/api/${type}/${id}`, {
+      const res = await fetch(`${BASE_PATH}/api/${type}/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'Draft' })
@@ -91,7 +92,7 @@ export default function AdminListClient({ items, type }: { items: any[], type: '
   const handlePermanentDelete = async (id: number) => {
     if (!window.confirm('Are you sure you want to permanently delete this item?')) return;
     try {
-      const res = await fetch(`/api/${type}/${id}`, { method: 'DELETE' });
+      const res = await fetch(`${BASE_PATH}/api/${type}/${id}`, { method: 'DELETE' });
       if (res.ok) {
         toast.success('Permanently deleted');
         router.refresh();
@@ -108,7 +109,7 @@ export default function AdminListClient({ items, type }: { items: any[], type: '
       if (!window.confirm(`Are you sure you want to move ${selectedIds.length} items to Trash?`)) return;
       try {
         await Promise.all(selectedIds.map(id => 
-          fetch(`/api/${type}/${id}`, {
+          fetch(`${BASE_PATH}/api/${type}/${id}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ status: 'Trash' })
@@ -123,7 +124,7 @@ export default function AdminListClient({ items, type }: { items: any[], type: '
     } else if (bulkAction === 'restore') {
       try {
         await Promise.all(selectedIds.map(id => 
-          fetch(`/api/${type}/${id}`, {
+          fetch(`${BASE_PATH}/api/${type}/${id}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ status: 'Draft' })
@@ -139,7 +140,7 @@ export default function AdminListClient({ items, type }: { items: any[], type: '
       if (!window.confirm(`Are you sure you want to permanently delete ${selectedIds.length} items?`)) return;
       try {
         await Promise.all(selectedIds.map(id => 
-          fetch(`/api/${type}/${id}`, { method: 'DELETE' })
+          fetch(`${BASE_PATH}/api/${type}/${id}`, { method: 'DELETE' })
         ));
         toast.success(`Permanently deleted ${selectedIds.length} items`);
         setSelectedIds([]);

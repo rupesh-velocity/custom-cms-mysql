@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { BASE_PATH } from '@/lib/config';
 
 interface PasswordProtectedFormProps {
   id: number;
@@ -21,7 +22,7 @@ export default function PasswordProtectedForm({ id, type, title }: PasswordProte
     setIsLoading(true);
 
     try {
-      const res = await fetch('/api/auth/verify-post-password', {
+      const res = await fetch(`${BASE_PATH}/api/auth/verify-post-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, password, type }),

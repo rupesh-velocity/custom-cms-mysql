@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
 import BlogSidebar from '@/components/BlogSidebar';
+import PageHeroBanner from '@/components/PageHeroBanner';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,19 +23,13 @@ export default async function SearchPage(props: { searchParams: Promise<{ q?: st
   });
 
   return (
-    <div className="min-h-screen bg-[#f8f9fa] w-full font-sans pt-8 pb-16">
-      <div className="max-w-[1200px] mx-auto px-4 mb-12">
-        <div className="bg-gradient-to-br from-[#5e3fde] to-[#8a72ec] rounded-3xl p-10 md:p-14 text-center shadow-lg relative overflow-hidden">
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-white tracking-tight font-outfit relative z-10">
-            Search Results for "{q}"
-          </h1>
-          <p className="mt-3 text-lg text-white/90 font-medium relative z-10">
-            Found {posts.length} {posts.length === 1 ? 'post' : 'posts'}
-          </p>
-        </div>
-      </div>
+    <div className="min-h-screen w-full font-sans pb-16">
+      <PageHeroBanner 
+        title={`Search Results for "${q}"`}
+        description={`Found ${posts.length} ${posts.length === 1 ? 'post' : 'posts'}`}
+      />
 
-      <div className="max-w-[1200px] mx-auto px-4 flex flex-col lg:flex-row gap-12">
+      <div className="max-w-[1200px] mx-auto px-4 flex flex-col lg:flex-row gap-12 mt-12">
         <div className="flex-1 min-w-0">
           {posts.length === 0 ? (
             <div className="bg-white p-12 rounded-2xl shadow-sm text-center border border-gray-100">

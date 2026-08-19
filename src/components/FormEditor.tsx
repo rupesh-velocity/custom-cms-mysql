@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import { Save, Plus, Trash2, ArrowLeft, ArrowUp, ArrowDown, Settings, GripVertical, CheckSquare, Type, Mail, AlignLeft, ChevronDown, List, CircleDot, Hash, Phone, Calendar, UploadCloud } from 'lucide-react';
 import Link from 'next/link';
 import FormNav from './FormNav';
+import { BASE_PATH } from '@/lib/config';
 
 const FIELD_TYPES = [
   { id: 'text', label: 'Single Line Text', icon: Type },
@@ -101,9 +102,11 @@ export default function FormEditor({ form }: { form?: any }) {
     
     setIsSaving(true);
     try {
-      const payload = { title, notificationEmail, fields, settings, status };
-      const url = form ? `/api/forms/${form.id}` : '/api/forms';
-      const method = form ? 'PUT' : 'POST';
+      const payload: any = { title, notificationEmail, fields, settings, status };
+      if (form) payload.id = form.id; // Include ID so the server knows to update
+      
+      const url = `${BASE_PATH}/api/forms`; // Always use the root URL that your host allows
+      const method = 'POST'; // Always use POST
       
       const res = await fetch(url, {
         method,

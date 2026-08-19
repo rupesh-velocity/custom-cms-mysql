@@ -8,6 +8,7 @@ import ClassicSidebar from '@/components/ClassicSidebar';
 import LinkSuggestionsSidebar from '@/components/LinkSuggestionsSidebar';
 import SeoAnalyzer from '@/components/SeoAnalyzer';
 import toast from 'react-hot-toast';
+import { BASE_PATH } from '@/lib/config';
 
 export default function EditPost() {
   const router = useRouter();
@@ -47,7 +48,7 @@ export default function EditPost() {
   useEffect(() => {
     if (!params?.id) return;
     
-    fetch(`/api/posts/${params?.id}`)
+    fetch(`${BASE_PATH}/api/posts/${params?.id}`)
       .then(res => res.json())
       .then(data => {
         if (data.error) {
@@ -89,7 +90,7 @@ export default function EditPost() {
       });
       
     // Fetch global settings
-    fetch('/api/settings')
+    fetch(`${BASE_PATH}/api/settings`)
       .then(res => res.json())
       .then(data => {
         if (!data.error) {
@@ -109,7 +110,7 @@ export default function EditPost() {
     const finalStatus = overrideStatus || status;
 
     try {
-      const res = await fetch(`/api/posts/${params?.id}`, {
+      const res = await fetch(`${BASE_PATH}/api/posts/${params?.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

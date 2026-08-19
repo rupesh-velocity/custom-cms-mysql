@@ -57,7 +57,7 @@ export default async function Home(props: { searchParams: Promise<{ [key: string
   const settingsRecords = await prisma.setting.findMany({
     where: {
       OR: [
-        { key: { in: ['homepage_displays', 'homepage_page_id', 'blog_pages_at_most', 'feed_include'] } },
+        { key: { in: ['homepage_displays', 'homepage_page_id', 'blog_pages_at_most', 'feed_include', 'site_title', 'site_tagline'] } },
         { key: { startsWith: 'seo_' } }
       ]
     }
@@ -201,8 +201,12 @@ export default async function Home(props: { searchParams: Promise<{ [key: string
           <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-white opacity-10 rounded-full blur-2xl"></div>
           <div className="absolute bottom-0 left-0 -mb-10 -ml-10 w-32 h-32 bg-white opacity-10 rounded-full blur-xl"></div>
           
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-white tracking-tight font-outfit relative z-10">Latest Updates</h1>
-          <p className="mt-3 text-lg text-white/90 font-medium max-w-2xl mx-auto lg:mx-0 relative z-10">Discover our latest news, articles, and insights.</p>
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-white tracking-tight font-outfit relative z-10">
+            {settings.site_title || 'Latest Updates'}
+          </h1>
+          <p className="mt-3 text-lg text-white/90 font-medium max-w-2xl mx-auto lg:mx-0 relative z-10">
+            {settings.site_tagline || 'Discover our latest news, articles, and insights.'}
+          </p>
         </div>
       </div>
       
@@ -215,31 +219,27 @@ export default async function Home(props: { searchParams: Promise<{ [key: string
           ) : (
             <div className="space-y-10">
               {posts.map((post: any) => (
-                <article key={post.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow flex flex-col sm:flex-row overflow-hidden group/card">
+                <article key={post.id} className="blog-post-card">
                   {post.featuredImage && (
-                    <Link href={`/${post.slug}`} className="block w-full sm:w-1/3 lg:w-[30%] shrink-0 overflow-hidden relative">
-                      <div className="absolute inset-0">
-                        <img src={post.featuredImage} alt={post.title} className="w-full h-full object-cover group-hover/card:scale-105 transition-transform duration-700" />
-                      </div>
-                      {/* Placeholder to maintain minimum aspect ratio on mobile, but let it stretch on desktop */}
-                      <div className="w-full pb-[56.25%] sm:pb-0"></div>
+                    <Link href={`/${post.slug}`} className="blog-post-img-wrap">
+                      <img src={post.featuredImage} alt={post.title} className="blog-post-img" />
+                      <div className="blog-post-img-spacer"></div>
                     </Link>
                   )}
-                  <div className="flex-1 min-w-0 p-6 sm:p-8 flex flex-col justify-center">
-                    <div className="flex flex-wrap items-center gap-2 text-sm text-[#5e3fde] font-semibold mb-2">
+                  <div className="blog-post-content">
+                    <div className="blog-post-category">
                       {post.categories?.map((cat: any, i: number) => (
                         <span key={cat.id}>
-                          <Link href={`/category/${cat.slug}`} className="hover:underline">{cat.name}</Link>
-                          {i < post.categories.length - 1 ? ' • ' : ''}
+                          <Link href={`/category/${cat.slug}`}>{cat.name}</Link>
                         </span>
                       ))}
                     </div>
                     <Link href={`/${post.slug}`} className="block group">
-                      <h2 className="text-2xl font-bold text-gray-900 group-hover:text-[#5e3fde] transition-colors mb-3 font-outfit leading-tight">
+                      <h2 className="blog-post-title">
                         {post.title}
                       </h2>
                     </Link>
-                    <div className="flex items-center gap-3 text-sm text-gray-500 mb-4 font-medium">
+                    <div className="blog-post-meta">
                       {post.author?.firstName && <span>By {post.author.firstName} {post.author.lastName}</span>}
                       {post.author?.firstName && <span>•</span>}
                       <span>
@@ -250,16 +250,16 @@ export default async function Home(props: { searchParams: Promise<{ [key: string
                     </div>
                     
                     {post.visibility === 'Password Protected' && cookieStore.get(`post_pass_${post.id}`)?.value !== post.password ? (
-                      <div className="prose prose-blue max-w-none text-gray-600">
+                      <div className="blog-post-excerpt">
                         <p>This content is password protected.</p>
-                        <Link href={`/${post.slug}`} className="text-[#5e3fde] font-medium hover:underline mt-4 inline-flex items-center gap-1">
+                        <Link href={`/${post.slug}`} className="blog-post-read-more">
                           Enter Password &rarr;
                         </Link>
                       </div>
                     ) : (
-                      <div className="prose prose-blue max-w-none text-gray-700 text-sm md:text-base">
+                      <div className="blog-post-excerpt">
                         <p>{(post.contentText || '').substring(0, 180)}...</p>
-                        <Link href={`/${post.slug}`} className="text-[#5e3fde] font-medium hover:underline mt-3 inline-flex items-center gap-1">
+                        <Link href={`/${post.slug}`} className="blog-post-read-more">
                           Read more &rarr;
                         </Link>
                       </div>

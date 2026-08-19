@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, X, Check, Save, Loader2, Globe } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { countries } from '@/lib/countries';
+import { BASE_PATH } from '@/lib/config';
 
 export default function ShippingZonesManager() {
   const [zones, setZones] = useState<any[]>([]);
@@ -16,7 +17,7 @@ export default function ShippingZonesManager() {
 
   const fetchZones = async () => {
     try {
-      const res = await fetch('/api/settings/shipping');
+      const res = await fetch(`${BASE_PATH}/api/settings/shipping`);
       if (res.ok) {
         const data = await res.json();
         setZones(data);
@@ -30,7 +31,7 @@ export default function ShippingZonesManager() {
 
   const handleAddZone = async () => {
     try {
-      const res = await fetch('/api/settings/shipping', {
+      const res = await fetch(`${BASE_PATH}/api/settings/shipping`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: 'New Shipping Zone', regions: [] })
@@ -48,7 +49,7 @@ export default function ShippingZonesManager() {
   const handleDeleteZone = async (id: number) => {
     if (!confirm('Are you sure you want to delete this shipping zone?')) return;
     try {
-      const res = await fetch(`/api/settings/shipping/${id}`, { method: 'DELETE' });
+      const res = await fetch(`${BASE_PATH}/api/settings/shipping/${id}`, { method: 'DELETE' });
       if (res.ok) {
         setZones(zones.filter(z => z.id !== id));
         toast.success('Zone deleted');
@@ -61,7 +62,7 @@ export default function ShippingZonesManager() {
   const handleSaveZone = async () => {
     if (!editingZone) return;
     try {
-      const res = await fetch(`/api/settings/shipping/${editingZone.id}`, {
+      const res = await fetch(`${BASE_PATH}/api/settings/shipping/${editingZone.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editingZone)

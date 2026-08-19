@@ -1,0 +1,180 @@
+App 3448854 output: Unhandled Rejection: Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id
+App 3448854 output:     at ignore-listed frames
+App 3468823 output: Unhandled Rejection: Error: Could not find a production build in the '.next' directory. Try building your app with 'next build' before starting the production server. https://nextjs.org/docs/messages/production-start-no-build-id
+App 3468823 output:     at ignore-listed frames
+App 3472131 output: > Ready on http://localhost:3000
+App 3473714 output: > Ready on http://localhost:3000
+App 3473714 output: ⨯ The requested resource isn't a valid image for /velocity-logo.png received null
+App 3473714 output: ⨯ The requested resource isn't a valid image for /velocity-logo.png received null
+App 3473714 output: ⨯ The requested resource isn't a valid image for /velocity-logo.png received null
+App 3473714 output: ⨯ The requested resource isn't a valid image for /velocity-logo.png received null
+App 3479572 output: > Ready on http://localhost:3000
+App 3479572 output: ⨯ The requested resource isn't a valid image for /velocity-logo.png received null
+App 3482031 output: > Ready on http://localhost:3000
+App 3482031 output: ⨯ The requested resource isn't a valid image for /velocity-logo.png received null
+App 3529615 output: > Ready on http://localhost:3000
+App 3607830 output: > Ready on http://localhost:3000
+App 3607830 output: ⨯ The requested resource isn't a valid image for /velocity-logo.png received null
+App 3612097 output: > Ready on http://localhost:3000
+App 3616077 output: > Ready on http://localhost:3000
+App 3616077 output: File /home/d15269/repositories/custom-cms/public/uploads/newweb-newFrame 76.png not found on disk, skipping filesystem deletion.
+App 3631205 output: > Ready on http://localhost:3000
+App 3631205 output: File /home/d15269/repositories/custom-cms/public/uploads/newweb-newplus-jakarta-400.woff2 not found on disk, skipping filesystem deletion.
+App 3631205 output: File /home/d15269/repositories/custom-cms/public/uploads/newweb-newplus-jakarta-500.woff2 not found on disk, skipping filesystem deletion.
+App 3635169 output: > Ready on http://localhost:3000
+App 3643372 output: > Ready on http://localhost:3000
+App 3657898 output: > Ready on http://localhost:3000
+App 3657898 output: File /home/d15269/repositories/custom-cms/public/uploads/newweb-newFrame 76.png not found on disk, skipping filesystem deletion.
+App 3657898 output: ⨯ The requested resource isn't a valid image for /newweb-new/uploads/logo.png received null
+App 3657898 output: File /home/d15269/repositories/custom-cms/public/uploads/newweb-newlogo.png not found on disk, skipping filesystem deletion.
+App 3657898 output: ⨯ The requested resource isn't a valid image for /newweb-new/uploads/logo.png received null
+App 4095924 output: > Ready on http://localhost:3000
+App 4095924 output: File /home/d15269/repositories/custom-cms/public/uploads/newweb-newFrame 194-2.png not found on disk, skipping filesystem deletion.
+App 4095924 output: File /home/d15269/repositories/custom-cms/public/uploads/newweb-newlogo.png not found on disk, skipping filesystem deletion.
+App 4095924 output: File /home/d15269/repositories/custom-cms/public/uploads/newweb-newplus-jakarta-400.woff2 not found on disk, skipping filesystem deletion.
+App 4095924 output: File /home/d15269/repositories/custom-cms/public/uploads/newweb-newinner-page-bg-img.png not found on disk, skipping filesystem deletion.
+App 4095924 output: File /home/d15269/repositories/custom-cms/public/uploads/newweb-newplus-jakarta-600.woff2 not found on disk, skipping filesystem deletion.
+App 4096351 output: > Ready on http://localhost:3000
+App 4096351 output: ⨯ The requested resource isn't a valid image for /newweb-new/uploads/2026/08/image 1.png received null
+App 4096351 output: ⨯ The requested resource isn't a valid image for /newweb-new/uploads/2026/08/image 1.png received null
+App 4096351 output: ⨯ The requested resource isn't a valid image for /newweb-new/uploads/2026/08/image 1.png received null
+App 4108237 output: > Ready on http://localhost:3000
+App 4108237 output: ⨯ The requested resource isn't a valid image for /newweb-new/uploads/2026/08/Frame 162.png received null
+App 4108237 output: ⨯ The requested resource isn't a valid image for /newweb-new/uploads/2026/08/Frame 163.png received null
+App 4108237 output: ⨯ The requested resource isn't a valid image for /newweb-new/uploads/2026/08/Frame 164.png received null
+App 4108237 output: ⨯ The requested resource isn't a valid image for /newweb-new/uploads/2026/08/Frame 165.png received null
+App 4111670 output: > Ready on http://localhost:3000
+App 4135421 output: > Ready on http://localhost:3000
+App 4156726 output: > Ready on http://localhost:3000
+App 4156726 output: File /home/d15269/repositories/custom-cms/public/uploads/newweb-new2026/08/blue-button-arrow.webp not found on disk, skipping filesystem deletion.
+App 4156726 output: File /home/d15269/repositories/custom-cms/public/uploads/newweb-new2026/08/purple-button-arrow.webp not found on disk, skipping filesystem deletion.
+App 4156726 output: File /home/d15269/repositories/custom-cms/public/uploads/newweb-new2026/08/blue-stroke-line.webp not found on disk, skipping filesystem deletion.
+App 4156726 output: File /home/d15269/repositories/custom-cms/public/uploads/newweb-new2026/08/fitness-art-blue-face.webp not found on disk, skipping filesystem deletion.
+App 4156726 output: File /home/d15269/repositories/custom-cms/public/uploads/newweb-new2026/08/blue-quotes.webp not found on disk, skipping filesystem deletion.
+App 4156726 output: File /home/d15269/repositories/custom-cms/public/uploads/newweb-new2026/08/Frame 21-1.png not found on disk, skipping filesystem deletion.
+App 4156726 output: File /home/d15269/repositories/custom-cms/public/uploads/newweb-new2026/08/ace-aprovd-logo.png not found on disk, skipping filesystem deletion.
+App 4156726 output: File /home/d15269/repositories/custom-cms/public/uploads/newweb-new2026/08/Group 1-1.png not found on disk, skipping filesystem deletion.
+App 4156726 output: File /home/d15269/repositories/custom-cms/public/uploads/newweb-new2026/08/blue-arrow.webp not found on disk, skipping filesystem deletion.
+App 4193751 output: > Ready on http://localhost:3000
+App 4193751 output: ⨯ Error [InvariantError]: Invariant: The client reference manifest for route "/admin/pages" does not exist. This is a bug in Next.js.
+App 4193751 output:     at Object.get (.next/server/chunks/6967.js:11:48689)
+App 4193751 output:     at async q (.next/server/app/admin/pages/page.js:1:15235)
+App 4193751 output:     at async s (.next/server/app/admin/pages/page.js:2:4238)
+App 4193751 output:     at async Module.Q (.next/server/app/admin/pages/page.js:2:9929)
+App 4193751 output: ⨯ Error [InvariantError]: Invariant: The client reference manifest for route "/admin/pages" does not exist. This is a bug in Next.js.
+App 4193751 output:     at Object.get (.next/server/chunks/6967.js:11:48689)
+App 4193751 output:     at async q (.next/server/app/admin/pages/page.js:1:15235)
+App 4193751 output:     at async s (.next/server/app/admin/pages/page.js:2:4238)
+App 4193751 output:     at async Module.Q (.next/server/app/admin/pages/page.js:2:9929)
+App 4193751 output: ⨯ Error: Failed to load static file for page: /500 ENOENT: no such file or directory, open '/home/d15269/repositories/custom-cms/.next/server/pages/500.html'
+App 4193751 output:     at ignore-listed frames
+App 4193751 output: ⨯ Error [InvariantError]: Invariant: The client reference manifest for route "/admin/pages" does not exist. This is a bug in Next.js.
+App 4193751 output:     at Object.get (.next/server/chunks/6967.js:11:48689)
+App 4193751 output:     at async q (.next/server/app/admin/pages/page.js:1:15235)
+App 4193751 output:     at async s (.next/server/app/admin/pages/page.js:2:4238)
+App 4193751 output: ⨯ Error [InvariantError]: Invariant: The client reference manifest for route "/admin/pages" does not exist. This is a bug in Next.js.
+App 4193751 output:     at Object.get (.next/server/chunks/6967.js:11:48689)
+App 4193751 output:     at async q (.next/server/app/admin/pages/page.js:1:15235)
+App 4193751 output:     at async s (.next/server/app/admin/pages/page.js:2:4238)
+App 4193751 output: ⨯ Error: Failed to load static file for page: /500 ENOENT: no such file or directory, open '/home/d15269/repositories/custom-cms/.next/server/pages/500.html'
+App 4193751 output:     at ignore-listed frames
+App 1919 output: > Ready on http://localhost:3000
+App 5058 output: > Ready on http://localhost:3000
+App 12282 output: > Ready on http://localhost:3000
+App 50895 output: > Ready on http://localhost:3000
+App 59627 output: > Ready on http://localhost:3000
+App 78814 output: > Ready on http://localhost:3000
+App 101166 output: > Ready on http://localhost:3000
+App 138042 output: > Ready on http://localhost:3000
+App 147019 output: > Ready on http://localhost:3000
+App 150727 output: > Ready on http://localhost:3000
+App 154781 output: > Ready on http://localhost:3000
+App 161645 output: > Ready on http://localhost:3000
+App 161645 output: Message sent: <d46e0f0e-4008-6e28-114a-a34e5375eb58@gmail.com>
+App 174358 output: > Ready on http://localhost:3000
+App 625571 output: > Ready on http://localhost:3000
+App 625571 output: Message sent: <2b6ebb2c-d3eb-d6a8-e7f8-bd2a9787b37a@gmail.com>
+App 659993 output: > Ready on http://localhost:3000
+App 677138 output: > Ready on http://localhost:3000
+App 679018 output: > Ready on http://localhost:3000
+App 695819 output: > Ready on http://localhost:3000
+App 708583 output: > Ready on http://localhost:3000
+App 731272 output: > Ready on http://localhost:3000
+App 737081 output: > Ready on http://localhost:3000
+App 739922 output: > Ready on http://localhost:3000
+App 741917 output: > Ready on http://localhost:3000
+App 770746 output: > Ready on http://localhost:3000
+App 775905 output: > Ready on http://localhost:3000
+App 778907 output: > Ready on http://localhost:3000
+App 789321 output: > Ready on http://localhost:3000
+App 794224 output: > Ready on http://localhost:3000
+App 810479 output: > Ready on http://localhost:3000
+App 812924 output: > Ready on http://localhost:3000
+App 820916 output: > Ready on http://localhost:3000
+App 826231 output: > Ready on http://localhost:3000
+App 835889 output: > Ready on http://localhost:3000
+App 843396 output: > Ready on http://localhost:3000
+App 845247 output: > Ready on http://localhost:3000
+App 845247 output: ⨯ Error: Could not find the module "/home/d15269/nodevenv/repositories/custom-cms/22/lib/node_modules/next/dist/lib/framework/boundary-components.js#ViewportBoundary" in the React Client Manifest. This is probably a bug in the React Server Components bundler.
+App 845247 output:     at stringify (<anonymous>) {
+App 845247 output:   digest: '3949174970'
+App 845247 output: }
+App 845247 output: ⨯ Error: Could not find the module "/home/d15269/nodevenv/repositories/custom-cms/22/lib/node_modules/next/dist/lib/framework/boundary-components.js#MetadataBoundary" in the React Client Manifest. This is probably a bug in the React Server Components bundler.
+App 845247 output:     at stringify (<anonymous>) {
+App 845247 output:   digest: '3443085914'
+App 845247 output: }
+App 845247 output: ⨯ Error: Could not find the module "/home/d15269/nodevenv/repositories/custom-cms/22/lib/node_modules/next/dist/lib/metadata/generate/icon-mark.js#IconMark" in the React Client Manifest. This is probably a bug in the React Server Components bundler.
+App 845247 output:     at stringify (<anonymous>) {
+App 845247 output:   digest: '3917975119'
+App 845247 output: }
+App 845247 output: ⨯ Error: Could not find the module "/home/d15269/nodevenv/repositories/custom-cms/22/lib/node_modules/next/dist/lib/framework/boundary-components.js#ViewportBoundary" in the React Client Manifest. This is probably a bug in the React Server Components bundler.
+App 845247 output:     at stringify (<anonymous>) {
+App 845247 output:   digest: '3949174970'
+App 845247 output: }
+App 845247 output: ⨯ Error: Could not find the module "/home/d15269/nodevenv/repositories/custom-cms/22/lib/node_modules/next/dist/lib/framework/boundary-components.js#MetadataBoundary" in the React Client Manifest. This is probably a bug in the React Server Components bundler.
+App 845247 output:     at stringify (<anonymous>) {
+App 845247 output:   digest: '3443085914'
+App 845247 output: }
+App 845247 output: ⨯ Error: Could not find the module "/home/d15269/nodevenv/repositories/custom-cms/22/lib/node_modules/next/dist/lib/metadata/generate/icon-mark.js#IconMark" in the React Client Manifest. This is probably a bug in the React Server Components bundler.
+App 845247 output:     at stringify (<anonymous>) {
+App 845247 output:   digest: '3917975119'
+App 845247 output: }
+App 845247 output: ⨯ Error: Could not find the module "/home/d15269/nodevenv/repositories/custom-cms/22/lib/node_modules/next/dist/lib/framework/boundary-components.js#ViewportBoundary" in the React Client Manifest. This is probably a bug in the React Server Components bundler.
+App 845247 output:     at stringify (<anonymous>) {
+App 845247 output:   digest: '3949174970'
+App 845247 output: }
+App 845247 output: ⨯ Error: Could not find the module "/home/d15269/nodevenv/repositories/custom-cms/22/lib/node_modules/next/dist/lib/framework/boundary-components.js#MetadataBoundary" in the React Client Manifest. This is probably a bug in the React Server Components bundler.
+App 845247 output:     at stringify (<anonymous>) {
+App 845247 output:   digest: '3443085914'
+App 845247 output: }
+App 845247 output: ⨯ Error: Could not find the module "/home/d15269/nodevenv/repositories/custom-cms/22/lib/node_modules/next/dist/lib/metadata/generate/icon-mark.js#IconMark" in the React Client Manifest. This is probably a bug in the React Server Components bundler.
+App 845247 output:     at stringify (<anonymous>) {
+App 845247 output:   digest: '3917975119'
+App 845247 output: }
+App 847470 output: > Ready on http://localhost:3000
+App 851394 output: > Ready on http://localhost:3000
+App 854176 output: > Ready on http://localhost:3000
+App 858436 output: > Ready on http://localhost:3000
+App 863226 output: > Ready on http://localhost:3000
+App 864160 output: > Ready on http://localhost:3000
+App 866124 output: > Ready on http://localhost:3000
+App 866124 output: Message sent: <e85857db-c80b-32dc-3ff3-0ea63532b119@gmail.com>
+App 866124 output: Message sent: <fedfd0cc-ef11-e8f8-a464-e506055b1f18@gmail.com>
+App 871585 output: > Ready on http://localhost:3000
+App 872575 output: > Ready on http://localhost:3000
+App 1360267 output: > Ready on http://localhost:3000
+App 3417491 output: > Ready on http://localhost:3000
+App 3425552 output: > Ready on http://localhost:3000
+App 3487208 output: > Ready on http://localhost:3000
+App 3498476 output: > Ready on http://localhost:3000
+App 3500272 output: > Ready on http://localhost:3000
+App 3567878 output: > Ready on http://localhost:3000
+App 3576565 output: > Ready on http://localhost:3000
+App 3596466 output: > Ready on http://localhost:3000
+App 3603767 output: > Ready on http://localhost:3000
+App 3614071 output: > Ready on http://localhost:3000
+App 3672422 output: > Ready on http://localhost:3000
+App 3672967 output: > Ready on http://localhost:3000
+App 3676180 output: > Ready on http://localhost:3000
+App 3680361 output: > Ready on http://localhost:3000
+App 3683869 output: > Ready on http://localhost:3000

@@ -7,6 +7,7 @@ import ClassicSidebar from '@/components/ClassicSidebar';
 import LinkSuggestionsSidebar from '@/components/LinkSuggestionsSidebar';
 import SeoAnalyzer from '@/components/SeoAnalyzer';
 import toast from 'react-hot-toast';
+import { BASE_PATH } from '@/lib/config';
 
 export default function NewPage() {
   const router = useRouter();
@@ -38,7 +39,7 @@ export default function NewPage() {
   const [globalSettings, setGlobalSettings] = useState<any>({});
 
   useEffect(() => {
-    fetch('/api/settings')
+    fetch(`${BASE_PATH}/api/settings`)
       .then(res => res.json())
       .then(data => {
         if (!data.error) setGlobalSettings(data);
@@ -55,7 +56,7 @@ export default function NewPage() {
     setIsSaving(true);
     const finalStatus = overrideStatus || status;
     try {
-      const res = await fetch('/api/pages', {
+      const res = await fetch(`${BASE_PATH}/api/pages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

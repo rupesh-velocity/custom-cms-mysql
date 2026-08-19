@@ -79,20 +79,25 @@ export function optimizeHtmlImages(html: string | null, seoSettings?: Record<str
       
       // We must enforce an aspect ratio so the div doesn't collapse to 0 height 
       // when the absolute iframe replaces the img content.
-      let inlineStyle = styleMatch ? styleMatch[1] : '';
+      let inlineStyle = styleMatch ? styleMatch[1].trim() : '';
+      if (inlineStyle && !inlineStyle.endsWith(';')) inlineStyle += ';';
       if (!inlineStyle.includes('aspect-ratio') && !inlineStyle.includes('height')) {
-        inlineStyle += '; aspect-ratio: 16/9;';
+        inlineStyle += ' aspect-ratio: 16/9;';
       }
       if (!inlineStyle.includes('width')) {
-        inlineStyle += '; width: 100%;';
+        inlineStyle += ' width: 100%;';
       }
       
       // Ensure it never overflows on mobile even if a fixed width like 546px is provided
       if (!inlineStyle.includes('max-width')) {
-        inlineStyle += '; max-width: 100%;';
+        inlineStyle += ' max-width: 100%;';
       }
       
-      const styleAttr = `style="${inlineStyle}"`;
+            // Clean up multiple spaces and semicolons to prevent html-react-parser crashes
+      inlineStyle = inlineStyle.replace(/;+/g, ';').trim();
+      if (inlineStyle.startsWith(';')) inlineStyle = inlineStyle.substring(1).trim();
+      
+      const styleAttr = inlineStyle ? `style="${inlineStyle}"` : '';
       
       return `
         <div class="video-facade vimeo-facade relative overflow-hidden rounded-xl cursor-pointer group my-6 bg-black" data-vimeo-id="${vimeoId}" ${styleAttr}>

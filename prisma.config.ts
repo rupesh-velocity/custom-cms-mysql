@@ -7,13 +7,8 @@ export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: {
     path: "prisma/migrations",
-    seed: "node prisma/seed-admin.js",
   },
   datasource: {
-    url:
-      process.env["MYSQL_DATABASE_URL"] ||
-      process.env["DATABASE_URL"] ||
-      process.env["MYSQL_URL"] ||
-      process.env["DB_URL"],
+    url: process.env["NEON_DATABASE_URL"] || process.env["PRISMA_DATABASE_URL"] || process.env["POSTGRES_PRISMA_URL"] || process.env["DATABASE_URL"] || process.env["POSTGRES_URL"],
   },
 });

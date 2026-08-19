@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
+import { BASE_PATH } from '@/lib/config';
 
 interface User {
   id?: number;
@@ -44,22 +46,23 @@ export default function UserForm({ initialData, isEdit }: UserFormProps) {
     setError('');
 
     try {
-      const url = isEdit && initialData?.id ? `/api/users/${initialData.id}` : '/api/users';
-      const method = isEdit ? 'PATCH' : 'POST';
-
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
+      const url = `${BASE_PATH}/api/users`;
+const method = 'POST';
+const payload = { ...formData, id: isEdit ? initialData?.id : undefined };
+const res = await fetch(url, {
+  method,
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(payload),
+});
 
       const data = await res.json();
 
       if (res.ok) {
         if (!isEdit) {
+          toast.success('User created successfully!');
           router.push(`/admin/users/${data.id}`);
         } else {
-          alert('User updated successfully!');
+          toast.success('User updated successfully!');
         }
         router.refresh();
       } else {

@@ -1,10 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+basePath: '/newweb-new',
   devIndicators: {
     appIsrStatus: false,
     buildActivity: false,
   },
-  trailingSlash: true,
+  trailingSlash: false,
   serverExternalPackages: ['@prisma/client', 'prisma'],
   images: {
     remotePatterns: [
@@ -17,7 +18,7 @@ const nextConfig = {
   async rewrites() {
     return [
       {
-        source: '/:slug.md',
+        source: '/newweb-new/uploads/:path*', destination: '/uploads/:path*' }, { source: '/:slug.md',
         destination: '/api/md',
       },
     ];

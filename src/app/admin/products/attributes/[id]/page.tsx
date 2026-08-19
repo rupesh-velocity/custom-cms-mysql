@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Loader2 } from 'lucide-react';
+import { BASE_PATH } from '@/lib/config';
 
 export default function AttributeTermsPage({ params }: { params: Promise<{ id: string }> }) {
   const unwrappedParams = React.use(params);
@@ -23,8 +24,8 @@ export default function AttributeTermsPage({ params }: { params: Promise<{ id: s
   const fetchData = async () => {
     try {
       const [attrRes, termsRes] = await Promise.all([
-        fetch(`/api/products/attributes/${id}`),
-        fetch(`/api/products/attributes/${id}/terms`)
+        fetch(`${BASE_PATH}/api/products/attributes/${id}`),
+        fetch(`${BASE_PATH}/api/products/attributes/${id}/terms`)
       ]);
       const attrData = await attrRes.json();
       const termsData = await termsRes.json();
@@ -41,7 +42,7 @@ export default function AttributeTermsPage({ params }: { params: Promise<{ id: s
     e.preventDefault();
     setIsSaving(true);
     try {
-      const res = await fetch(`/api/products/attributes/${id}/terms`, {
+      const res = await fetch(`${BASE_PATH}/api/products/attributes/${id}/terms`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, slug, description })
@@ -65,7 +66,7 @@ export default function AttributeTermsPage({ params }: { params: Promise<{ id: s
   const handleDelete = async (termId: number) => {
     if (!confirm('Are you sure you want to delete this term?')) return;
     try {
-      const res = await fetch(`/api/products/attributes/${id}/terms/${termId}`, { method: 'DELETE' });
+      const res = await fetch(`${BASE_PATH}/api/products/attributes/${id}/terms/${termId}`, { method: 'DELETE' });
       if (res.ok) {
         await fetchData();
       } else {

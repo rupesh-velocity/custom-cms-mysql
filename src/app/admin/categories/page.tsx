@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { Trash2, Edit2 } from 'lucide-react';
+import { BASE_PATH } from '@/lib/config';
 
 interface Category {
   id: number;
@@ -32,7 +33,7 @@ export default function CategoriesPage() {
   const fetchCategories = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch('/api/categories');
+      const res = await fetch(`${BASE_PATH}/api/categories`);
       if (res.ok) {
         const data = await res.json();
         setCategories(data);
@@ -110,7 +111,7 @@ export default function CategoriesPage() {
     if (!confirm('Are you sure you want to delete this category?')) return;
     
     try {
-      const res = await fetch(`/api/categories/${id}`, { method: 'DELETE' });
+      const res = await fetch(`${BASE_PATH}/api/categories/${id}`, { method: 'DELETE' });
       if (res.ok) {
         toast.success('Category deleted');
         fetchCategories();

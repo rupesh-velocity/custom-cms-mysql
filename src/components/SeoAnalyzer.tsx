@@ -10,6 +10,7 @@ import {
   Settings, LayoutGrid, Video, PlusCircle, Info, Search, Eye, Trash2, Edit2, Copy, Link as LinkIcon
 } from 'lucide-react';
 import { resolveSeoVariables, getResolvedLength } from '@/lib/seo-variables';
+import { BASE_PATH } from '@/lib/config';
 
 export interface SchemaNode {
   id: string;
@@ -454,7 +455,7 @@ export default function SeoAnalyzer({
   const [liveSettings, setLiveSettings] = useState<any>(null);
 
   useEffect(() => {
-    fetch('/api/settings')
+    fetch(`${BASE_PATH}/api/settings`)
       .then(res => res.json())
       .then(data => {
         if (data && !data.error) {
@@ -570,7 +571,7 @@ export default function SeoAnalyzer({
 
 
   useEffect(() => {
-    fetch('/api/schema-templates')
+    fetch(`${BASE_PATH}/api/schema-templates`)
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) setCustomTemplates(data);
@@ -1823,7 +1824,7 @@ export default function SeoAnalyzer({
                           
                           setIsImporting(true);
                           try {
-                            const res = await fetch(`/api/schema/import?url=${encodeURIComponent(importUrl)}`);
+                            const res = await fetch(`${BASE_PATH}/api/schema/import?url=${encodeURIComponent(importUrl)}`);
                             const data = await res.json();
                             if (!res.ok) throw new Error(data.error || 'Failed to import');
                             if (!data.schemas || data.schemas.length === 0) throw new Error('No valid JSON-LD schemas found on this URL.');
@@ -2177,7 +2178,7 @@ export default function SeoAnalyzer({
                       let templateName = selectedSchema === 'Custom' ? 'Custom Template' : selectedSchema + ' Template';
                       const name = window.prompt("Enter template name:", templateName);
                       if (name) {
-                        fetch('/api/schema-templates', {
+                        fetch(`${BASE_PATH}/api/schema-templates`, {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify({ name, schema: schemaObj })

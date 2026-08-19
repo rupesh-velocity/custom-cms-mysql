@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { X, Upload, Image as ImageIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { BASE_PATH } from '@/lib/config';
 
 interface Media {
   id: number;
@@ -29,7 +30,7 @@ export default function MediaModal({ isOpen, onClose, onInsert }: MediaModalProp
 
   const fetchMedia = useCallback(async () => {
     try {
-      const res = await fetch('/api/media');
+      const res = await fetch(`${BASE_PATH}/api/media`);
       if (res.ok) {
         const data = await res.json();
         setMedia(data);
@@ -62,7 +63,7 @@ export default function MediaModal({ isOpen, onClose, onInsert }: MediaModalProp
       formData.append('file', file);
 
       try {
-        const res = await fetch('/api/upload', {
+        const res = await fetch(`${BASE_PATH}/api/upload`, {
           method: 'POST',
           body: formData,
         });

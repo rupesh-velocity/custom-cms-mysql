@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, X, Trash2 } from 'lucide-react';
+import { BASE_PATH } from '@/lib/config';
 
 interface LocalSeoTabProps {
   settings: Record<string, string>;
@@ -30,7 +31,7 @@ export default function LocalSeoTab({ settings, handleChange, toggleBoolean, ope
     if (typeof window !== 'undefined') {
       setSiteUrl(window.location.origin);
     }
-    fetch('/api/pages')
+    fetch(`${BASE_PATH}/api/pages`)
       .then(res => res.json())
       .then(data => setPages(data || []))
       .catch(() => {});

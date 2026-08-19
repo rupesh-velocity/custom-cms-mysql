@@ -32,6 +32,21 @@ export async function POST(req: Request) {
       } catch (e) {}
     }
 
+    if (data.id) {
+      // It's an update!
+      const updatedForm = await prisma.form.update({
+        where: { id: parseInt(data.id) },
+        data: {
+          title: data.title,
+          fields: typeof data.fields === 'string' ? data.fields : JSON.stringify(data.fields),
+          settings: typeof data.settings === 'string' ? data.settings : JSON.stringify(data.settings),
+          notificationEmail: data.notificationEmail,
+          status: data.status
+        }
+      });
+      return NextResponse.json(updatedForm);
+    }
+
     const form = await prisma.form.create({
       data: {
         title: data.title || 'Untitled Form',

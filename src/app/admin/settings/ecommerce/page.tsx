@@ -10,6 +10,7 @@ import { currencies } from '@/lib/currencies';
 import { X } from 'lucide-react';
 import ShippingZonesManager from './ShippingZonesManager';
 import TaxManager from './TaxManager';
+import { BASE_PATH } from '@/lib/config';
 
 export default function EcommerceSettingsPage() {
   const [settings, setSettings] = useState({
@@ -55,7 +56,7 @@ export default function EcommerceSettingsPage() {
 
   const fetchSettings = async () => {
     try {
-      const res = await fetch('/api/settings/ecommerce', { cache: 'no-store' });
+      const res = await fetch(`${BASE_PATH}/api/settings/ecommerce`, { cache: 'no-store' });
       if (res.ok) {
         const data = await res.json();
         setSettings(prev => ({ ...prev, ...data }));
@@ -70,7 +71,7 @@ export default function EcommerceSettingsPage() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const res = await fetch('/api/settings/ecommerce', {
+      const res = await fetch(`${BASE_PATH}/api/settings/ecommerce`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(settings),
@@ -401,7 +402,7 @@ export default function EcommerceSettingsPage() {
                   <div className="flex items-start gap-4">
                     <div className="flex flex-col items-center justify-center w-32 h-32 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 overflow-hidden relative group">
                       {(settings as any).emailLogoUrl ? (
-                        <Image src={(settings as any).emailLogoUrl} alt="Email Logo" fill className="object-contain p-2" />
+                        <img src={(settings as any).emailLogoUrl} alt="Email Logo" className="w-full h-full object-contain p-2" />
                       ) : (
                         <ImageIcon className="text-gray-300" size={32} />
                       )}

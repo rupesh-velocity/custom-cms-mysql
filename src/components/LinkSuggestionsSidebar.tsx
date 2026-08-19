@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Link as LinkIcon, Copy } from 'lucide-react';
 import { Accordion } from './ClassicSidebar';
 import toast from 'react-hot-toast';
+import { BASE_PATH } from '@/lib/config';
 
 interface LinkSuggestionsSidebarProps {
   globalSettings: any;
@@ -32,7 +33,7 @@ export default function LinkSuggestionsSidebar({ globalSettings, isPost = false,
     }
     const timer = setTimeout(() => {
       setIsFetchingSuggestions(true);
-      fetch(`/api/seo/link-suggestions?keyword=${encodeURIComponent(suggestionTarget)}&slug=${encodeURIComponent(slug || '')}`)
+      fetch(`${BASE_PATH}/api/seo/link-suggestions?keyword=${encodeURIComponent(suggestionTarget)}&slug=${encodeURIComponent(slug || '')}`)
         .then(res => res.json())
         .then(data => {
           if (data.suggestions) setLinkSuggestions(data.suggestions);

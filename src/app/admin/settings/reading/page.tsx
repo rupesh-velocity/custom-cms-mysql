@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Save, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { BASE_PATH } from '@/lib/config';
 
 export default function ReadingSettings() {
   const [settings, setSettings] = useState({
@@ -22,8 +23,8 @@ export default function ReadingSettings() {
 
   useEffect(() => {
     Promise.all([
-      fetch('/api/settings').then(res => res.json()),
-      fetch('/api/pages').then(res => res.json())
+      fetch(`${BASE_PATH}/api/settings`).then(res => res.json()),
+      fetch(`${BASE_PATH}/api/pages`).then(res => res.json())
     ]).then(([settingsData, pagesData]) => {
       setSettings({
         homepage_displays: settingsData.homepage_displays || 'latest_posts',
@@ -50,7 +51,7 @@ export default function ReadingSettings() {
     e.preventDefault();
     setIsSaving(true);
     try {
-      const res = await fetch('/api/settings', {
+      const res = await fetch(`${BASE_PATH}/api/settings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(settings),

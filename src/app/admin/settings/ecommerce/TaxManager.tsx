@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Trash2, Check, Save, Loader2, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { countries } from '@/lib/countries';
+import { BASE_PATH } from '@/lib/config';
 
 export default function TaxManager() {
   const [taxes, setTaxes] = useState<any[]>([]);
@@ -16,7 +17,7 @@ export default function TaxManager() {
 
   const fetchTaxes = async () => {
     try {
-      const res = await fetch('/api/settings/taxes');
+      const res = await fetch(`${BASE_PATH}/api/settings/taxes`);
       if (res.ok) {
         const data = await res.json();
         setTaxes(data);
@@ -52,7 +53,7 @@ export default function TaxManager() {
     if (!confirm('Are you sure you want to delete this tax rate?')) return;
     
     try {
-      const res = await fetch(`/api/settings/taxes/${id}`, { method: 'DELETE' });
+      const res = await fetch(`${BASE_PATH}/api/settings/taxes/${id}`, { method: 'DELETE' });
       if (res.ok) {
         const newTaxes = [...taxes];
         newTaxes.splice(index, 1);

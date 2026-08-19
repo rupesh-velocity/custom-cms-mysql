@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ArrowLeft, Save, Mail, Calendar, CreditCard, ShoppingBag, Package } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
+import { BASE_PATH } from '@/lib/config';
 
 export default function OrderDetailsClient({ order }: { order: any }) {
   const router = useRouter();
@@ -22,7 +23,7 @@ export default function OrderDetailsClient({ order }: { order: any }) {
   const handleUpdateStatus = async () => {
     setIsUpdating(true);
     try {
-      const res = await fetch(`/api/orders/${order.id}`, {
+      const res = await fetch(`${BASE_PATH}/api/orders/${order.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status })

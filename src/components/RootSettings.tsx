@@ -18,7 +18,7 @@ async function getSettings() {
   try {
     settings = await prisma.setting.findMany({
       where: {
-        key: { in: ['custom_css', 'head_scripts', 'body_scripts', 'seo_custom_webmaster_tags', 'seo_norton_verify'] }
+        key: { in: ['custom_css', 'custom_js', 'head_scripts', 'body_scripts', 'seo_custom_webmaster_tags', 'seo_norton_verify'] }
       }
     });
   } catch (error) {
@@ -50,8 +50,17 @@ export async function RootBodyScripts({ position }: { position: 'top' | 'bottom'
   if (position === 'top' && settingsObj.head_scripts) {
     return <div style={{ display: 'none' }} dangerouslySetInnerHTML={{ __html: settingsObj.head_scripts }} />;
   }
-  if (position === 'bottom' && settingsObj.body_scripts) {
-    return <div style={{ display: 'none' }} dangerouslySetInnerHTML={{ __html: settingsObj.body_scripts }} />;
+  if (position === 'bottom') {
+    return (
+      <>
+        {settingsObj.body_scripts && (
+          <div style={{ display: 'none' }} dangerouslySetInnerHTML={{ __html: settingsObj.body_scripts }} />
+        )}
+        {settingsObj.custom_js && (
+          <script dangerouslySetInnerHTML={{ __html: settingsObj.custom_js }} />
+        )}
+      </>
+    );
   }
   return null;
 }

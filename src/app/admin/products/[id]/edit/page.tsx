@@ -8,6 +8,7 @@ import toast from 'react-hot-toast';
 import TipTapEditor from '@/components/TipTapEditor';
 import MediaModal from '@/components/MediaModal';
 import { Accordion } from '@/components/ClassicSidebar';
+import { BASE_PATH } from '@/lib/config';
 
 export default function EditProductPage() {
   const router = useRouter();
@@ -58,7 +59,7 @@ export default function EditProductPage() {
 
   useEffect(() => {
     if (!params?.id) return;
-    fetch(`/api/products/${params?.id}`)
+    fetch(`${BASE_PATH}/api/products/${params?.id}`)
       .then(res => res.json())
       .then(data => {
         if (data.error) {
@@ -98,12 +99,12 @@ export default function EditProductPage() {
     if (typeof window !== 'undefined') {
       setOrigin(window.location.origin);
     }
-    fetch('/api/products/attributes')
+    fetch(`${BASE_PATH}/api/products/attributes`)
       .then(res => res.json())
       .then(data => setGlobalAttributes(data))
       .catch(console.error);
 
-    fetch('/api/courses')
+    fetch(`${BASE_PATH}/api/courses`)
       .then(res => res.json())
       .then(data => setCourses(data))
       .catch(console.error);
@@ -126,7 +127,7 @@ export default function EditProductPage() {
     setIsSaving(true);
     const finalStatus = overrideStatus || product.status;
     try {
-      const res = await fetch(`/api/products/${params?.id}`, {
+      const res = await fetch(`${BASE_PATH}/api/products/${params?.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...product, status: finalStatus, createdAt: publishDate || undefined })

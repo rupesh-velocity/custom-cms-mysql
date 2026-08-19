@@ -3,6 +3,7 @@
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { BASE_PATH } from '@/lib/config';
 
 export default function Breadcrumbs({ theme = 'light', initialSettings }: { theme?: 'light' | 'dark', initialSettings?: any }) {
   const pathname = usePathname();
@@ -10,7 +11,7 @@ export default function Breadcrumbs({ theme = 'light', initialSettings }: { them
   
   useEffect(() => {
     if (initialSettings) return; // Skip network request if server already provided the data!
-    fetch('/api/settings')
+    fetch(`${BASE_PATH}/api/settings`)
       .then(res => res.json())
       .then(data => {
         setSettings({
@@ -71,7 +72,7 @@ export default function Breadcrumbs({ theme = 'light', initialSettings }: { them
   const separatorClass = theme === 'dark' ? 'text-white/50 select-none' : 'text-gray-400 select-none';
 
   return (
-    <nav aria-label="breadcrumb" className={`text-sm my-4 flex items-center flex-wrap gap-2 ${containerClass}`}>
+    <nav aria-label="breadcrumb" className={`innerpage-breadcrumb text-sm my-4 flex items-center flex-wrap gap-2 ${containerClass}`}>
       {settings.prefix && <span className="mr-1">{settings.prefix}</span>}
       {breadcrumbItems.map((item, index) => {
         const isLast = index === breadcrumbItems.length - 1;

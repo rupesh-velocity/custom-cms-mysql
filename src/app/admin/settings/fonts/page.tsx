@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Save, Upload, Loader2, Plus, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import MediaModal from '@/components/MediaModal';
+import { BASE_PATH } from '@/lib/config';
 
 interface FontVariation {
   id: string;
@@ -25,7 +26,7 @@ export default function FontsSettings() {
   const [modalTargetVarId, setModalTargetVarId] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch('/api/settings')
+    fetch(`${BASE_PATH}/api/settings`)
       .then(res => res.json())
       .then(data => {
         if (data.custom_fonts) {
@@ -105,7 +106,7 @@ export default function FontsSettings() {
     setIsSaving(true);
     
     try {
-      const res = await fetch('/api/settings', {
+      const res = await fetch(`${BASE_PATH}/api/settings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 

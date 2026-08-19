@@ -6,6 +6,7 @@ import ClassicEditor from '@/components/ClassicEditor';
 import ClassicSidebar from '@/components/ClassicSidebar';
 import SeoAnalyzer from '@/components/SeoAnalyzer';
 import toast from 'react-hot-toast';
+import { BASE_PATH } from '@/lib/config';
 
 export default function NewCourse() {
   const router = useRouter();
@@ -39,7 +40,7 @@ export default function NewCourse() {
     setIsSaving(true);
     const finalStatus = overrideStatus || status;
     try {
-      const res = await fetch('/api/courses', {
+      const res = await fetch(`${BASE_PATH}/api/courses`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
