@@ -12,11 +12,24 @@ const url =
 
 if (!url) {
   throw new Error(
-    "Missing database URL. Set MYSQL_DATABASE_URL, DATABASE_URL, MYSQL_URL, or DB_URL.",
+    "Missing database URL. Set MYSQL_DATABASE_URL, DATABASE_URL, MYSQL_URL, or DB_URL."
   );
 }
 
-const adapter = new PrismaMariaDb(url);
+// Convert mysql://user:password@host:port/database
+// into the configuration required by PrismaMariaDb.
+const dbUrl = new URL(url);
+
+const adapter = new PrismaMariaDb({
+  host: dbUrl.hostname,
+  port: Number(dbUrl.port || 3306),
+  user: decodeURIComponent(dbUrl.username),
+  password: decodeURIComponent(dbUrl.password),
+  database: decodeURIComponent(dbUrl.pathname.replace(/^\//, "")),
+  connectionLimit: 5,
+    allowPublicKeyRetrieval: true,
+
+});
 
 const prisma = new PrismaClient({
   adapter,
@@ -43,7 +56,9 @@ async function main() {
     },
   });
 
-  console.log("Admin user ready! You can now log in with admin / password123");
+  console.log("Admin user ready!");
+  console.log("Username: admin");
+  console.log("Password: password123");
 }
 
 main()
