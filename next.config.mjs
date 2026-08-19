@@ -1,6 +1,11 @@
 /** @type {import('next').NextConfig} */
+
+// Safely pull the variable from your .env file.
+// If it's empty (like running locally without it), it defaults to ''.
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+
 const nextConfig = {
-basePath: '/newweb-new',
+  basePath: basePath,
   devIndicators: {
     appIsrStatus: false,
     buildActivity: false,
@@ -18,7 +23,11 @@ basePath: '/newweb-new',
   async rewrites() {
     return [
       {
-        source: '/newweb-new/uploads/:path*', destination: '/uploads/:path*' }, { source: '/:slug.md',
+        source: `${basePath}/uploads/:path*`, 
+        destination: '/uploads/:path*' 
+      }, 
+      { 
+        source: '/:slug.md',
         destination: '/api/md',
       },
     ];
