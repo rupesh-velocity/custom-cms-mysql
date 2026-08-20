@@ -14,6 +14,14 @@ const handle = app.getRequestHandler();
 app.prepare().then(() => {
   createServer(async (req, res) => {
     try {
+      // FIX FOR CPANEL PASSENGER: 
+      // Passenger strips the basePath. We must add it back so Next.js recognizes the route!
+      const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+      
+      if (basePath && !req.url.startsWith(basePath)) {
+        req.url = `${basePath}${req.url === '/' ? '' : req.url}`;
+      }
+
       const parsedUrl = parse(req.url, true);
       await handle(req, res, parsedUrl);
     } catch (err) {
