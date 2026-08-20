@@ -2,10 +2,11 @@
 
 // Safely pull the variable from your .env file.
 // If it's empty (like running locally without it), it defaults to ''.
-const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH || ''; 
 
 const nextConfig = {
-  basePath: basePath,
+  // Only include basePath if it's not empty, otherwise Next.js router breaks
+  ...(basePath ? { basePath } : {}),
   devIndicators: {
     appIsrStatus: false,
     buildActivity: false,
