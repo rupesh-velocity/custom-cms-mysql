@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import LocalSeoSchema from '@/components/seo/LocalSeoSchema';
+import Script from 'next/script';
 
 async function getSettings() {
   if (process.env.npm_lifecycle_event === 'build') {
@@ -57,7 +58,7 @@ export async function RootBodyScripts({ position }: { position: 'top' | 'bottom'
           <div style={{ display: 'none' }} dangerouslySetInnerHTML={{ __html: settingsObj.body_scripts }} />
         )}
         {settingsObj.custom_js && (
-          <script dangerouslySetInnerHTML={{ __html: settingsObj.custom_js }} />
+          <Script id="global-custom-js" dangerouslySetInnerHTML={{ __html: settingsObj.custom_js }} strategy="lazyOnload" />
         )}
       </>
     );

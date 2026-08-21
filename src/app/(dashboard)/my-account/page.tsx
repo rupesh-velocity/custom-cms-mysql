@@ -42,54 +42,73 @@ export default async function MyAccountPage() {
   });
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col font-sans text-[#2c3338]">
+    <div className="min-h-screen bg-light font-body text-body">
+      {/* Dashboard Header using their standard page-banner style */}
+      
 
-
-      <main className="flex-1 max-w-5xl mx-auto w-full p-6 md:p-8">
-        <h1 className="text-3xl font-extrabold text-gray-900 mb-8 tracking-tight">My Dashboard</h1>
-        
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-6 border-b border-gray-100 pb-4">My Courses</h2>
+      <main className="section-padding">
+        <div className="container">
           
-          {accessRecords.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="w-16 h-16 bg-gray-100 text-gray-400 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
-              </div>
-              <p className="text-gray-500 mb-4">You haven't purchased any courses yet.</p>
-              <Link href="/shop" className="inline-block bg-[#5e3fde] text-white px-6 py-2 rounded-lg font-medium hover:bg-[#4b32b2] transition-colors">
-                Browse Shop
-              </Link>
+          <div className="bg-white rounded-[12px] shadow-[0_10px_40px_rgba(0,0,0,0.04)] border border-[#f0f0f0] overflow-hidden">
+            <div className="px-8 py-6 border-b border-[#f0f0f0] bg-[#f8f9fa]">
+              <h2 className="font-heading text-heading text-[24px]">My Courses</h2>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {accessRecords.map((record) => (
-                <Link 
-                  href={`/courses/${record.course.slug}`} 
-                  key={record.id}
-                  className="group block bg-white rounded-xl border border-gray-200 overflow-hidden hover:border-[#5e3fde] hover:shadow-lg transition-all"
-                >
-                  <div className="aspect-video bg-gray-100 relative overflow-hidden">
-                    {record.course.featuredImage ? (
-                      <img src={record.course.featuredImage} alt={record.course.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-[#5e3fde]/10 text-[#5e3fde]">
-                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+            
+            <div className="p-8">
+              {accessRecords.length === 0 ? (
+                <div className="shop-empty-state text-center">
+                  <div className="shop-empty-icon flex justify-center">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+                  </div>
+                  <h3 className="shop-empty-title">No courses yet</h3>
+                  <p className="shop-empty-desc mx-auto mb-8">You haven't purchased or enrolled in any courses yet. Explore our library to get started.</p>
+                  <Link href="/shop" className="theme-btn theme-btn-blue">
+                    <span>Browse Course Library</span>
+                  </Link>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                  {accessRecords.map((record) => (
+                    <Link 
+                      href={`/courses/${record.course.slug}`} 
+                      key={record.id}
+                      className="blog-post-card group flex flex-col h-full"
+                    >
+                      <div className="blog-post-img-wrap w-full aspect-[4/3] bg-[#f9fafb]">
+                        {record.course.featuredImage ? (
+                          <img src={record.course.featuredImage} alt={record.course.title} className="blog-post-img" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-[#f6f6f6] text-[var(--purple)]">
+                            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+                          </div>
+                        )}
+                        
+                        {/* Play overlay on hover */}
+                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10 bg-black/10">
+                          <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center text-[var(--pink)] shadow-lg transform scale-90 group-hover:scale-100 transition-transform duration-300">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ml-1"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                          </div>
+                        </div>
                       </div>
-                    )}
-                    <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors"></div>
-                  </div>
-                  <div className="p-4">
-                    <h3 className="font-bold text-gray-900 group-hover:text-[#5e3fde] transition-colors">{record.course.title}</h3>
-                    <div className="flex items-center gap-2 mt-2 text-sm text-gray-500">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                      Purchased on {new Date(record.createdAt).toLocaleDateString()}
-                    </div>
-                  </div>
-                </Link>
-              ))}
+                      <div className="p-6 flex flex-col flex-1">
+                        <div className="blog-post-category text-[var(--purple)] mb-2">
+                          <span>Course</span>
+                        </div>
+                        <h3 className="blog-post-title group-hover:text-[var(--pink)] line-clamp-2 mb-4">
+                          {record.course.title}
+                        </h3>
+                        <div className="mt-auto pt-4 border-t border-[#f0f0f0]">
+                          <div className="recent-post-date">
+                            Enrolled: {new Date(record.createdAt).toLocaleDateString()}
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
       </main>
     </div>

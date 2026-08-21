@@ -213,7 +213,7 @@ export default async function SiteHeader({ hideMenu = false }: { hideMenu?: bool
             )}
             
             {!isCustomerOrSubscriber && (
-              <Link href="https://ipdav.com/newweb-new/on-demand/" className="theme-btn theme-btn-blue ml-2">
+              <Link href="https://sharpefforts.com/fitnessarts/on-demand/" className="theme-btn theme-btn-blue ml-2">
                 On Demand Classes <span></span> 
               </Link>
             )}

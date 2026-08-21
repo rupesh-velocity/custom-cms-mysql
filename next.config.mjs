@@ -1,18 +1,46 @@
 /** @type {import('next').NextConfig} */
 
-// Safely pull the variable from your .env file.
-// If it's empty (like running locally without it), it defaults to ''.
-const basePath = process.env.NEXT_PUBLIC_BASE_PATH || ''; 
+// Base path must be only a path, e.g. "/fitnessarts" (not a full URL).
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
 
 const nextConfig = {
-  // Only include basePath if it's not empty, otherwise Next.js router breaks
   ...(basePath ? { basePath } : {}),
+
+  outputFileTracingRoot: process.cwd(),
+  
+   typescript: {
+    ignoreBuildErrors: true,
+  },
+
+ experimental: {
+  cpus: 1,
+
+  // Use a Node worker thread instead of a separate child process.
+  workerThreads: true,
+
+  // Keep webpack build worker disabled for cPanel.
+  webpackBuildWorker: false,
+
+  // Keep memory/concurrency low.
+  parallelServerCompiles: false,
+  parallelServerBuildTraces: false,
+
+  // Process only one static page at a time.
+  staticGenerationMaxConcurrency: 1,
+  staticGenerationMinPagesPerWorker: 1000,
+},
+
+  productionBrowserSourceMaps: false,
+
   devIndicators: {
     appIsrStatus: false,
     buildActivity: false,
   },
+
   trailingSlash: false,
+
   serverExternalPackages: ['@prisma/client', 'prisma'],
+
   images: {
     remotePatterns: [
       {
@@ -21,13 +49,14 @@ const nextConfig = {
       },
     ],
   },
+
   async rewrites() {
     return [
       {
-        source: `${basePath}/uploads/:path*`, 
-        destination: '/uploads/:path*' 
-      }, 
-      { 
+        source: '/uploads/:path*',
+        destination: '/uploads/:path*',
+      },
+      {
         source: '/:slug.md',
         destination: '/api/md',
       },

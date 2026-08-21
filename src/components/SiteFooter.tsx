@@ -114,7 +114,7 @@ export default async function SiteFooter() {
           <div className="footer-cta-col lg:col-span-4 lg:col-start-9">
             <h2 className="footer-title">Your Best Move <span className="txt-accent">Starts Now</span></h2>
             <p className="footer-text footer-cta-text">Start with a Free Class and Discover how good Movement can Feel</p>
-            <a href="https://ipdav.com/newweb-new/free-yoga-pilates-fusion-class/" className="theme-btn theme-btn-blue">Start Your Free Class Now</a>
+            <a href="https://sharpefforts.com/fitnessarts/on-demand/" className="theme-btn theme-btn-blue">Start Your Free Class Now</a>
           </div>
         </div>
         <div className="footer-line"></div>

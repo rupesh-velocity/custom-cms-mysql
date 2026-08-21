@@ -5,12 +5,22 @@ import { jwtVerify } from 'jose';
 export async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
   
+  // Helper to safely redirect while avoiding cPanel Passenger port bugs
+  const createRedirect = (targetPath: string) => {
+    const url = request.nextUrl.clone();
+    if (url.hostname !== 'localhost' && url.hostname !== '127.0.0.1') {
+      url.port = ''; // Strip the internal port 3000 injected by Passenger in production
+    }
+    url.pathname = targetPath;
+    return NextResponse.redirect(url);
+  };
+
   // Protect all /admin routes
   if (path.startsWith('/admin')) {
     const token = request.cookies.get('cms_session')?.value;
 
     if (!token) {
-      return NextResponse.redirect(new URL('/login', request.url));
+      return createRedirect('/login');
     }
 
     try {
@@ -21,15 +31,15 @@ export async function proxy(request: NextRequest) {
       // Verify the JWT token
       const { payload } = await jwtVerify(token, secret);
       
-    const userRole = String(payload.role).toLowerCase();
-if (userRole !== 'administrator') {
-  return NextResponse.redirect(new URL('/my-account', request.url));
-}
+      const userRole = String(payload.role).toLowerCase();
+      if (userRole !== 'administrator') {
+        return createRedirect('/my-account');
+      }
       
       return NextResponse.next();
     } catch (error) {
       // If token is invalid/expired, redirect to login
-      return NextResponse.redirect(new URL('/login', request.url));
+      return createRedirect('/login');
     }
   }
 
@@ -42,7 +52,7 @@ if (userRole !== 'administrator') {
           process.env.JWT_SECRET || 'fallback_super_secret_key_change_in_production'
         );
         await jwtVerify(token, secret);
-        return NextResponse.redirect(new URL('/admin', request.url));
+        return createRedirect('/admin');
       } catch {
         // invalid token on login page, just continue
       }
@@ -61,12 +71,17 @@ if (userRole !== 'administrator') {
         if (data.destinationUrl) {
           const type = data.redirectType === '301' || data.redirectType === '308' ? 308 : 307;
           
-          // Handle absolute vs relative destination
-          const dest = data.destinationUrl.startsWith('http') 
-            ? data.destinationUrl 
-            : new URL(data.destinationUrl, request.url);
-            
-          return NextResponse.redirect(dest, type);
+          let dest = data.destinationUrl;
+          if (!dest.startsWith('http')) {
+            const url = request.nextUrl.clone();
+            if (url.hostname !== 'localhost' && url.hostname !== '127.0.0.1') {
+              url.port = ''; 
+            }
+            url.pathname = dest.startsWith('/') ? dest : `/${dest}`;
+            return NextResponse.redirect(url, type);
+          } else {
+             return NextResponse.redirect(dest, type);
+          }
         }
       }
     } catch (error) {
