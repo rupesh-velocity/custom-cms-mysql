@@ -71,7 +71,7 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
   }
 
   return (
-    <div className="flex flex-col font-sans w-full min-h-screen">
+    <div className="flex flex-col w-full min-h-screen">
       {hasAccess ? (
         <CourseViewerClient course={course} />
       ) : (

@@ -19,7 +19,7 @@ export default function FormSettingsEditor({ form }: { form: any }) {
       enableHoneypot: true,
       enableRecaptchaV3: false,
       recaptchaSiteKey: '',
-      recaptchaSecretKey: ''
+      recaptchaSecretKey: '', hideTitle: false
     }
   );
   const [isSaving, setIsSaving] = useState(false);
@@ -82,6 +82,20 @@ export default function FormSettingsEditor({ form }: { form: any }) {
               <option value="Draft">Draft</option>
             </select>
             <p className="text-xs text-gray-500 mt-1">Draft forms will not accept submissions.</p>
+          </div>
+          <div>
+            <label className="flex items-start gap-3 cursor-pointer mt-6">
+              <input 
+                type="checkbox" 
+                checked={settings.hideTitle || false}
+                onChange={e => setSettings({...settings, hideTitle: e.target.checked})}
+                className="rounded text-[#5e3fde] focus:ring-[#5e3fde] mt-1"
+              />
+              <div>
+                <span className="text-sm font-medium text-gray-700 block">Hide Form Title</span>
+                <p className="text-xs text-gray-500">Do not display the form title on the frontend.</p>
+              </div>
+            </label>
           </div>
         </div>
 

@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { cookies } from 'next/headers';
 import BlogSidebar from '@/components/BlogSidebar';
 import PageHeroBanner from '@/components/PageHeroBanner';
+import BodyClassInjector from '@/components/BodyClassInjector';
 import { Metadata } from 'next';
 
 export const dynamic = 'force-dynamic';
@@ -92,8 +93,10 @@ export default async function TagPage(props: { params: Promise<{ slug: string }>
   const totalPages = Math.ceil(totalPosts / limit);
 
   return (
-    <div className="min-h-screen w-full font-sans pb-16">
-      <PageHeroBanner 
+    <>
+      <BodyClassInjector type="tag" id={tag.id} />
+      <div className="min-h-screen w-full pb-16">
+        <PageHeroBanner 
         title={tag.name} 
         description="Tag"
       />
@@ -180,5 +183,6 @@ export default async function TagPage(props: { params: Promise<{ slug: string }>
         <BlogSidebar />
       </div>
     </div>
+    </>
   );
 }

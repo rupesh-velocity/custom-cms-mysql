@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { unlink } from 'fs/promises';
 import { join } from 'path';
+import { existsSync } from 'fs';
 
 export async function DELETE(req: Request, context: any) {
   try {
@@ -18,8 +19,15 @@ export async function DELETE(req: Request, context: any) {
     }
     
     // Delete the file from the filesystem
-    const filename = media.url.replace('/uploads/', '');
-    const path = join(process.cwd(), 'public', 'uploads', filename);
+    // URL format is usually like /fitnessarts/uploads/2026/08/home-hero-img.png
+    // We split by '/uploads/' and take everything after it.
+    const urlParts = media.url.split('/uploads/');
+    const relativePath = urlParts.length > 1 ? urlParts[1] : media.filename;
+    
+    const isLiveServer = process.platform === 'linux';
+    const path = isLiveServer 
+      ? join(process.cwd(), '..', '..', 'public_html', 'fitnessarts', 'uploads', relativePath)
+      : join(process.cwd(), 'public', 'uploads', relativePath);
     
     try {
       await unlink(path);

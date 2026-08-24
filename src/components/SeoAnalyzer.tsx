@@ -576,7 +576,7 @@ export default function SeoAnalyzer({
       .then(data => {
         if (Array.isArray(data)) setCustomTemplates(data);
       })
-      .catch(console.error);
+      .catch(() => {});
   }, []);
 
   const generateSchemaObj = () => {

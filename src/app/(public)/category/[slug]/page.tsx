@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { cookies } from 'next/headers';
 import BlogSidebar from '@/components/BlogSidebar';
 import PageHeroBanner from '@/components/PageHeroBanner';
+import BodyClassInjector from '@/components/BodyClassInjector';
 import { Metadata } from 'next';
 
 export const dynamic = 'force-dynamic';
@@ -92,8 +93,10 @@ export default async function CategoryPage(props: { params: Promise<{ slug: stri
   const totalPages = Math.ceil(totalPosts / limit);
 
   return (
-    <div className="min-h-screen w-full font-sans pb-16">
-      <PageHeroBanner 
+    <>
+      <BodyClassInjector type="category" id={category.id} />
+      <div className="min-h-screen w-full pb-16">
+        <PageHeroBanner 
         title={category.name} 
         description="Category"
       />
@@ -174,11 +177,13 @@ export default async function CategoryPage(props: { params: Promise<{ slug: stri
                 </div>
               )}
             </div>
-          )}
+          )
+        }
         </div>
         
         <BlogSidebar />
       </div>
     </div>
+    </>
   );
 }

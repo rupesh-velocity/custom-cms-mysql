@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { v2 as cloudinary } from 'cloudinary';
 import { prisma } from '@/lib/prisma';
 import { join } from 'path';
 import { existsSync, mkdirSync, writeFileSync } from 'fs';
@@ -38,39 +37,16 @@ export async function POST(req: Request) {
     const year = now.getFullYear().toString();
     const month = (now.getMonth() + 1).toString().padStart(2, '0');
 
-    if (process.env.CLOUDINARY_URL) {
-      try {
-        const uploadResult = await new Promise((resolve, reject) => {
-          const uploadStream = cloudinary.uploader.upload_stream(
-            { folder: 'custom-cms', public_id: publicId, resource_type: 'auto' },
-            (error, result) => {
-              if (error) reject(error);
-              else resolve(result);
-            }
-          );
-          uploadStream.end(buffer);
-        });
+    const isLiveServer = process.platform === 'linux';
+    const uploadDir = isLiveServer 
+      ? join(process.cwd(), '..', '..', 'public_html', 'fitnessarts', 'uploads', year, month)
+      : join(process.cwd(), 'public', 'uploads', year, month);
 
-        const result = uploadResult as any;
-        finalUrl = result.secure_url;
-      } catch (err) {
-        console.error('Cloudinary upload failed, falling back to local file system', err);
-        const uploadDir = join(process.cwd(), '..', '..', 'public_html', 'newweb-new', 'uploads', year, month);
-        if (!existsSync(uploadDir)) mkdirSync(uploadDir, { recursive: true });
-        
-        const filePath = join(uploadDir, finalFileName);
-        writeFileSync(filePath, buffer);
-        finalUrl = `${BASE_PATH}/uploads/${year}/${month}/${finalFileName}`;
-      }
-    } else {
-      // Navigate up from repositories/custom-cms to reach public_html/newweb-new
-      const uploadDir = join(process.cwd(), '..', '..', 'public_html', 'newweb-new', 'uploads', year, month);
-      if (!existsSync(uploadDir)) mkdirSync(uploadDir, { recursive: true });
-      
-      const filePath = join(uploadDir, finalFileName);
-      writeFileSync(filePath, buffer);
-      finalUrl = `${BASE_PATH}/uploads/${year}/${month}/${finalFileName}`;
-    }
+    if (!existsSync(uploadDir)) mkdirSync(uploadDir, { recursive: true });
+    
+    const filePath = join(uploadDir, finalFileName);
+    writeFileSync(filePath, buffer);
+    finalUrl = `${BASE_PATH}/uploads/${year}/${month}/${finalFileName}`;
     
     const media = await prisma.media.create({
       data: {

@@ -70,7 +70,7 @@ export default function FrontendForm({ id }: { id: string }) {
 
   if (error && !form) {
     return (
-      <div className="bg-white border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-2xl p-8 sm:p-10 my-8 max-w-2xl mx-auto text-center">
+      <div className="w-full text-center">
         <p className="text-gray-500">{error}</p>
       </div>
     );
@@ -144,7 +144,7 @@ export default function FrontendForm({ id }: { id: string }) {
 
   if (success) {
     return (
-      <div className="bg-white border border-gray-100 shadow-[0_20px_50px_rgb(0,0,0,0.07)] rounded-3xl p-10 sm:p-14 text-center my-8 max-w-2xl mx-auto transform transition-all duration-500 hover:scale-[1.01]">
+      <div className="w-full text-center my-8">
         <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-6">
           <svg className="w-10 h-10 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
@@ -159,8 +159,10 @@ export default function FrontendForm({ id }: { id: string }) {
   }
 
   return (
-    <div className="bg-white border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-2xl p-8 sm:p-10 my-8 max-w-2xl mx-auto">
-      <h3 className="text-2xl font-bold text-gray-900 mb-6">{form.title}</h3>
+    <div className="w-full">
+      {!settings.hideTitle && (
+        <h3 className="text-2xl font-bold text-gray-900 mb-6">{form.title}</h3>
+      )}
       
       {error && <div className="bg-red-50 text-red-600 p-4 rounded-xl mb-6 text-sm border border-red-100">{error}</div>}
       
@@ -179,18 +181,39 @@ export default function FrontendForm({ id }: { id: string }) {
           
           return (
           <div key={field.id} className={`${widthClass} px-3 mb-6`}>
-            <label className="block text-sm font-semibold text-gray-700 mb-1">
-              {field.label} {field.required && <span className="text-red-500">*</span>}
-            </label>
-            {field.description && <p className="text-xs text-gray-500 mb-3">{field.description}</p>}
+            {field.type !== 'html' && field.type !== 'consent' && (
+              <>
+                {!field.hideLabel && (
+                  <label className="block text-sm font-semibold text-gray-700 mb-1 text-left">
+                    {field.label} {field.required && <span className="text-red-500">*</span>}
+                  </label>
+                )}
+                {field.description && <p className="text-xs text-gray-500 mb-3 text-left">{field.description}</p>}
+              </>
+            )}
             
-            {field.type === 'textarea' ? (
+            {field.type === 'html' ? (
+              <div dangerouslySetInnerHTML={{ __html: field.options || '' }} className="prose prose-sm max-w-none text-left" />
+            ) : field.type === 'consent' ? (
+              <label className="flex items-start gap-3 cursor-pointer text-sm text-gray-700 text-left pt-2">
+                <input 
+                  type="checkbox" 
+                  required={field.required}
+                  checked={formData[field.id] === 'yes'}
+                  onChange={e => setFormData({...formData, [field.id]: e.target.checked ? 'yes' : ''})}
+                  onInvalid={e => e.currentTarget.setCustomValidity(field.placeholder || 'You must agree to continue.')}
+                  onInput={e => e.currentTarget.setCustomValidity('')}
+                  className="rounded text-[#5e3fde] focus:ring-[#5e3fde] mt-1 shrink-0"
+                />
+                <span dangerouslySetInnerHTML={{ __html: field.options || field.label || '' }} />
+              </label>
+            ) : field.type === 'textarea' ? (
               <textarea 
                 required={field.required}
                 value={formData[field.id] || ''}
                 onChange={e => setFormData({...formData, [field.id]: e.target.value})}
                 placeholder={field.placeholder || ''}
-                className="w-full px-4 py-3 bg-gray-50/50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-[#5e3fde]/20 focus:border-[#5e3fde] transition-all outline-none resize-y"
+                className={`w-full px-4 py-3 bg-gray-50/50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-[#5e3fde]/20 focus:border-[#5e3fde] transition-all outline-none resize-y ${field.customClass || ''}`}
                 rows={4}
               />
             ) : field.type === 'select' ? (
@@ -198,7 +221,7 @@ export default function FrontendForm({ id }: { id: string }) {
                 required={field.required}
                 value={formData[field.id] || ''}
                 onChange={e => setFormData({...formData, [field.id]: e.target.value})}
-                className="w-full px-4 py-3 bg-gray-50/50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-[#5e3fde]/20 focus:border-[#5e3fde] transition-all outline-none appearance-none"
+                className={`w-full px-4 py-3 bg-gray-50/50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-[#5e3fde]/20 focus:border-[#5e3fde] transition-all outline-none appearance-none ${field.customClass || ''}`}
               >
                 <option value="">Select an option</option>
                 {field.options?.split(',').map((opt: string, i: number) => (
@@ -216,7 +239,7 @@ export default function FrontendForm({ id }: { id: string }) {
                       value={opt.trim()}
                       checked={formData[field.id] === opt.trim()}
                       onChange={e => setFormData({...formData, [field.id]: e.target.value})}
-                      className="text-[#5e3fde] focus:ring-[#5e3fde]"
+                      className={`text-[#5e3fde] focus:ring-[#5e3fde] ${field.customClass || ''}`}
                     />
                     {opt.trim()}
                   </label>
@@ -239,7 +262,7 @@ export default function FrontendForm({ id }: { id: string }) {
                             setFormData({...formData, [field.id]: currentValues.filter((v: string) => v !== opt.trim())});
                           }
                         }}
-                        className="rounded text-[#5e3fde] focus:ring-[#5e3fde]"
+                        className={`rounded text-[#5e3fde] focus:ring-[#5e3fde] ${field.customClass || ''}`}
                       />
                       {opt.trim()}
                     </label>
@@ -267,7 +290,7 @@ export default function FrontendForm({ id }: { id: string }) {
                       alert("File upload failed. Please try again.");
                     }
                   }}
-                  className="w-full px-4 py-2 bg-gray-50/50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-[#5e3fde]/20 focus:border-[#5e3fde] transition-all outline-none"
+                  className={`w-full px-4 py-2 bg-gray-50/50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-[#5e3fde]/20 focus:border-[#5e3fde] transition-all outline-none ${field.customClass || ''}`}
                 />
                 {formData[field.id] && (
                   <p className="text-xs text-[#166534] mt-2 font-medium flex items-center gap-1">
@@ -283,7 +306,7 @@ export default function FrontendForm({ id }: { id: string }) {
                 value={formData[field.id] || ''}
                 onChange={e => setFormData({...formData, [field.id]: e.target.value})}
                 placeholder={field.placeholder || ''}
-                className="w-full px-4 py-3 bg-gray-50/50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-[#5e3fde]/20 focus:border-[#5e3fde] transition-all outline-none"
+                className={`w-full px-4 py-3 bg-gray-50/50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-[#5e3fde]/20 focus:border-[#5e3fde] transition-all outline-none ${field.customClass || ''}`}
               />
             )}
           </div>

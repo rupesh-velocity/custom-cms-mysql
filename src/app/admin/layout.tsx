@@ -2,16 +2,28 @@ import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
 import { Toaster } from 'react-hot-toast';
 import { prisma } from '@/lib/prisma';
+import { BASE_PATH } from '@/lib/config';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   let enableProducts = false;
+  let siteTitle = 'Velocity CMS';
+  let siteIcon = `${BASE_PATH}/velocity-logo.png`;
   let dbError = null;
 
   try {
-    const setting = await prisma.setting.findUnique({ where: { key: 'enable_physical_products' } });
-    enableProducts = setting?.value === 'true';
+    const settings = await prisma.setting.findMany({
+      where: {
+        key: { in: ['enable_physical_products', 'site_title', 'site_icon'] }
+      }
+    });
+    
+    settings.forEach((setting: any) => {
+      if (setting.key === 'enable_physical_products') enableProducts = setting.value === 'true';
+      if (setting.key === 'site_title' && setting.value) siteTitle = setting.value;
+      if (setting.key === 'site_icon' && setting.value) siteIcon = setting.value;
+    });
   } catch (error: any) {
     console.error("Database connection failed in AdminLayout:", error);
     dbError = error.message;
@@ -38,7 +50,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     <>
       <div className="flex min-h-screen bg-gray-50 font-sans">
         <Toaster position="top-right" />
-        <Sidebar enableProducts={enableProducts} />
+        <Sidebar enableProducts={enableProducts} siteTitle={siteTitle} siteIcon={siteIcon} />
         <div className="flex-1 flex flex-col">
           <Header />
           <main className="flex-1 p-8">

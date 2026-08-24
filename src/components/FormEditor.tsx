@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
-import { Save, Plus, Trash2, ArrowLeft, ArrowUp, ArrowDown, Settings, GripVertical, CheckSquare, Type, Mail, AlignLeft, ChevronDown, List, CircleDot, Hash, Phone, Calendar, UploadCloud } from 'lucide-react';
+import { Save, Plus, Trash2, ArrowLeft, ArrowUp, ArrowDown, Settings, GripVertical, CheckSquare, Type, Mail, AlignLeft, ChevronDown, List, CircleDot, Hash, Phone, Calendar, UploadCloud, Code, Globe } from 'lucide-react';
 import Link from 'next/link';
 import FormNav from './FormNav';
 import { BASE_PATH } from '@/lib/config';
@@ -19,6 +19,9 @@ const FIELD_TYPES = [
   { id: 'tel', label: 'Phone', icon: Phone },
   { id: 'date', label: 'Date', icon: Calendar },
   { id: 'file', label: 'File Upload', icon: UploadCloud },
+  { id: 'html', label: 'HTML Block', icon: Code },
+  { id: 'consent', label: 'Consent Checkbox', icon: CheckSquare },
+  { id: 'url', label: 'URL / Website', icon: Globe },
 ];
 
 export default function FormEditor({ form }: { form?: any }) {
@@ -307,26 +310,50 @@ export default function FormEditor({ form }: { form?: any }) {
                     </div>
                   ) : (
                     <div className="space-y-5 pb-8">
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">Field Label</label>
-                        <input 
-                          type="text" 
-                          value={activeField.label} 
-                          onChange={e => updateField(activeField.id, 'label', e.target.value)}
-                          className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:ring-[#5e3fde] focus:border-[#5e3fde] outline-none transition-shadow"
-                        />
-                      </div>
-                      
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">Description</label>
-                        <textarea 
-                          value={activeField.description || ''} 
-                          onChange={e => updateField(activeField.id, 'description', e.target.value)}
-                          placeholder="Help text for the user"
-                          rows={2}
-                          className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:ring-[#5e3fde] focus:border-[#5e3fde] outline-none transition-shadow"
-                        />
-                      </div>
+                      {activeField.type !== 'html' && (
+                        <>
+                          <div>
+                            <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">Field Label</label>
+                            <input 
+                              type="text" 
+                              value={activeField.label} 
+                              onChange={e => updateField(activeField.id, 'label', e.target.value)}
+                              className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:ring-[#5e3fde] focus:border-[#5e3fde] outline-none transition-shadow"
+                            />
+                            <label className="flex items-center gap-2 cursor-pointer mt-2 text-xs text-gray-600">
+                              <input 
+                                type="checkbox" 
+                                checked={activeField.hideLabel || false}
+                                onChange={e => updateField(activeField.id, 'hideLabel', e.target.checked)}
+                                className="rounded text-[#5e3fde] focus:ring-[#5e3fde] w-3.5 h-3.5"
+                              />
+                              Hide label on the live form
+                            </label>
+                          </div>
+                          
+                          <div>
+                            <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">Description</label>
+                            <textarea 
+                              value={activeField.description || ''} 
+                              onChange={e => updateField(activeField.id, 'description', e.target.value)}
+                              placeholder="Help text for the user"
+                              rows={2}
+                              className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:ring-[#5e3fde] focus:border-[#5e3fde] outline-none transition-shadow"
+                            />
+                          </div>
+                          
+                          <div>
+                            <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">Custom CSS Class</label>
+                            <input 
+                              type="text" 
+                              value={activeField.customClass || ''} 
+                              onChange={e => updateField(activeField.id, 'customClass', e.target.value)}
+                              placeholder="e.g., hidden md:block"
+                              className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:ring-[#5e3fde] focus:border-[#5e3fde] outline-none transition-shadow font-mono"
+                            />
+                          </div>
+                        </>
+                      )}
 
                       <div className="grid grid-cols-2 gap-4">
                         <div>
@@ -368,7 +395,45 @@ export default function FormEditor({ form }: { form?: any }) {
                         </div>
                       )}
                       
-                      {!['select', 'radio', 'checkbox', 'file'].includes(activeField.type) && (
+                      {activeField.type === 'html' && (
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">HTML Content</label>
+                          <textarea 
+                            value={activeField.options || ''} 
+                            onChange={e => updateField(activeField.id, 'options', e.target.value)}
+                            placeholder="<p>Enter HTML here...</p>"
+                            rows={8}
+                            className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:ring-[#5e3fde] focus:border-[#5e3fde] outline-none transition-shadow font-mono"
+                          />
+                        </div>
+                      )}
+
+                      {activeField.type === 'consent' && (
+                        <>
+                          <div>
+                            <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">Consent Text (HTML allowed)</label>
+                            <textarea 
+                              value={activeField.options || ''} 
+                              onChange={e => updateField(activeField.id, 'options', e.target.value)}
+                              placeholder="I agree to the <a href='/privacy'>Privacy Policy</a>."
+                              rows={3}
+                              className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:ring-[#5e3fde] focus:border-[#5e3fde] outline-none transition-shadow"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">Custom Error Message</label>
+                            <input 
+                              type="text" 
+                              value={activeField.placeholder || ''} 
+                              onChange={e => updateField(activeField.id, 'placeholder', e.target.value)}
+                              placeholder="You must agree to continue."
+                              className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:ring-[#5e3fde] focus:border-[#5e3fde] outline-none transition-shadow"
+                            />
+                          </div>
+                        </>
+                      )}
+                      
+                      {!['select', 'radio', 'checkbox', 'file', 'html', 'consent'].includes(activeField.type) && (
                         <div>
                           <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">Placeholder</label>
                           <input 

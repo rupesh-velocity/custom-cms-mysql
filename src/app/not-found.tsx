@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { BASE_PATH } from '@/lib/config';
+import BodyClassInjector from '@/components/BodyClassInjector';
 
 export default function NotFound() {
   useEffect(() => {
@@ -15,7 +16,8 @@ export default function NotFound() {
 
   return (
     <>
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4 font-sans text-center">
+      <BodyClassInjector type="error404" />
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4 text-center">
       <div className="bg-white p-12 rounded-2xl shadow-xl max-w-lg w-full">
         <h2 className="text-4xl font-bold text-gray-900 mb-4">404</h2>
         <h3 className="text-xl font-semibold text-gray-800 mb-4">Page Not Found</h3>

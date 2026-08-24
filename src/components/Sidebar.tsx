@@ -6,7 +6,7 @@ import { LayoutDashboard, FileText, Files, Users, Settings, ChevronDown, Chevron
 import clsx from 'clsx';
 import { BASE_PATH } from '@/lib/config';
 
-export default function Sidebar({ enableProducts = false }: { enableProducts?: boolean }) {
+export default function Sidebar({ enableProducts = false, siteTitle = "Velocity CMS", siteIcon = `${BASE_PATH}/velocity-logo.png` }: { enableProducts?: boolean, siteTitle?: string, siteIcon?: string }) {
   const pathname = usePathname() || '';
   
   // Settings is considered active if we are on /admin/settings or any of its subpages
@@ -19,8 +19,8 @@ export default function Sidebar({ enableProducts = false }: { enableProducts?: b
     <aside className="w-64 bg-white border-r border-gray-100 text-gray-600 flex flex-col h-screen sticky top-0 shadow-sm">
       {/* Brand */}
       <div className="p-6 mb-2 flex items-center gap-3">
-        <img src={`${BASE_PATH}/velocity-logo.png`} alt="Velocity Logo" className="h-8 w-auto object-contain" />
-        <h1 className="text-xl font-bold text-gray-900 tracking-tight">Velocity CMS</h1>
+        <img src={siteIcon} alt={`${siteTitle} Logo`} className="h-8 w-auto object-contain" onError={(e) => { e.currentTarget.src = `${BASE_PATH}/velocity-logo.png`; }} />
+        <h1 className="text-xl font-bold text-gray-900 tracking-tight">{siteTitle}</h1>
       </div>
       
       {/* Navigation */}

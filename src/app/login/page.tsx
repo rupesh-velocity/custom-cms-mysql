@@ -1,8 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
 import { BASE_PATH } from '@/lib/config';
 
 export default function LoginPage() {
@@ -11,6 +10,26 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Start with an empty string so nothing loads (keeps space blank)
+  const [siteIcon, setSiteIcon] = useState('');
+
+  useEffect(() => {
+    fetch(`${BASE_PATH}/api/settings`)
+      .then(res => res.json())
+      .then(data => {
+        // Only set the icon if it exists in the database
+        if (data.site_logo) {
+          setSiteIcon(data.site_logo);
+        } else {
+          // If no custom logo, load the default
+          setSiteIcon(`${BASE_PATH}/velocity-logo.png`);
+        }
+      })
+      .catch(() => {
+        setSiteIcon(`${BASE_PATH}/velocity-logo.png`);
+      });
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,17 +62,19 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8 bg-white p-10 rounded-2xl shadow-xl border border-gray-100">
         <div className="flex flex-col items-center">
-          <div className="mb-6 flex justify-center">
-            <Image 
-              src={`${BASE_PATH}/velocity-logo.png`} 
-              alt="Velocity Consultancy Logo" 
-              width={120} 
-              height={48} 
-              className="object-contain"
-              priority
-            />
+          {/* h-12 ensures the space stays blank until the logo loads */}
+          <div className="mb-6 flex justify-center h-16 w-full">
+            {siteIcon ? (
+              <img 
+                src={siteIcon} 
+                alt="Site Logo" 
+                className="h-full w-auto object-contain"
+                onError={(e) => { e.currentTarget.src = `${BASE_PATH}/velocity-logo.png`; }}
+              />
+            ) : null}
           </div>
-          <h2 className="text-center text-2xl font-bold text-gray-900 mb-2">
+          
+          <h2 className="text-center text-xl font-semibold text-gray-700 mt-4 mb-2">
             Admin Login
           </h2>
         </div>

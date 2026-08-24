@@ -1,4 +1,4 @@
-import Link from 'next/link';
+﻿import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import { notFound, redirect, permanentRedirect } from 'next/navigation';
 import { optimizeHtmlImages } from '@/lib/html-optimizer';
@@ -7,7 +7,7 @@ import PasswordProtectedForm from '@/components/PasswordProtectedForm';
 import BlogSidebar from '@/components/BlogSidebar';
 import { processSchemaVariables, formatSchemaGraph, generateBreadcrumbSchema } from '@/lib/schema-parser';
 import ContentRenderer from '@/components/ContentRenderer';
-
+import BodyClassInjector from '@/components/BodyClassInjector';
 export const dynamic = 'force-dynamic';
 
 import { resolveSeoVariables } from '@/lib/seo-variables';
@@ -120,6 +120,7 @@ export default async function Home(props: { searchParams: Promise<{ [key: string
 
     return (
       <div className="min-h-screen bg-white">
+        <BodyClassInjector type="page" id={page.id} />
         {(() => {
           let parsedSchemas: any[] = [];
           if (page.schemaJson) {
@@ -194,7 +195,8 @@ export default async function Home(props: { searchParams: Promise<{ [key: string
   const totalPages = Math.ceil(totalPosts / limit);
 
   return (
-    <div className="min-h-screen bg-[#f8f9fa] w-full font-sans pt-8 pb-16">
+    <div className="min-h-screen bg-[#f8f9fa] w-full pt-8 pb-16">
+      <BodyClassInjector type="blog" id="home" />
       <div className="max-w-[1200px] mx-auto px-4 mb-12">
         <div className="bg-gradient-to-br from-[#5e3fde] to-[#8a72ec] rounded-3xl p-10 md:p-14 text-center lg:text-left shadow-lg relative overflow-hidden">
           {/* Decorative shapes */}
@@ -241,7 +243,7 @@ export default async function Home(props: { searchParams: Promise<{ [key: string
                     </Link>
                     <div className="blog-post-meta">
                       {post.author?.firstName && <span>By {post.author.firstName} {post.author.lastName}</span>}
-                      {post.author?.firstName && <span>•</span>}
+                      {post.author?.firstName && <span>â€¢</span>}
                       <span>
                         {new Date(post.publishedAt || post.createdAt).toLocaleDateString('en-US', {
                           year: 'numeric', month: 'long', day: 'numeric'

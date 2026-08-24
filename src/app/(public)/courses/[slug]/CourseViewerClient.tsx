@@ -22,7 +22,7 @@ export default function CourseViewerClient({ course }: CourseViewerClientProps) 
   const activeVideo = videos[activeVideoIndex];
 
   return (
-    <main className="flex-1 w-full flex flex-col font-sans bg-gray-50 pb-24">
+    <main className="flex-1 w-full flex flex-col bg-gray-50 pb-24">
       {/* Hero Banner */}
       <PageHeroBanner
         title={course.title}

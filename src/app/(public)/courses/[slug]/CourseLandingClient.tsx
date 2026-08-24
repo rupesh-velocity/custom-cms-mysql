@@ -16,7 +16,7 @@ interface CourseLandingClientProps {
 
 export default function CourseLandingClient({ course }: CourseLandingClientProps) {
   return (
-    <div className="min-h-screen bg-gray-50 w-full font-sans pb-16">
+    <div className="min-h-screen bg-gray-50 w-full pb-16">
       
       {/* Hero Banner */}
       <PageHeroBanner 

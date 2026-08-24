@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
 import BlogSidebar from '@/components/BlogSidebar';
 import PageHeroBanner from '@/components/PageHeroBanner';
+import BodyClassInjector from '@/components/BodyClassInjector';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,24 +23,45 @@ export default async function SearchPage(props: { searchParams: Promise<{ q?: st
     include: { author: true, categories: true }
   });
 
+  const pages = await prisma.page.findMany({
+    where: {
+      status: 'Published',
+      visibility: 'Public',
+      OR: [
+        { title: { contains: q } },
+        { contentText: { contains: q } }
+      ]
+    },
+    orderBy: { publishedAt: 'desc' },
+    include: { author: true }
+  });
+
+  const allResults = [...posts.map(p => ({...p, __type: 'post'})), ...pages.map(p => ({...p, __type: 'page'}))].sort((a: any, b: any) => {
+    const dateA = new Date(a.publishedAt || a.createdAt).getTime();
+    const dateB = new Date(b.publishedAt || b.createdAt).getTime();
+    return dateB - dateA;
+  });
+
   return (
-    <div className="min-h-screen w-full font-sans pb-16">
-      <PageHeroBanner 
+    <>
+      <BodyClassInjector type="search" />
+      <div className="min-h-screen w-full pb-16">
+        <PageHeroBanner 
         title={`Search Results for "${q}"`}
-        description={`Found ${posts.length} ${posts.length === 1 ? 'post' : 'posts'}`}
+        description={`Found ${allResults.length} ${allResults.length === 1 ? 'result' : 'results'}`}
       />
 
       <div className="max-w-[1200px] mx-auto px-4 flex flex-col lg:flex-row gap-12 mt-12">
         <div className="flex-1 min-w-0">
-          {posts.length === 0 ? (
+          {allResults.length === 0 ? (
             <div className="bg-white p-12 rounded-2xl shadow-sm text-center border border-gray-100">
               <h2 className="text-2xl font-bold text-gray-900 mb-2">No results found</h2>
               <p className="text-gray-500 text-lg">Sorry, but nothing matched your search terms. Please try again with some different keywords.</p>
             </div>
           ) : (
             <div className="space-y-10">
-              {posts.map((post: any) => (
-                <article key={post.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow flex flex-col sm:flex-row overflow-hidden group/card">
+              {allResults.map((post: any) => (
+                <article key={`${post.__type}-${post.id}`} className="bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow flex flex-col sm:flex-row overflow-hidden group/card">
                   {post.featuredImage && (
                     <Link href={`/${post.slug}`} className="block w-full sm:w-1/3 lg:w-[30%] shrink-0 overflow-hidden relative">
                       <div className="absolute inset-0">
@@ -53,7 +75,7 @@ export default async function SearchPage(props: { searchParams: Promise<{ q?: st
                       {post.categories?.map((cat: any, i: number) => (
                         <span key={cat.id}>
                           <Link href={`/category/${cat.slug}`} className="hover:underline">{cat.name}</Link>
-                          {i < post.categories.length - 1 ? ' • ' : ''}
+                          {i < post.categories.length - 1 ? ' â€¢ ' : ''}
                         </span>
                       ))}
                     </div>
@@ -64,7 +86,7 @@ export default async function SearchPage(props: { searchParams: Promise<{ q?: st
                     </Link>
                     <div className="flex items-center gap-3 text-sm text-gray-500 mb-4 font-medium">
                       {post.author?.firstName && <span>By {post.author.firstName} {post.author.lastName}</span>}
-                      {post.author?.firstName && <span>•</span>}
+                      {post.author?.firstName && <span>â€¢</span>}
                       <span>
                         {new Date(post.publishedAt || post.createdAt).toLocaleDateString('en-US', {
                           year: 'numeric', month: 'long', day: 'numeric'
@@ -88,5 +110,6 @@ export default async function SearchPage(props: { searchParams: Promise<{ q?: st
         <BlogSidebar />
       </div>
     </div>
+    </>
   );
 }
