@@ -277,7 +277,7 @@ export default function AdminListClient({ items, type }: { items: any[], type: '
                     {item.status === 'Published' ? 'Published' : (item.status === 'Draft' ? 'Modified' : item.status)}
                   </div>
                   <div className="text-xs text-gray-500 mt-1">
-                    {new Date(item.updatedAt || item.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                    {new Date(item.publishedAt || item.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
                   </div>
                 </td>
                 {type === 'forms' && (

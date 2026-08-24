@@ -20,7 +20,7 @@ export default async function PostsPage({ searchParams }: { searchParams: Promis
 
   const posts = await prisma.post.findMany({
     where: whereClause,
-    orderBy: { createdAt: 'desc' },
+    orderBy: { publishedAt: 'desc' },
     include: { author: true }
   });
 
