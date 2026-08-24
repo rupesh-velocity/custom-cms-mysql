@@ -5,6 +5,7 @@ import MobileMenu from '@/components/MobileMenu';
 import { cookies } from 'next/headers';
 import { jwtVerify } from 'jose';
 import { BASE_PATH } from '@/lib/config';
+import DesktopMenu from '@/components/DesktopMenu';
 
 // Helper to build a nested tree from the flat items list
 function buildTree(items: any[], parentId: number | null = null, homepageSlug: string = ''): any[] {
@@ -19,68 +20,6 @@ function buildTree(items: any[], parentId: number | null = null, homepageSlug: s
         children: buildTree(items, item.id, homepageSlug)
       };
     });
-}
-
-// Recursive component for rendering menu items
-function MenuNode({ node, depth = 0 }: { node: any, depth?: number }) {
-  const hasChildren = node.children && node.children.length > 0;
-
-  if (!hasChildren) {
-    if (depth === 0) {
-      return (
-        <Link href={node.url}>
-          {node.label}
-        </Link>
-      );
-    }
-    return (
-      <Link 
-        href={node.url}
-        className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-blue-600"
-      >
-        {node.label}
-      </Link>
-    );
-  }
-
-  // Dropdown node
-  if (depth === 0) {
-    return (
-      <div className="relative group flex items-center cursor-pointer">
-        <Link href={node.url} className="flex items-center gap-1">
-          {node.label}
-          <ChevronDown size={14} className="opacity-70 transition-transform" />
-        </Link>
-        
-        <div className="absolute top-full left-0 pt-2 hidden group-hover:block min-w-[200px] z-50">
-          <div className="bg-white border border-gray-100 shadow-xl rounded-lg py-2">
-            {node.children.map((child: any) => (
-              <MenuNode key={child.id} node={child} depth={depth + 1} />
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="relative group cursor-pointer">
-      <Link 
-        href={node.url}
-        className="flex items-center gap-1 justify-between"
-      >
-        {node.label}
-        <ChevronDown size={14} className="opacity-70 -rotate-90" />
-      </Link>
-      
-      <div className="absolute top-0 left-full ml-1 hidden group-hover:block min-w-[200px] bg-white border border-gray-100 shadow-xl rounded-lg py-2 z-50">
-        <div className="absolute -left-1 w-1 top-0 bottom-0"></div>
-        {node.children.map((child: any) => (
-          <MenuNode key={child.id} node={child} depth={depth + 1} />
-        ))}
-      </div>
-    </div>
-  );
 }
 
 export default async function SiteHeader({ hideMenu = false }: { hideMenu?: boolean } = {}) {
@@ -175,16 +114,7 @@ export default async function SiteHeader({ hideMenu = false }: { hideMenu?: bool
         
         <div className="flex items-center gap-4 lg:gap-10">
           {!hideMenu && (
-            <nav className="main-menu hidden lg:flex items-center gap-10">
-              {menuTree.map((node: any) => (
-                <MenuNode key={node.id} node={node} />
-              ))}
-              {!primaryMenu?.items?.length && (
-                <div className="text-sm text-gray-400 italic">
-                  Create a menu to add links
-                </div>
-              )}
-            </nav>
+            <DesktopMenu menuTree={menuTree} primaryMenu={primaryMenu} />
           )}
           
           <div className="hidden lg:flex items-center gap-6">
@@ -219,7 +149,16 @@ export default async function SiteHeader({ hideMenu = false }: { hideMenu?: bool
             )}
           </div>
           
-          {!hideMenu && <MobileMenu menuTree={menuTree} isAuthenticated={isAuthenticated} userRole={userRole} />}
+          {!hideMenu && (
+            <MobileMenu 
+              menuTree={menuTree} 
+              isAuthenticated={isAuthenticated} 
+              userRole={userRole} 
+              siteTitle={siteTitle}
+              siteLogo={siteLogo ? optimizeLogoUrl(siteLogo) : null}
+              siteIcon={siteIcon ? optimizeLogoUrl(siteIcon) : null}
+            />
+          )}
         </div>
 
         {/* Mobile-only full width button below logo/menu */}

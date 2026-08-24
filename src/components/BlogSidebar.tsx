@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
+import { BASE_PATH } from '@/lib/config';
 
 export default async function BlogSidebar() {
   const recentPosts = await prisma.post.findMany({
@@ -13,7 +14,7 @@ export default async function BlogSidebar() {
       {/* Search Widget */}
         <div className="blog-sidebar-widget">
         <h3 className="blog-sidebar-title">Search</h3>
-        <form action="/search" method="GET" className="blog-search-form">
+        <form action={`${BASE_PATH}/search`} method="GET" className="blog-search-form">
           <input 
             type="text" 
             name="q" 
