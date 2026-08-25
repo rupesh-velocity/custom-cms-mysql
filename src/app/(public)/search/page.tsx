@@ -75,18 +75,18 @@ export default async function SearchPage(props: { searchParams: Promise<{ q?: st
                       {post.categories?.map((cat: any, i: number) => (
                         <span key={cat.id}>
                           <Link href={`/category/${cat.slug}`} className="hover:underline">{cat.name}</Link>
-                          {i < post.categories.length - 1 ? ' â€¢ ' : ''}
+                          {i < post.categories.length - 1 ? ' • ' : ''}
                         </span>
                       ))}
                     </div>
                     <Link href={`/${post.slug}`} className="block group">
-                      <h2 className="text-2xl font-bold text-gray-900 group-hover:text-[#5e3fde] transition-colors mb-3 font-outfit leading-tight">
+                      <h2 className="text-2xl font-bold text-gray-900 group-hover:text-[#5e3fde] transition-colors font-outfit leading-tight" style={{ marginBottom: '16px' }}>
                         {post.title}
                       </h2>
                     </Link>
                     <div className="flex items-center gap-3 text-sm text-gray-500 mb-4 font-medium">
                       {post.author?.firstName && <span>By {post.author.firstName} {post.author.lastName}</span>}
-                      {post.author?.firstName && <span>â€¢</span>}
+                      {post.author?.firstName && <span>•</span>}
                       <span>
                         {new Date(post.publishedAt || post.createdAt).toLocaleDateString('en-US', {
                           year: 'numeric', month: 'long', day: 'numeric'
