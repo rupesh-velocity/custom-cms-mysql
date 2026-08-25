@@ -42,6 +42,18 @@ export default async function MyAccountPage() {
     orderBy: { createdAt: 'desc' }
   });
 
+  // Fetch pending orders (like Zelle)
+  const pendingOrders = await prisma.order.findMany({
+    where: { 
+      customerId: userId,
+      status: 'PENDING'
+    },
+    include: {
+      items: true
+    },
+    orderBy: { createdAt: 'desc' }
+  });
+
   return (
     <div className="min-h-screen bg-[#f8f9fa] font-body text-body relative overflow-hidden">
       
@@ -63,7 +75,7 @@ export default async function MyAccountPage() {
             </div>
             
             <div className="">
-              {accessRecords.length === 0 ? (
+              {accessRecords.length === 0 && pendingOrders.length === 0 ? (
                 <div className="shop-empty-state flex flex-col items-center justify-center text-center py-12">
                   <div className="shop-empty-icon flex justify-center mb-4">
                     <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
@@ -75,6 +87,37 @@ export default async function MyAccountPage() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                  
+                  {/* Map Pending Orders First */}
+                  {pendingOrders.map((order) => 
+                    order.items.map((item) => (
+                      <div key={`pending-${item.id}`} className="blog-post-card group flex flex-col h-full relative cursor-default border-2 border-yellow-200" style={{ backgroundColor: '#fffdf5' }}>
+                        <div className="absolute top-4 right-4 z-20 bg-yellow-100 text-yellow-800 text-xs font-bold px-3 py-1 rounded-full shadow-sm border border-yellow-200">
+                          Pending Verification
+                        </div>
+                        <div className="blog-post-img-wrap w-full aspect-[4/3] bg-yellow-50/50">
+                          <div className="w-full h-full flex items-center justify-center text-yellow-300">
+                            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+                          </div>
+                        </div>
+                        <div className="p-6 flex flex-col flex-1">
+                          <div className="blog-post-category text-yellow-700 mb-2">
+                            <span>Order {order.orderNumber}</span>
+                          </div>
+                          <h3 className="blog-post-title text-gray-700 line-clamp-2 mb-4">
+                            {item.name}
+                          </h3>
+                          <div className="mt-auto pt-4 border-t border-yellow-100">
+                            <div className="recent-post-date text-yellow-600 font-medium">
+                              Awaiting Zelle transfer approval
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+
+                  {/* Map Active Enrolled Courses */}
                   {accessRecords.map((record) => (
                     <Link 
                       href={`/courses/${record.course.slug}`} 
