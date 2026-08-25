@@ -1,5 +1,6 @@
 // Force tailwind recompilation
 import { prisma } from '@/lib/prisma';
+import { BASE_PATH } from '@/lib/config';
 import CheckoutClient from './CheckoutClient';
 import { cookies } from 'next/headers';
 import { jwtVerify } from 'jose';
@@ -81,7 +82,7 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
           {/* Left Side Header (Matches Payment Form Width) */}
           <div className="w-full lg:w-2/3 flex items-start gap-4">
             <div className="w-12 h-12 shrink-0 flex items-center justify-center mt-1">
-              <img src="/lock.svg" alt="Secure Checkout Icon" className="w-full h-full object-contain" />
+              <img src={`${BASE_PATH}/lock.svg`} alt="Secure Checkout Icon" className="w-full h-full object-contain" />
             </div>
             <div className="flex flex-col">
               <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight leading-none mb-2">Secure Checkout</h1>

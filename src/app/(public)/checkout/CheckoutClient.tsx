@@ -234,7 +234,7 @@ function CheckoutForm({ item, isAuthenticated, initialEmail, initialName, client
               <div className="p-6 border border-[#773dbe] rounded-lg bg-indigo-50/30 mt-4 space-y-6">
                 <div className="flex flex-col items-center text-center max-w-sm mx-auto">
                   <div className="bg-white p-3 rounded-2xl shadow-sm border border-gray-200 flex justify-center mb-6 w-full max-w-[240px]">
-                    <img src="/zelle-qr-code.png" alt="Zelle QR Code" className="w-full h-auto object-contain rounded-xl" />
+                    <img src={`${BASE_PATH}/zelle-qr-code.png`} alt="Zelle QR Code" className="w-full h-auto object-contain rounded-xl" />
                   </div>
                   <h4 className="font-bold text-gray-900 text-xl mb-2">Manual Zelle Payment</h4>
                   <p className="text-gray-600 text-sm" style={{ marginBottom: '24px' }}>
