@@ -4,9 +4,10 @@ import { cookies } from 'next/headers';
 import { jwtVerify, SignJWT } from 'jose';
 import bcrypt from 'bcryptjs';
 import { sendCoursePurchaseEmail } from '@/lib/email';
+
 export async function POST(req: Request) {
   try {
-    const { itemId, type, name, email, password, paymentIntentId, shippingAddress } = await req.json();
+    const { itemId, type, name, email, password, paymentIntentId, shippingAddress, paymentMethod, paymentId } = await req.json();
 
     if (!itemId) {
       return NextResponse.json({ error: 'Item ID required' }, { status: 400 });
@@ -67,6 +68,8 @@ export async function POST(req: Request) {
     }
 
     let responseData: any = { success: true };
+    const isZelle = paymentMethod === 'ZELLE';
+    const orderStatus = isZelle ? 'PENDING' : 'COMPLETED';
 
     if (type === 'course') {
       const course = await prisma.course.findUnique({ where: { id: parseInt(itemId) } });
@@ -74,43 +77,50 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'Course not found' }, { status: 404 });
       }
 
-      const existingAccess = await prisma.userCourseAccess.findFirst({
-        where: { userId: userId, courseId: course.id }
-      });
+      const amountPaid = course.salePrice || course.price || 0;
+      const generatedOrderNumber = `#${Math.floor(100000 + Math.random() * 900000)}`;
       
-      if (!existingAccess) {
-        await prisma.userCourseAccess.create({
-          data: { userId: userId, courseId: course.id }
-        });
-        
-        const amountPaid = course.salePrice || course.price || 0;
-        const generatedOrderNumber = `#${Math.floor(100000 + Math.random() * 900000)}`;
-        
-        // CREATE ORDER
-        await prisma.order.create({
-          data: {
-            customerId: userId,
-            customerEmail: userEmail,
-            orderNumber: generatedOrderNumber,
-            status: 'COMPLETED',
-            totalAmount: amountPaid,
-            billingAddress: '{}',
-            shippingAddress: '{}',
-            items: {
-              create: [{
-                name: course.title,
-                quantity: 1,
-                price: amountPaid,
-                total: amountPaid
-              }]
-            }
+      // CREATE ORDER
+      const order = await prisma.order.create({
+        data: {
+          customerId: userId,
+          customerEmail: userEmail,
+          orderNumber: generatedOrderNumber,
+          status: orderStatus,
+          paymentMethod: paymentMethod || 'STRIPE',
+          paymentId: paymentId || paymentIntentId || null,
+          totalAmount: amountPaid,
+          billingAddress: '{}',
+          shippingAddress: '{}',
+          items: {
+            create: [{
+              name: course.title,
+              quantity: 1,
+              price: amountPaid,
+              total: amountPaid
+            }]
           }
-        });
+        }
+      });
 
-        // Send notification email asynchronously
-        sendCoursePurchaseEmail(userEmail, userName, course.title, amountPaid > 0 ? amountPaid.toString() : "Free", generatedOrderNumber).catch(console.error);
+      // ONLY GRANT ACCESS IF NOT ZELLE (OR IF FREE COURSE WITH ZELLE)
+      if (!isZelle || amountPaid === 0) {
+        const existingAccess = await prisma.userCourseAccess.findFirst({
+          where: { userId: userId, courseId: course.id }
+        });
+        
+        if (!existingAccess) {
+          await prisma.userCourseAccess.create({
+            data: { userId: userId, courseId: course.id }
+          });
+          
+          // Send notification email asynchronously
+          sendCoursePurchaseEmail(userEmail, userName, course.title, amountPaid > 0 ? amountPaid.toString() : "Free", generatedOrderNumber).catch(console.error);
+        }
       }
       responseData.enrollmentId = course.id;
+      responseData.orderId = order.id;
+      responseData.isPending = isZelle;
     } else {
       const product = await prisma.product.findUnique({ where: { id: parseInt(itemId) } });
       if (!product) {
@@ -124,7 +134,9 @@ export async function POST(req: Request) {
           customerId: userId,
           customerEmail: userEmail,
           orderNumber: generatedOrderNumber,
-          status: 'COMPLETED',
+          status: orderStatus,
+          paymentMethod: paymentMethod || 'STRIPE',
+          paymentId: paymentId || paymentIntentId || null,
           totalAmount: product.salePrice || product.price || 0,
           billingAddress: JSON.stringify(shippingAddress || {}),
           shippingAddress: JSON.stringify(shippingAddress || {}),
@@ -140,7 +152,8 @@ export async function POST(req: Request) {
         }
       });
 
-      if (product.linkedCourseId) {
+      // ONLY GRANT ACCESS IF NOT ZELLE
+      if (!isZelle && product.linkedCourseId) {
         const existingAccess = await prisma.userCourseAccess.findFirst({
           where: { userId: userId, courseId: product.linkedCourseId }
         });
@@ -157,6 +170,7 @@ export async function POST(req: Request) {
         }
       }
       responseData.orderId = order.id;
+      responseData.isPending = isZelle;
     }
 
     const response = NextResponse.json(responseData);

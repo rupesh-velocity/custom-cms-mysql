@@ -56,15 +56,14 @@ export default async function MyAccountPage() {
             
             <div className="p-8">
               {accessRecords.length === 0 ? (
-                <div className="shop-empty-state text-center">
-                  <div className="shop-empty-icon flex justify-center">
+                <div className="shop-empty-state flex flex-col items-center justify-center text-center py-12">
+                  <div className="shop-empty-icon flex justify-center mb-4">
                     <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
                   </div>
-                  <h3 className="shop-empty-title">No courses yet</h3>
-                  <p className="shop-empty-desc mx-auto mb-8">You haven't purchased or enrolled in any courses yet. Explore our library to get started.</p>
-                  <Link href="/shop" className="theme-btn theme-btn-blue">
-                    <span>Browse Course Library</span>
-                  </Link>
+                  <h3 className="shop-empty-title mb-4">No courses yet</h3>
+                  <p className="shop-empty-desc text-center" style={{ marginBottom: '24px' }}>
+                    You haven't purchased or enrolled in any courses yet.
+                  </p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">

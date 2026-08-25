@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Save, Mail, Calendar, CreditCard, ShoppingBag, Package } from 'lucide-react';
+import { ArrowLeft, Save, Mail, Calendar, CreditCard, ShoppingBag, Package, CheckCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 import { BASE_PATH } from '@/lib/config';
@@ -20,16 +20,20 @@ export default function OrderDetailsClient({ order }: { order: any }) {
     shipping = JSON.parse(order.shippingAddress || '{}');
   } catch(e) {}
 
-  const handleUpdateStatus = async () => {
+  const handleUpdateStatus = async (newStatusOverride?: string) => {
+    const targetStatus = newStatusOverride || status;
     setIsUpdating(true);
     try {
       const res = await fetch(`${BASE_PATH}/api/orders/${order.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status })
+        body: JSON.stringify({ status: targetStatus })
       });
       if (res.ok) {
-        toast.success('Order status updated');
+        toast.success('Order status updated successfully');
+        if (newStatusOverride) {
+          setStatus(newStatusOverride);
+        }
         router.refresh();
       } else {
         toast.error('Failed to update status');
@@ -180,9 +184,33 @@ export default function OrderDetailsClient({ order }: { order: any }) {
                   <strong>Payment:</strong> {order.paymentMethod || 'Manual / N/A'}
                 </span>
               </div>
+
+              {/* ZELLE APPROVAL SECTION */}
+              {order.paymentMethod === 'ZELLE' && order.status === 'PENDING' && (
+                <div className="pt-4 mt-2 border-t border-gray-100">
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 shadow-sm">
+                    <h4 className="font-bold text-yellow-800 text-base mb-1">Zelle Verification</h4>
+                    <p className="text-xs text-yellow-700 mb-3 leading-relaxed">
+                      Check your bank account to verify if this customer successfully transferred the funds.
+                    </p>
+                    <div className="bg-white p-3 rounded border border-yellow-200 font-mono text-sm mb-4 break-all shadow-inner text-gray-800">
+                      <strong>Txn ID / Name:</strong><br/>
+                      {order.paymentId || 'Not provided by customer'}
+                    </div>
+                    <button
+                      onClick={() => handleUpdateStatus('COMPLETED')}
+                      disabled={isUpdating}
+                      style={{ backgroundColor: '#16a34a', color: '#ffffff' }}
+                      className="w-full flex items-center justify-center gap-2 hover:opacity-90 px-4 py-2.5 rounded text-sm font-bold transition-colors disabled:opacity-50 shadow-sm"
+                    >
+                      <CheckCircle size={18} /> Approve & Grant Access
+                    </button>
+                  </div>
+                </div>
+              )}
               
               <div className="pt-4 border-t border-gray-100">
-                <label className="block text-gray-700 font-medium mb-2">Order Status</label>
+                <label className="block text-gray-700 font-medium mb-2">Manual Status Override</label>
                 <select 
                   className="w-full border border-gray-300 rounded px-3 py-2 outline-none focus:border-[#5e3fde]"
                   value={status}
@@ -194,7 +222,7 @@ export default function OrderDetailsClient({ order }: { order: any }) {
                   <option value="CANCELLED">Cancelled</option>
                 </select>
                 <button 
-                  onClick={handleUpdateStatus}
+                  onClick={() => handleUpdateStatus()}
                   disabled={isUpdating || status === order.status}
                   className="mt-3 w-full flex items-center justify-center gap-2 bg-[#5e3fde] hover:bg-[#4b32b2] text-white px-4 py-2 rounded text-sm font-medium transition-colors disabled:opacity-50"
                 >

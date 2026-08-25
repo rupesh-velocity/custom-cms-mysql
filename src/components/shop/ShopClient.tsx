@@ -127,10 +127,12 @@ export default function ShopClient({ initialItems, mode = 'all' }: { initialItem
             ))}
           </div>
         ) : (
-          <div className="shop-empty-state text-center">
-            <ShoppingBag size={56} className="shop-empty-icon mx-auto" />
-            <h3 className="shop-empty-title">No items found</h3>
-            <p className="shop-empty-desc mx-auto">Try adjusting your filters or search query to find what you're looking for.</p>
+          <div className="shop-empty-state flex flex-col items-center justify-center text-center py-12">
+            <ShoppingBag size={56} className="shop-empty-icon mb-4" />
+            <h3 className="shop-empty-title mb-4">No items found</h3>
+            <p className="shop-empty-desc text-center mb-8">
+              Try adjusting your filters or search query to find what you're looking for.
+            </p>
             <button 
               onClick={() => { setFilter('all'); setSearchQuery(''); }}
               className="shop-empty-btn"

@@ -218,10 +218,15 @@ export default async function PublicPage(props: { params: Promise<{ slug: string
         orderBy: { createdAt: 'desc' }
       });
     } else {
-      shopMode = 'products';
+      shopMode = 'all';
       products = await prisma.product.findMany({
         where: { status: 'Published' },
         select: { id: true, title: true, slug: true, featuredImage: true, price: true, salePrice: true, type: true },
+        orderBy: { createdAt: 'desc' }
+      });
+      courses = await prisma.course.findMany({
+        where: { status: 'Published' },
+        select: { id: true, title: true, slug: true, featuredImage: true, price: true, salePrice: true },
         orderBy: { createdAt: 'desc' }
       });
     }
