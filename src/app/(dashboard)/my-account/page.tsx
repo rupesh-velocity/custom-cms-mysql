@@ -68,7 +68,7 @@ export default async function MyAccountPage() {
           
           <div className="bg-white rounded-[12px] shadow-[0_10px_40px_rgba(0,0,0,0.04)] border border-[#f0f0f0] overflow-hidden p-8 md:p-12 relative -mt-8">
             <div className="mb-10 text-left border-b border-[#f0f0f0] pb-6 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-[var(--purple)]/10 flex items-center justify-center text-[var(--purple)]">
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center text-[var(--purple)]" style={{ backgroundColor: '#f3e8ff' }}>
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
               </div>
               <h2 className="font-heading text-[var(--purple)] text-[24px]">Enrolled Courses</h2>
@@ -91,25 +91,28 @@ export default async function MyAccountPage() {
                   {/* Map Pending Orders First */}
                   {pendingOrders.map((order) => 
                     order.items.map((item) => (
-                      <div key={`pending-${item.id}`} className="blog-post-card group flex flex-col h-full relative cursor-default border-2 border-yellow-200" style={{ backgroundColor: '#fffdf5' }}>
-                        <div className="absolute top-4 right-4 z-20 bg-yellow-100 text-yellow-800 text-xs font-bold px-3 py-1 rounded-full shadow-sm border border-yellow-200">
-                          Pending Verification
-                        </div>
-                        <div className="blog-post-img-wrap w-full aspect-[4/3] bg-yellow-50/50">
-                          <div className="w-full h-full flex items-center justify-center text-yellow-300">
-                            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+                      <div key={`pending-${item.id}`} className="blog-post-card group flex flex-col h-full relative cursor-default transition-all border border-gray-200 shadow-sm" style={{ backgroundColor: '#fcfcfc', opacity: 0.85 }}>
+                        <div className="blog-post-img-wrap w-full aspect-[4/3] bg-gray-100/80">
+                          <div className="w-full h-full flex items-center justify-center text-gray-400">
+                            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
                           </div>
                         </div>
-                        <div className="p-6 flex flex-col flex-1">
-                          <div className="blog-post-category text-yellow-700 mb-2">
-                            <span>Order {order.orderNumber}</span>
+                        <div className="p-6 flex flex-col flex-1 bg-white relative">
+                          <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                            <div className="blog-post-category text-[var(--purple)] opacity-70 mb-0">
+                              <span>Order {order.orderNumber}</span>
+                            </div>
+                            <div className="text-xs font-bold px-3 py-1 rounded-full shadow-sm flex items-center gap-1.5 text-white" style={{ backgroundColor: '#773dbe' }}>
+                              <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></div>
+                              Pending Verification
+                            </div>
                           </div>
-                          <h3 className="blog-post-title text-gray-700 line-clamp-2 mb-4">
+                          <h3 className="blog-post-title text-gray-800 line-clamp-2 mb-4">
                             {item.name}
                           </h3>
-                          <div className="mt-auto pt-4 border-t border-yellow-100">
-                            <div className="recent-post-date text-yellow-600 font-medium">
-                              Awaiting Zelle transfer approval
+                          <div className="mt-auto pt-4 border-t border-gray-100">
+                            <div className="recent-post-date text-gray-500 font-medium">
+                              Awaiting Zelle approval
                             </div>
                           </div>
                         </div>
