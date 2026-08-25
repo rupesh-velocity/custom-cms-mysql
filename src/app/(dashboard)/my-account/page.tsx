@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { jwtVerify } from 'jose';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
+import PageHeroBanner from '@/components/PageHeroBanner';
 
 export const dynamic = 'force-dynamic';
 
@@ -42,19 +43,26 @@ export default async function MyAccountPage() {
   });
 
   return (
-    <div className="min-h-screen bg-light font-body text-body">
-      {/* Dashboard Header using their standard page-banner style */}
+    <div className="min-h-screen bg-[#f8f9fa] font-body text-body relative overflow-hidden">
       
+      {/* Dashboard Header using their standard page-banner style */}
+      <PageHeroBanner 
+        title={`Welcome back, ${user.firstName || user.username}!`}
+        description="Manage your enrolled courses"
+      />
 
-      <main className="section-padding">
-        <div className="container">
+      <main className="section-padding relative z-10">
+        <div className="container max-w-6xl mx-auto">
           
-          <div className="bg-white rounded-[12px] shadow-[0_10px_40px_rgba(0,0,0,0.04)] border border-[#f0f0f0] overflow-hidden">
-            <div className="px-8 py-6 border-b border-[#f0f0f0] bg-[#f8f9fa]">
-              <h2 className="font-heading text-heading text-[24px]">My Courses</h2>
+          <div className="bg-white rounded-[12px] shadow-[0_10px_40px_rgba(0,0,0,0.04)] border border-[#f0f0f0] overflow-hidden p-8 md:p-12 relative -mt-8">
+            <div className="mb-10 text-left border-b border-[#f0f0f0] pb-6 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-[var(--purple)]/10 flex items-center justify-center text-[var(--purple)]">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+              </div>
+              <h2 className="font-heading text-[var(--purple)] text-[24px]">Enrolled Courses</h2>
             </div>
             
-            <div className="p-8">
+            <div className="">
               {accessRecords.length === 0 ? (
                 <div className="shop-empty-state flex flex-col items-center justify-center text-center py-12">
                   <div className="shop-empty-icon flex justify-center mb-4">

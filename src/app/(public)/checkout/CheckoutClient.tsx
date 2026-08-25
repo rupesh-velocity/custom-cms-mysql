@@ -1,4 +1,5 @@
 'use client';
+// Force tailwind recompilation
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -116,8 +117,17 @@ function CheckoutForm({ item, isAuthenticated, initialEmail, initialName, client
   };
 
   return (
-    <div className="flex flex-col lg:flex-row gap-8 !mt-6">
-      {/* Checkout Form */}
+    <>
+      <style dangerouslySetInnerHTML={{ __html: `
+        .text-\\[\\#773dbe\\] { color: #773dbe !important; }
+        .border-\\[\\#773dbe\\] { border-color: #773dbe !important; }
+        .bg-\\[\\#773dbe\\] { background-color: #773dbe !important; }
+        .ring-\\[\\#773dbe\\] { --tw-ring-color: #773dbe !important; box-shadow: var(--tw-ring-inset) 0 0 0 calc(1px + var(--tw-ring-offset-width)) var(--tw-ring-color) !important; }
+        .focus\\:ring-\\[\\#773dbe\\]:focus { --tw-ring-color: #773dbe !important; }
+        .focus\\:border-\\[\\#773dbe\\]:focus { border-color: #773dbe !important; }
+      `}} />
+      <div className="flex flex-col lg:flex-row gap-8 !mt-6">
+        {/* Checkout Form */}
       <div className="w-full lg:w-2/3 bg-white p-8 rounded-xl shadow-sm border border-gray-200">
         <h2 className="!text-2xl font-bold text-gray-900 !mb-6">Payment Details</h2>
         <form onSubmit={handleCheckout} className="space-y-6">
@@ -131,7 +141,7 @@ function CheckoutForm({ item, isAuthenticated, initialEmail, initialName, client
                 <input 
                   type="text" name="name" required
                   value={formData.name} onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5e3fde] outline-none"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#773dbe] outline-none"
                   placeholder="John Doe"
                 />
               </div>
@@ -141,7 +151,7 @@ function CheckoutForm({ item, isAuthenticated, initialEmail, initialName, client
                   type="email" name="email" required
                   disabled={isAuthenticated}
                   value={formData.email} onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5e3fde] outline-none disabled:bg-gray-100 disabled:text-gray-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#773dbe] outline-none disabled:bg-gray-100 disabled:text-gray-500"
                   placeholder="john@example.com"
                 />
               </div>
@@ -153,7 +163,7 @@ function CheckoutForm({ item, isAuthenticated, initialEmail, initialName, client
                 <input 
                   type="password" name="password" required
                   value={formData.password} onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5e3fde] outline-none"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#773dbe] outline-none"
                   placeholder="••••••••"
                 />
               </div>
@@ -190,28 +200,28 @@ function CheckoutForm({ item, isAuthenticated, initialEmail, initialName, client
           <div className="space-y-4">
             <h3 className="!text-sm font-semibold text-gray-700 uppercase tracking-wider !mb-4">Select Payment Method</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <label className={`cursor-pointer flex items-center gap-3 p-4 border rounded-xl transition-all ${paymentMethod === 'stripe' ? 'border-[#5e3fde] bg-indigo-50 ring-1 ring-[#5e3fde]' : 'border-gray-200 hover:border-gray-300 bg-white'}`}>
+              <label className={`cursor-pointer flex items-center gap-3 p-4 border rounded-xl transition-all ${paymentMethod === 'stripe' ? 'border-[#773dbe] bg-indigo-50 ring-1 ring-[#773dbe]' : 'border-gray-200 hover:border-gray-300 bg-white'}`}>
                 <input 
                   type="radio" 
                   name="paymentMethod" 
                   checked={paymentMethod === 'stripe'} 
                   onChange={() => setPaymentMethod('stripe')} 
-                  className="w-4 h-4 text-[#5e3fde] focus:ring-[#5e3fde]"
+                  className="w-4 h-4 text-[#773dbe] focus:ring-[#773dbe]"
                 />
-                <CreditCard size={20} className={paymentMethod === 'stripe' ? 'text-[#5e3fde]' : 'text-gray-400'} />
-                <span className={`font-medium ${paymentMethod === 'stripe' ? 'text-[#5e3fde]' : 'text-gray-700'}`}>Credit/Debit Card</span>
+                <CreditCard size={20} className={paymentMethod === 'stripe' ? 'text-[#773dbe]' : 'text-gray-400'} />
+                <span className={`font-medium ${paymentMethod === 'stripe' ? 'text-[#773dbe]' : 'text-gray-700'}`}>Credit/Debit Card</span>
               </label>
               
-              <label className={`cursor-pointer flex items-center gap-3 p-4 border rounded-xl transition-all ${paymentMethod === 'zelle' ? 'border-[#5e3fde] bg-indigo-50 ring-1 ring-[#5e3fde]' : 'border-gray-200 hover:border-gray-300 bg-white'}`}>
+              <label className={`cursor-pointer flex items-center gap-3 p-4 border rounded-xl transition-all ${paymentMethod === 'zelle' ? 'border-[#773dbe] bg-indigo-50 ring-1 ring-[#773dbe]' : 'border-gray-200 hover:border-gray-300 bg-white'}`}>
                 <input 
                   type="radio" 
                   name="paymentMethod" 
                   checked={paymentMethod === 'zelle'} 
                   onChange={() => setPaymentMethod('zelle')} 
-                  className="w-4 h-4 text-[#5e3fde] focus:ring-[#5e3fde]"
+                  className="w-4 h-4 text-[#773dbe] focus:ring-[#773dbe]"
                 />
-                <Smartphone size={20} className={paymentMethod === 'zelle' ? 'text-[#5e3fde]' : 'text-gray-400'} />
-                <span className={`font-medium ${paymentMethod === 'zelle' ? 'text-[#5e3fde]' : 'text-gray-700'}`}>Pay with Zelle</span>
+                <Smartphone size={20} className={paymentMethod === 'zelle' ? 'text-[#773dbe]' : 'text-gray-400'} />
+                <span className={`font-medium ${paymentMethod === 'zelle' ? 'text-[#773dbe]' : 'text-gray-700'}`}>Pay with Zelle</span>
               </label>
             </div>
 
@@ -221,16 +231,16 @@ function CheckoutForm({ item, isAuthenticated, initialEmail, initialName, client
                 <PaymentElement />
               </div>
             ) : (
-              <div className="p-6 border border-[#5e3fde] rounded-lg bg-indigo-50/30 mt-4 space-y-6">
+              <div className="p-6 border border-[#773dbe] rounded-lg bg-indigo-50/30 mt-4 space-y-6">
                 <div className="flex flex-col items-center text-center max-w-sm mx-auto">
                   <div className="bg-white p-3 rounded-2xl shadow-sm border border-gray-200 flex justify-center mb-6 w-full max-w-[240px]">
                     <img src="/zelle-qr-code.png" alt="Zelle QR Code" className="w-full h-auto object-contain rounded-xl" />
                   </div>
                   <h4 className="font-bold text-gray-900 text-xl mb-2">Manual Zelle Payment</h4>
                   <p className="text-gray-600 text-sm" style={{ marginBottom: '24px' }}>
-                    To complete your order, open your banking app and send exactly <strong className="text-lg text-[#5e3fde]">${item.price}</strong> via Zelle to:
+                    To complete your order, open your banking app and send exactly <strong className="text-lg text-[#773dbe]">${item.price}</strong> via Zelle to:
                   </p>
-                  <div className="bg-white px-6 py-4 rounded-xl border-2 border-dashed border-[#5e3fde] font-mono text-2xl font-bold text-gray-900 shadow-sm w-full tracking-widest" style={{ marginBottom: '24px' }}>
+                  <div className="bg-white px-6 py-4 rounded-xl border-2 border-dashed border-[#773dbe] font-mono text-2xl font-bold text-gray-900 shadow-sm w-full tracking-widest" style={{ marginBottom: '24px' }}>
                     520-440-5326
                   </div>
                   <p className="text-gray-500 text-xs italic">
@@ -247,7 +257,7 @@ function CheckoutForm({ item, isAuthenticated, initialEmail, initialName, client
                     required={paymentMethod === 'zelle'}
                     value={zelleTransactionId} 
                     onChange={(e) => setZelleTransactionId(e.target.value)}
-                    className="w-full px-4 py-3 text-center border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#5e3fde] focus:border-[#5e3fde] outline-none text-lg transition-all"
+                    className="w-full px-4 py-3 text-center border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#773dbe] focus:border-[#773dbe] outline-none text-lg transition-all"
                     placeholder="e.g. 123456789 or John Doe"
                   />
                   <p className="text-xs text-gray-500 mt-3 text-center leading-relaxed">
@@ -261,7 +271,8 @@ function CheckoutForm({ item, isAuthenticated, initialEmail, initialName, client
           <button 
             type="submit" 
             disabled={isLoading || (paymentMethod === 'stripe' && (!stripe || !elements)) || (item.type === 'product' && !shippingAddress)}
-            className="w-full py-3 px-6 bg-[#5e3fde] text-white font-bold rounded-lg hover:bg-[#4b32b2] transition-colors disabled:opacity-50 mt-6"
+            className="w-full py-3 px-6 text-white font-bold rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 mt-6"
+            style={{ backgroundColor: '#773dbe' }}
           >
             {isLoading ? 'Processing...' : paymentMethod === 'stripe' ? `Pay $${item.price} Now` : `Complete Order ($${item.price})`}
           </button>
@@ -282,7 +293,7 @@ function CheckoutForm({ item, isAuthenticated, initialEmail, initialName, client
             </div>
             <div className="flex-1 min-w-0">
               <h3 className="!text-base font-semibold text-gray-900 break-words">{item.title}</h3>
-              <p className="text-[#5e3fde] font-bold mt-1">${item.price}</p>
+              <p className="text-[#773dbe] font-bold mt-1">${item.price}</p>
             </div>
           </div>
           <hr className="border-gray-100 mb-4" />
@@ -302,6 +313,7 @@ function CheckoutForm({ item, isAuthenticated, initialEmail, initialName, client
         </div>
       </div>
     </div>
+    </>
   );
 }
 
@@ -342,7 +354,7 @@ export default function CheckoutClient(props: CheckoutClientProps) {
   if (!clientSecret || !stripePromise) {
     return (
       <div className="min-h-[40vh] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#5e3fde]"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#773dbe]"></div>
       </div>
     );
   }

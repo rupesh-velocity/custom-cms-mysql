@@ -1,3 +1,4 @@
+// Force tailwind recompilation
 import { prisma } from '@/lib/prisma';
 import CheckoutClient from './CheckoutClient';
 import { cookies } from 'next/headers';
@@ -72,9 +73,44 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
-      <div className="max-w-4xl mx-auto px-6">
-        <h1 className="text-3xl font-extrabold text-gray-900 mb-8 tracking-tight">Secure Checkout</h1>
+    <div className="min-h-screen bg-[#f8f9fa] py-12">
+      <div className="max-w-5xl mx-auto px-6">
+        
+        <div className="flex flex-col lg:flex-row gap-8 mb-8 lg:items-end">
+          
+          {/* Left Side Header (Matches Payment Form Width) */}
+          <div className="w-full lg:w-2/3 flex items-start gap-4">
+            <div className="w-12 h-12 shrink-0 flex items-center justify-center mt-1">
+              <img src="/lock.svg" alt="Secure Checkout Icon" className="w-full h-full object-contain" />
+            </div>
+            <div className="flex flex-col">
+              <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight leading-none mb-2">Secure Checkout</h1>
+              <p className="text-gray-500 text-lg">You're one step closer to your fitness goals.</p>
+            </div>
+          </div>
+          
+          {/* Right Side Progress Steps (Matches Order Summary Width) */}
+          <div className="w-full lg:w-1/3 flex lg:justify-end">
+            <div className="flex items-start text-xs font-bold uppercase tracking-wider">
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-8 h-8 rounded-full text-white flex items-center justify-center text-sm shadow-sm" style={{ backgroundColor: '#773dbe' }}>1</div>
+                <span style={{ color: '#773dbe' }}>Account</span>
+              </div>
+              <div className="w-12 md:w-16 h-[2px] bg-gray-200 mt-4 mx-2"></div>
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-8 h-8 rounded-full text-white flex items-center justify-center text-sm shadow-sm" style={{ backgroundColor: '#773dbe' }}>2</div>
+                <span style={{ color: '#773dbe' }}>Payment</span>
+              </div>
+              <div className="w-12 md:w-16 h-[2px] bg-gray-200 mt-4 mx-2"></div>
+              <div className="flex flex-col items-center gap-3 opacity-50">
+                <div className="w-8 h-8 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center text-sm shadow-sm">3</div>
+                <span className="text-gray-500">Review</span>
+              </div>
+            </div>
+          </div>
+          
+        </div>
+
         <CheckoutClient 
           item={itemData}
           isAuthenticated={!!userEmail}

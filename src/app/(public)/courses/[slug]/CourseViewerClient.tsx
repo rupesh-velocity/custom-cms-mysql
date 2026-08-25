@@ -26,11 +26,6 @@ export default function CourseViewerClient({ course }: CourseViewerClientProps) 
       {/* Hero Banner */}
       <PageHeroBanner
         title={course.title}
-        description={
-          <div className="inline-block px-4 py-1.5 rounded-full bg-[#5e3fde]/20 text-[#a5b4fc] font-bold text-sm mt-4 border border-[#5e3fde]/30 uppercase tracking-widest w-max">
-            My Course
-          </div>
-        }
       />
 
       <div className="max-w-6xl mx-auto w-full px-4 sm:px-6 mt-12 relative z-20 flex flex-col lg:flex-row gap-8">
