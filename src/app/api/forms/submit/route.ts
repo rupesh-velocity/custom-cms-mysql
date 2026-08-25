@@ -93,9 +93,17 @@ export async function POST(req: Request) {
             let htmlContent = `<table border="1" cellpadding="10" cellspacing="0" style="width:100%; border-collapse: collapse; font-family: sans-serif; font-size: 14px; border-color: #e5e7eb;">`;
             for (const key in data) {
               const field = fields.find((f: any) => f.id === key);
-              const label = field ? field.label : key;
+              
+              // Explicitly extract the label and ensure it never renders completely blank.
+              // If the user checked "Hide Label" but provided text, it will properly use that text.
+              let labelText = key;
+              if (field && typeof field.label === 'string' && field.label.trim() !== '') {
+                labelText = field.label.trim();
+              }
+              
               let val = Array.isArray(data[key]) ? data[key].join(', ') : data[key];
-              htmlContent += `<tr><td style="background-color: #f1f5f9; font-weight: 700; color: #333; border-bottom: none;">${label}</td></tr>`;
+              
+              htmlContent += `<tr><td style="background-color: #f1f5f9; font-weight: 700; color: #333; border-bottom: none;">${labelText}</td></tr>`;
               htmlContent += `<tr><td style="background-color: #ffffff; padding-left: 20px; color: #555;">${val || ''}</td></tr>`;
             }
             htmlContent += `</table>`;

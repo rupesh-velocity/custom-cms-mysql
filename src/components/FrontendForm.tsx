@@ -322,7 +322,7 @@ export default function FrontendForm({ id }: { id: string }) {
           <button 
             type="submit" 
             disabled={submitting}
-            className="w-full bg-[#5e3fde] text-white font-semibold py-3.5 px-6 rounded-xl hover:bg-[#4b32b2] hover:shadow-md transition-all mt-2 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-[15px]"
+            className="w-full theme-btn theme-btn-blue mt-2 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-[15px]"
           >
             {submitting ? (
               <>
