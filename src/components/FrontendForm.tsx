@@ -223,7 +223,7 @@ export default function FrontendForm({ id }: { id: string }) {
                 onChange={e => setFormData({...formData, [field.id]: e.target.value})}
                 className={`w-full px-4 py-3 bg-gray-50/50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-[#5e3fde]/20 focus:border-[#5e3fde] transition-all outline-none appearance-none ${field.customClass || ''}`}
               >
-                <option value="">Select an option</option>
+                <option value="">{field.placeholder || 'Select an option'}</option>
                 {field.options?.split(',').map((opt: string, i: number) => (
                   <option key={i} value={opt.trim()}>{opt.trim()}</option>
                 ))}

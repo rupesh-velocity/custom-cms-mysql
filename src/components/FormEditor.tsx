@@ -215,7 +215,7 @@ export default function FormEditor({ form }: { form?: any }) {
                             <textarea placeholder={field.placeholder} disabled className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-400" rows={2} />
                           ) : ['select'].includes(field.type) ? (
                             <select disabled className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-400">
-                              <option>Select an option</option>
+                              <option>{field.placeholder || 'Select an option'}</option>
                             </select>
                           ) : ['radio', 'checkbox'].includes(field.type) ? (
                             <div className="space-y-1">
@@ -433,7 +433,7 @@ export default function FormEditor({ form }: { form?: any }) {
                         </>
                       )}
                       
-                      {!['select', 'radio', 'checkbox', 'file', 'html', 'consent'].includes(activeField.type) && (
+                      {!['radio', 'checkbox', 'file', 'html', 'consent'].includes(activeField.type) && (
                         <div>
                           <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">Placeholder</label>
                           <input 
