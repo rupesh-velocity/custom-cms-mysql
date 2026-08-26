@@ -22,6 +22,9 @@ export default function EcommerceSettingsPage() {
     stripeLiveSecretKey: '',
     paypalEnabled: 'false',
     paypalClientId: '',
+    zelleEnabled: 'false',
+    zellePhone: '',
+    zelleQrCodeUrl: '',
     currency: 'USD',
     adminEmail: '',
     storeAddress1: '',
@@ -49,6 +52,7 @@ export default function EcommerceSettingsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('general');
   const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
+  const [activeImageField, setActiveImageField] = useState<string>('emailLogoUrl');
 
   useEffect(() => {
     fetchSettings();
@@ -99,7 +103,7 @@ export default function EcommerceSettingsPage() {
   };
 
   const handleMediaInsert = (url: string) => {
-    setSettings(s => ({ ...s, emailLogoUrl: url }));
+    setSettings(s => ({ ...s, [activeImageField]: url }));
   };
 
   if (isLoading) return <div className="flex justify-center p-12"><Loader2 className="animate-spin text-gray-400" /></div>;
@@ -365,6 +369,48 @@ export default function EcommerceSettingsPage() {
                     <input type="text" name="paypalClientId" value={settings.paypalClientId} onChange={handleChange} placeholder="Client ID" className="border border-[#8c8f94] rounded-[3px] px-3 py-1.5 w-full max-w-xs block focus:border-[#5e3fde] outline-none" />
                   </td>
                 </tr>
+
+                <tr className="border-b border-gray-100">
+                  <td className="py-4 font-medium flex items-center gap-2">Zelle</td>
+                  <td className="py-4">
+                    <input type="checkbox" name="zelleEnabled" checked={(settings as any).zelleEnabled === 'true'} onChange={handleChange} className="w-4 h-4 rounded text-[#5e3fde] focus:ring-[#5e3fde]" />
+                  </td>
+                  <td className="py-4 space-y-4">
+                    <div className="space-y-2">
+                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">Zelle Phone Number</label>
+                      <input type="text" name="zellePhone" value={(settings as any).zellePhone || ''} onChange={handleChange} placeholder="e.g. 555-0123" autoComplete="off" className="border border-[#8c8f94] rounded-[3px] px-3 py-1.5 w-full max-w-sm block focus:border-[#5e3fde] outline-none text-[13px]" />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider block">Zelle QR Code Image</label>
+                      <div className="flex items-start gap-4">
+                        <div className="flex flex-col items-center justify-center w-24 h-24 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 overflow-hidden relative group">
+                          {(settings as any).zelleQrCodeUrl ? (
+                            <img src={(settings as any).zelleQrCodeUrl} alt="Zelle QR Code" className="w-full h-full object-contain p-2" />
+                          ) : (
+                            <ImageIcon className="text-gray-300" size={24} />
+                          )}
+                        </div>
+                        <div>
+                          <button
+                            type="button"
+                            onClick={() => { setActiveImageField('zelleQrCodeUrl'); setIsMediaModalOpen(true); }}
+                            className="flex items-center gap-2 px-3 py-1.5 border border-gray-300 rounded hover:bg-gray-50 text-[13px] font-medium text-gray-700 transition-colors mb-2"
+                          >
+                            <FileImage size={14} /> Choose Image
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setSettings(s => ({ ...s, zelleQrCodeUrl: '' }))}
+                            className="text-[11px] text-red-500 hover:text-red-700 font-medium"
+                          >
+                            Remove Image
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
               </tbody>
             </table>
           </div>
@@ -410,7 +456,7 @@ export default function EcommerceSettingsPage() {
                     <div>
                       <button
                         type="button"
-                        onClick={() => setIsMediaModalOpen(true)}
+                        onClick={() => { setActiveImageField('emailLogoUrl'); setIsMediaModalOpen(true); }}
                         className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm font-medium text-gray-700 transition-colors mb-2"
                       >
                         <FileImage size={16} /> Choose Logo

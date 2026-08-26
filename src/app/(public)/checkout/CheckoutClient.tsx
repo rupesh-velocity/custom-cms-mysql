@@ -24,7 +24,7 @@ interface CheckoutClientProps {
   initialName: string;
 }
 
-function CheckoutForm({ item, isAuthenticated, initialEmail, initialName, clientSecret, allowedCountries }: CheckoutClientProps & { clientSecret: string, allowedCountries?: string[] }) {
+function CheckoutForm({ item, isAuthenticated, initialEmail, initialName, clientSecret, allowedCountries, zelleEnabled, zellePhone, zelleQrCodeUrl }: CheckoutClientProps & { clientSecret: string, allowedCountries?: string[], zelleEnabled?: boolean, zellePhone?: string, zelleQrCodeUrl?: string }) {
   const stripe = useStripe();
   const elements = useElements();
   const router = useRouter();
@@ -212,7 +212,7 @@ function CheckoutForm({ item, isAuthenticated, initialEmail, initialName, client
                 <span className={`font-medium ${paymentMethod === 'stripe' ? 'text-[#773dbe]' : 'text-gray-700'}`}>Credit/Debit Card</span>
               </label>
               
-              <label className={`cursor-pointer flex items-center gap-3 p-4 border rounded-xl transition-all ${paymentMethod === 'zelle' ? 'border-[#773dbe] bg-indigo-50 ring-1 ring-[#773dbe]' : 'border-gray-200 hover:border-gray-300 bg-white'}`}>
+              {zelleEnabled && (<label className={`cursor-pointer flex items-center gap-3 p-4 border rounded-xl transition-all ${paymentMethod === 'zelle' ? 'border-[#773dbe] bg-indigo-50 ring-1 ring-[#773dbe]' : 'border-gray-200 hover:border-gray-300 bg-white'}`}>
                 <input 
                   type="radio" 
                   name="paymentMethod" 
@@ -222,7 +222,7 @@ function CheckoutForm({ item, isAuthenticated, initialEmail, initialName, client
                 />
                 <Smartphone size={20} className={paymentMethod === 'zelle' ? 'text-[#773dbe]' : 'text-gray-400'} />
                 <span className={`font-medium ${paymentMethod === 'zelle' ? 'text-[#773dbe]' : 'text-gray-700'}`}>Pay with Zelle</span>
-              </label>
+              </label>)}
             </div>
 
             {/* Conditional Payment UI */}
@@ -233,19 +233,23 @@ function CheckoutForm({ item, isAuthenticated, initialEmail, initialName, client
             ) : (
               <div className="p-6 border border-[#773dbe] rounded-lg bg-indigo-50/30 mt-4 space-y-6">
                 <div className="flex flex-col items-center text-center max-w-sm mx-auto">
-                  <div className="bg-white p-3 rounded-2xl shadow-sm border border-gray-200 flex justify-center mb-6 w-full max-w-[240px]">
-                    <img src={`${BASE_PATH}/zelle-qr-code.png`} alt="Zelle QR Code" className="w-full h-auto object-contain rounded-xl" />
-                  </div>
+                  {zelleQrCodeUrl ? (
+                    <div className="bg-white p-3 rounded-2xl shadow-sm border border-gray-200 flex justify-center mb-6 w-full max-w-[240px]">
+                      <img src={zelleQrCodeUrl} alt="Zelle QR Code" className="w-full h-auto object-contain rounded-xl" />
+                    </div>
+                  ) : null}
                   <h4 className="font-bold text-gray-900 text-xl mb-2">Manual Zelle Payment</h4>
                   <p className="text-gray-600 text-sm" style={{ marginBottom: '24px' }}>
                     To complete your order, open your banking app and send exactly <strong className="text-lg text-[#773dbe]">${item.price}</strong> via Zelle to:
                   </p>
-                  <div className="bg-white px-6 py-4 rounded-xl border-2 border-dashed border-[#773dbe] font-mono text-2xl font-bold text-gray-900 shadow-sm w-full tracking-widest" style={{ marginBottom: '24px' }}>
-                    520-440-5326
+                  <div className="bg-white px-6 py-4 rounded-xl border-2 border-dashed border-[#773dbe] font-mono text-xl md:text-2xl font-bold text-gray-900 shadow-sm w-full tracking-wider" style={{ marginBottom: '24px' }}>
+                    {zellePhone || 'No phone number provided'}
                   </div>
-                  <p className="text-gray-500 text-xs italic">
-                    Tip: You can easily scan the QR code above using your Zelle app to auto-fill the details.
-                  </p>
+                  {zelleQrCodeUrl && (
+                    <p className="text-gray-500 text-xs italic">
+                      Tip: You can easily scan the QR code above using your Zelle app to auto-fill the details.
+                    </p>
+                  )}
                 </div>
                 
                 <hr className="border-gray-200" />
@@ -321,6 +325,9 @@ export default function CheckoutClient(props: CheckoutClientProps) {
   const [clientSecret, setClientSecret] = useState('');
   const [stripePromise, setStripePromise] = useState<Promise<Stripe | null> | null>(null);
   const [allowedCountries, setAllowedCountries] = useState<string[] | undefined>(undefined);
+  const [zelleEnabled, setZelleEnabled] = useState(false);
+  const [zellePhone, setZellePhone] = useState('');
+  const [zelleQrCodeUrl, setZelleQrCodeUrl] = useState('');
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -336,6 +343,9 @@ export default function CheckoutClient(props: CheckoutClientProps) {
         } else {
           setClientSecret(data.clientSecret);
           setAllowedCountries(data.allowedCountries);
+          setZelleEnabled(data.zelleEnabled);
+          setZellePhone(data.zellePhone);
+          setZelleQrCodeUrl(data.zelleQrCodeUrl);
           setStripePromise(loadStripe(data.publishableKey));
         }
       })
@@ -361,7 +371,7 @@ export default function CheckoutClient(props: CheckoutClientProps) {
 
   return (
     <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: 'stripe' } }}>
-      <CheckoutForm {...props} clientSecret={clientSecret} allowedCountries={allowedCountries} />
+      <CheckoutForm {...props} clientSecret={clientSecret} allowedCountries={allowedCountries} zelleEnabled={zelleEnabled} zellePhone={zellePhone} zelleQrCodeUrl={zelleQrCodeUrl} />
     </Elements>
   );
 }

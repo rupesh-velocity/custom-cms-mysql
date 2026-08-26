@@ -1,27 +1,17 @@
-'use client';
-
-import { useEffect } from 'react';
-import { BASE_PATH } from '@/lib/config';
 import BodyClassInjector from '@/components/BodyClassInjector';
-import PageHeroBanner from '@/components/PageHeroBanner';
+import SiteHeader from '@/components/SiteHeader';
+import SiteFooter from '@/components/SiteFooter';
+import NotFoundTracker from '@/components/NotFoundTracker';
 
 export default function NotFound() {
-  useEffect(() => {
-    const url = window.location.pathname + window.location.search;
-    fetch(`${BASE_PATH}/api/seo/not-found-logs/log`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url }),
-    }).catch(() => {});
-  }, []);
-
   return (
     <>
+      <NotFoundTracker />
       <BodyClassInjector type="error404" />
-      <PageHeroBanner title="Page Not Found" />
-      <div className="w-full bg-white text-center flex flex-col items-center justify-center" style={{ padding: '100px 20px', minHeight: '50vh' }}>
+      <SiteHeader />
+      <main className="flex-1 w-full min-h-[50vh] flex flex-col items-center justify-center bg-white" style={{ padding: '100px 20px' }}>
         <h2 className="font-bold text-gray-900 font-outfit" style={{ fontSize: '140px', lineHeight: '1', marginBottom: '30px' }}>404</h2>
-        <p className="text-gray-600 text-xl max-w-lg mx-auto leading-relaxed" style={{ marginBottom: '40px' }}>
+        <p className="text-gray-600 text-xl max-w-lg mx-auto leading-relaxed text-center" style={{ marginBottom: '40px' }}>
           The page you are looking for does not exist or has been moved.
         </p>
         <a
@@ -30,7 +20,8 @@ export default function NotFound() {
         >
           Return Home
         </a>
-      </div>
+      </main>
+      <SiteFooter />
     </>
   );
 }

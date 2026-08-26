@@ -78,6 +78,9 @@ export async function POST(req: Request) {
       clientSecret: paymentIntent.client_secret,
       publishableKey: publicKey,
       allowedCountries,
+      zelleEnabled: settingsObj.zelleEnabled === 'true',
+      zellePhone: settingsObj.zellePhone || '',
+      zelleQrCodeUrl: settingsObj.zelleQrCodeUrl || '',
     });
   } catch (error: any) {
     console.error('Stripe PaymentIntent Error:', error);

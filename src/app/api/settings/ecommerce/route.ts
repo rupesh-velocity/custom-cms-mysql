@@ -8,6 +8,7 @@ export async function GET() {
     const allowedKeys = [
       'stripeEnabled', 'stripeMode', 'stripeTestPublicKey', 'stripeTestSecretKey',
       'stripeLivePublicKey', 'stripeLiveSecretKey', 'paypalEnabled', 'paypalClientId',
+      'zelleEnabled', 'zellePhone', 'zelleQrCodeUrl',
       'currency', 'adminEmail', 'storeAddress1', 'storeAddress2', 'storeCity',
       'storeState', 'storeZip', 'storeCountry', 'sellingLocation', 'specificSellingCountries',
       'storePhone', 'storePublicEmail', 'enableTaxes', 'emailSenderName', 'emailLogoUrl',

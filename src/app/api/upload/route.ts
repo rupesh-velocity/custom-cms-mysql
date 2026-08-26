@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { join } from 'path';
 import { existsSync, mkdirSync, writeFileSync } from 'fs';
 import { BASE_PATH } from '@/lib/config';
+import sharp from 'sharp';
 
 export async function POST(req: Request) {
   try {
@@ -13,12 +14,23 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
     }
     const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
+    let buffer = Buffer.from(bytes);
     
     const baseName = file.name.replace(/\.[^/.]+$/, "").replace(/[^a-zA-Z0-9_-]/g, "-");
-    const extension = file.name.includes('.') ? file.name.substring(file.name.lastIndexOf('.')) : '';
+    let extension = file.name.includes('.') ? file.name.substring(file.name.lastIndexOf('.')) : '';
+    let mimeType = file.type || 'application/octet-stream';
     
-    let finalFileName = file.name;
+    if (mimeType.startsWith('image/') && mimeType !== 'image/svg+xml') {
+      try {
+        buffer = await sharp(buffer).webp({ quality: 80 }).toBuffer();
+        extension = '.webp';
+        mimeType = 'image/webp';
+      } catch (err) {
+        console.error('Image optimization failed:', err);
+      }
+    }
+    
+    let finalFileName = `${baseName}${extension}`;
     let publicId = baseName;
     let counter = 1;
 
@@ -52,7 +64,7 @@ export async function POST(req: Request) {
       data: {
         filename: finalFileName,
         url: finalUrl,
-        mimeType: file.type || 'application/octet-stream',
+        mimeType: mimeType,
         size: buffer.length,
       }
     });
