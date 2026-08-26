@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import { BASE_PATH } from '@/lib/config';
 import { prisma } from '@/lib/prisma';
 import { cookies } from 'next/headers';
 import BlogSidebar from '@/components/BlogSidebar';
