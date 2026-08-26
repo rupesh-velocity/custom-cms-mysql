@@ -99,6 +99,7 @@ export default async function CategoryPage(props: { params: Promise<{ slug: stri
       <div className="min-h-screen w-full pb-16">
         <PageHeroBanner 
         title={category.name} 
+        image={`${BASE_PATH}/uploads/2026/08/home-hero-img.png`}
         description="Category"
       />
 
