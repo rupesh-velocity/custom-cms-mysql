@@ -9,7 +9,7 @@ import DesktopMenu from '@/components/DesktopMenu';
 
 // Helper to build a nested tree from the flat items list
 function buildTree(items: any[], parentId: number | null = null, homepageSlug: string = ''): any[] {
-  return items
+  return (items || [])
     .filter(item => item.parentId === parentId)
     .map(item => {
       // If the URL matches the homepage slug, change it to "/"
