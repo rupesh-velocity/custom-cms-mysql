@@ -2,10 +2,13 @@ import BodyClassInjector from '@/components/BodyClassInjector';
 import SiteHeader from '@/components/SiteHeader';
 import SiteFooter from '@/components/SiteFooter';
 import NotFoundTracker from '@/components/NotFoundTracker';
+import { RootHeadSettings, RootBodyScripts } from '@/components/RootSettings';
 
 export default function NotFound() {
   return (
     <>
+      <RootHeadSettings />
+      <RootBodyScripts position="top" />
       <NotFoundTracker />
       <BodyClassInjector type="error404" />
       <SiteHeader />
@@ -22,6 +25,7 @@ export default function NotFound() {
         </a>
       </main>
       <SiteFooter />
+      <RootBodyScripts position="bottom" />
     </>
   );
 }
