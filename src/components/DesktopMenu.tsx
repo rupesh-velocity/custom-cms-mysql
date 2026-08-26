@@ -57,7 +57,7 @@ function MenuNode({ node, depth = 0, pathname }: { node: any, depth?: number, pa
           <ChevronDown size={14} className="opacity-70 transition-transform" />
         </Link>
         
-        <div className="absolute top-full left-0 pt-2 hidden group-hover:block min-w-[200px] z-50">
+        <div className="absolute top-full left-0 pt-2 hidden group-hover:block z-50">
           <ul className="sub-menu bg-white border border-gray-100 shadow-xl rounded-lg py-2 m-0 p-0">
             {node.children.map((child: any) => (
               <MenuNode key={child.id} node={child} depth={depth + 1} pathname={pathname} />
@@ -75,7 +75,7 @@ function MenuNode({ node, depth = 0, pathname }: { node: any, depth?: number, pa
         <ChevronDown size={14} className="opacity-70 -rotate-90" />
       </Link>
       
-      <div className="absolute top-0 left-full ml-1 hidden group-hover:block min-w-[200px] z-50">
+      <div className="absolute top-0 left-full ml-1 hidden group-hover:block z-50">
         <div className="absolute -left-1 w-1 top-0 bottom-0"></div>
         <ul className="sub-menu bg-white border border-gray-100 shadow-xl rounded-lg py-2 m-0 p-0">
           {node.children.map((child: any) => (

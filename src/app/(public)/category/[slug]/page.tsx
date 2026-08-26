@@ -100,7 +100,7 @@ export default async function CategoryPage(props: { params: Promise<{ slug: stri
         <PageHeroBanner 
         title={category.name} 
         image={`${BASE_PATH}/uploads/2026/08/home-hero-img.png`}
-        description="Category"
+        
       />
 
       <div className="max-w-[1200px] mx-auto px-4 flex flex-col lg:flex-row gap-12 mt-12">
