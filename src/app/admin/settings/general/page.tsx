@@ -34,31 +34,55 @@ export default function GeneralSettings() {
   
   const [modalTarget, setModalTarget] = useState<'site_icon' | 'site_logo' | 'footer_logo' | 'social_icon' | null>(null);
   const [activeSocialId, setActiveSocialId] = useState<string | null>(null);
-
-  useEffect(() => {
-    fetch(`${BASE_PATH}/api/settings`)
-      .then(res => res.json())
-      .then(data => {
-        setSettings({
-          site_title: data.site_title || '',
-          site_tagline: data.site_tagline || '',
-          site_icon: data.site_icon || '',
-          site_logo: data.site_logo || '',
-          footer_logo: data.footer_logo || '',
-          copyright_text: data.copyright_text || '',
-          enable_physical_products: data.enable_physical_products || 'false',
-        });
-        
-        if (data.social_icons) {
-          try {
-            setSocialIcons(JSON.parse(data.social_icons));
-          } catch (e) {
-            console.error('Failed to parse social icons');
-          }
+useEffect(() => {
+  const loadSettings = async () => {
+    try {
+      const res = await fetch(
+        `${BASE_PATH}/api/settings?_=${Date.now()}`,
+        {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+          },
         }
-        setIsLoading(false);
+      );
+
+      if (!res.ok) {
+        throw new Error('Failed to load settings');
+      }
+
+      const data = await res.json();
+
+      setSettings({
+        site_title: data.site_title || '',
+        site_tagline: data.site_tagline || '',
+        site_icon: data.site_icon || '',
+        site_logo: data.site_logo || '',
+        footer_logo: data.footer_logo || '',
+        copyright_text: data.copyright_text || '',
+        enable_physical_products: data.enable_physical_products || 'false',
       });
-  }, []);
+
+      if (data.social_icons) {
+        try {
+          setSocialIcons(JSON.parse(data.social_icons));
+        } catch (error) {
+          console.error('Failed to parse social icons:', error);
+          setSocialIcons([]);
+        }
+      } else {
+        setSocialIcons([]);
+      }
+    } catch (error) {
+      console.error('Failed to load settings:', error);
+      toast.error('Failed to load settings');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  loadSettings();
+}, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
