@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Plus, Edit2, Trash2, X, ExternalLink } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { BASE_PATH } from '@/lib/config';
@@ -22,6 +22,7 @@ type Redirection = {
 export default function RedirectionsPage() {
   const [redirections, setRedirections] = useState<Redirection[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const didInitialLoad = useRef(false);
   
   // Filters
   const [activeFilter, setActiveFilter] = useState<'All' | 'Active' | 'Inactive' | 'Trash'>('All');
@@ -44,17 +45,22 @@ export default function RedirectionsPage() {
   const [status, setStatus] = useState(true);
 
   useEffect(() => {
+    if (didInitialLoad.current) return;
+    didInitialLoad.current = true;
     fetchRedirections();
   }, []);
 
   const fetchRedirections = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch(`${BASE_PATH}/api/redirections`);
-      const data = await res.json();
+      const res = await fetch(`${BASE_PATH}/api/redirections`, { cache: 'no-store' });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(data?.error || 'Failed to load redirections');
+      if (!Array.isArray(data)) throw new Error('Invalid redirections response');
       setRedirections(data);
     } catch (err) {
-      toast.error('Failed to load redirections');
+      console.error(err);
+      toast.error(err instanceof Error ? err.message : 'Failed to load redirections');
     } finally {
       setIsLoading(false);
     }
@@ -92,7 +98,7 @@ export default function RedirectionsPage() {
     
     setIsSubmitting(true);
     try {
-      const url = editingId ? `/api/redirections/${editingId}` : '/api/redirections';
+      const url = editingId ? `${BASE_PATH}/api/redirections/${editingId}` : `${BASE_PATH}/api/redirections`;
       const method = editingId ? 'PUT' : 'POST';
       
       const res = await fetch(url, {
@@ -160,13 +166,18 @@ export default function RedirectionsPage() {
     if (!window.confirm('Are you sure you want to permanently delete this redirection?')) return;
     
     try {
-      const res = await fetch(`${BASE_PATH}/api/redirections/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Failed to delete');
+      const res = await fetch(`${BASE_PATH}/api/redirections/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'delete_permanently', sourceUrl: redirections.find(r=>r.id===id)?.sourceUrl, destinationUrl: redirections.find(r=>r.id===id)?.destinationUrl })
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(data?.details || data?.error || 'Failed to delete');
       
       toast.success('Redirection deleted permanently');
       fetchRedirections();
     } catch (err) {
-      toast.error('Failed to delete redirection');
+      toast.error(err instanceof Error ? err.message : 'Failed to delete redirection');
     }
   };
 
@@ -204,7 +215,12 @@ export default function RedirectionsPage() {
             body: JSON.stringify({ isTrashed: false })
           });
         } else if (bulkAction === 'delete_permanently') {
-          await fetch(`${BASE_PATH}/api/redirections/${id}`, { method: 'DELETE' });
+          const res = await fetch(`${BASE_PATH}/api/redirections/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'delete_permanently', sourceUrl: redirections.find(r=>r.id===id)?.sourceUrl, destinationUrl: redirections.find(r=>r.id===id)?.destinationUrl })
+          });
+          if (!res.ok) throw new Error('Failed to delete redirection');
         } else if (bulkAction === 'activate') {
           await fetch(`${BASE_PATH}/api/redirections/${id}`, {
             method: 'PUT',

@@ -16,10 +16,7 @@ export default function FormSettingsEditor({ form }: { form: any }) {
       successAction: 'message',
       successMessage: 'Your submission has been received successfully.',
       redirectUrl: '',
-      enableHoneypot: true,
-      enableRecaptchaV3: false,
-      recaptchaSiteKey: '',
-      recaptchaSecretKey: '', hideTitle: false
+      hideTitle: false
     }
   );
   const [isSaving, setIsSaving] = useState(false);
@@ -27,11 +24,18 @@ export default function FormSettingsEditor({ form }: { form: any }) {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      // Preserve existing fields
+      // Spam protection is global under Forms > Settings, never per-form.
+      const cleanSettings = { ...settings };
+      delete cleanSettings.enableHoneypot;
+      delete cleanSettings.enableRecaptchaV3;
+      delete cleanSettings.recaptchaSiteKey;
+      delete cleanSettings.recaptchaSecretKey;
+
+      // Preserve existing form-specific fields.
       const payload: any = { 
         status, 
         notificationEmail, 
-        settings,
+        settings: cleanSettings,
         fields: typeof form.fields === 'string' ? JSON.parse(form.fields || '[]') : form.fields,
         title: form.title
       };
@@ -96,63 +100,6 @@ export default function FormSettingsEditor({ form }: { form: any }) {
                 <p className="text-xs text-gray-500">Do not display the form title on the frontend.</p>
               </div>
             </label>
-          </div>
-        </div>
-
-        <div className="border-t border-gray-100 pt-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Spam Protection</h3>
-          
-          <div className="space-y-4 max-w-xl">
-            <label className="flex items-start gap-3 cursor-pointer">
-              <input 
-                type="checkbox" 
-                checked={settings.enableHoneypot}
-                onChange={e => setSettings({...settings, enableHoneypot: e.target.checked})}
-                className="rounded text-[#5e3fde] focus:ring-[#5e3fde] mt-1"
-              />
-              <div>
-                <span className="text-sm font-medium text-gray-700 block">Honeypot (Invisible Trap)</span>
-                <p className="text-xs text-gray-500">Injects a hidden field. If filled by a bot, submission is silently rejected.</p>
-              </div>
-            </label>
-
-            <label className="flex items-start gap-3 cursor-pointer mt-4">
-              <input 
-                type="checkbox" 
-                checked={settings.enableRecaptchaV3}
-                onChange={e => setSettings({...settings, enableRecaptchaV3: e.target.checked})}
-                className="rounded text-[#5e3fde] focus:ring-[#5e3fde] mt-1"
-              />
-              <div>
-                <span className="text-sm font-medium text-gray-700 block">Google reCAPTCHA v3</span>
-                <p className="text-xs text-gray-500">Invisible score-based bot protection. Requires backend verification.</p>
-              </div>
-            </label>
-            
-            {settings.enableRecaptchaV3 && (
-              <div className="mt-3 ml-7 space-y-3 bg-gray-50 p-4 rounded-lg border border-gray-200">
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Site Key</label>
-                  <input 
-                    type="text" 
-                    value={settings.recaptchaSiteKey || ''}
-                    onChange={e => setSettings({...settings, recaptchaSiteKey: e.target.value})}
-                    placeholder="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"
-                    className="w-full px-3 py-1.5 bg-white border border-gray-200 rounded text-sm outline-none focus:ring-1 focus:ring-[#5e3fde]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Secret Key</label>
-                  <input 
-                    type="password" 
-                    value={settings.recaptchaSecretKey || ''}
-                    onChange={e => setSettings({...settings, recaptchaSecretKey: e.target.value})}
-                    placeholder="••••••••••••••••••••••••••••••••••••••••"
-                    className="w-full px-3 py-1.5 bg-white border border-gray-200 rounded text-sm outline-none focus:ring-1 focus:ring-[#5e3fde]"
-                  />
-                </div>
-              </div>
-            )}
           </div>
         </div>
 

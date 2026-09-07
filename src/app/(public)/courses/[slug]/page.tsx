@@ -43,6 +43,7 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
   const token = cookieStore.get('cms_session')?.value;
   
   let userId: number | null = null;
+  let userRole = '';
   
   if (token) {
     try {
@@ -51,14 +52,15 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
       );
       const { payload } = await jwtVerify(token, secret);
       userId = payload.id as number;
+      userRole = String(payload.role || '');
     } catch (error) {
       // Invalid token, treat as unauthenticated
     }
   }
 
   // 3. Verify Access
-  let hasAccess = false;
-  if (userId) {
+  let hasAccess = ['Administrator', 'Admin'].includes(userRole);
+  if (userId && !hasAccess) {
     const access = await prisma.userCourseAccess.findFirst({
       where: {
         userId: userId,

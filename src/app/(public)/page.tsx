@@ -1,4 +1,4 @@
-﻿import Link from 'next/link';
+import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import { notFound, redirect, permanentRedirect } from 'next/navigation';
 import { optimizeHtmlImages } from '@/lib/html-optimizer';
@@ -8,6 +8,7 @@ import BlogSidebar from '@/components/BlogSidebar';
 import { processSchemaVariables, formatSchemaGraph, generateBreadcrumbSchema } from '@/lib/schema-parser';
 import ContentRenderer from '@/components/ContentRenderer';
 import BodyClassInjector from '@/components/BodyClassInjector';
+import { buildPostUrl, buildCategoryUrl } from '@/lib/permalinks';
 export const dynamic = 'force-dynamic';
 
 import { resolveSeoVariables } from '@/lib/seo-variables';
@@ -24,6 +25,7 @@ export async function generateMetadata() {
 
   const seoContext: any = {
     type: 'website',
+    url: '/',
   };
 
   if (settings.homepage_displays === 'static_page' && settings.homepage_page_id) {
@@ -43,6 +45,8 @@ export async function generateMetadata() {
       seoContext.postDate = page.publishedAt ? new Date(page.publishedAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : page.createdAt ? new Date(page.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : '';
       seoContext.modifiedDate = page.updatedAt ? new Date(page.updatedAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : '';
       seoContext.noIndex = page.noIndex;
+      seoContext.robots = page.seoRobots;
+      seoContext.advancedRobots = page.seoAdvancedRobots;
       seoContext.image = page.featuredImage;
       seoContext.isPost = false;
     }
@@ -57,7 +61,7 @@ export default async function Home(props: { searchParams: Promise<{ [key: string
   const settingsRecords = await prisma.setting.findMany({
     where: {
       OR: [
-        { key: { in: ['homepage_displays', 'homepage_page_id', 'blog_pages_at_most', 'feed_include', 'site_title', 'site_tagline'] } },
+        { key: { in: ['homepage_displays', 'homepage_page_id', 'blog_pages_at_most', 'feed_include', 'site_title', 'site_tagline', 'permalink_post_base', 'permalink_category_base', 'permalink_tag_base', 'permalink_trailing_slash'] } },
         { key: { startsWith: 'seo_' } }
       ]
     }
@@ -223,7 +227,7 @@ export default async function Home(props: { searchParams: Promise<{ [key: string
               {posts.map((post: any) => (
                 <article key={post.id} className="blog-post-card">
                   {post.featuredImage && (
-                    <Link href={`/${post.slug}`} className="blog-post-img-wrap">
+                    <Link href={buildPostUrl(post.slug, settings)} className="blog-post-img-wrap">
                       <img src={post.featuredImage} alt={post.title} className="blog-post-img" />
                       <div className="blog-post-img-spacer"></div>
                     </Link>
@@ -232,11 +236,11 @@ export default async function Home(props: { searchParams: Promise<{ [key: string
                     <div className="blog-post-category">
                       {post.categories?.map((cat: any, i: number) => (
                         <span key={cat.id}>
-                          <Link href={`/category/${cat.slug}`}>{cat.name}</Link>
+                          <Link href={buildCategoryUrl(cat.slug, settings)}>{cat.name}</Link>
                         </span>
                       ))}
                     </div>
-                    <Link href={`/${post.slug}`} className="block group">
+                    <Link href={buildPostUrl(post.slug, settings)} className="block group">
                       <h2 className="blog-post-title">
                         {post.title}
                       </h2>
@@ -254,14 +258,14 @@ export default async function Home(props: { searchParams: Promise<{ [key: string
                     {post.visibility === 'Password Protected' && cookieStore.get(`post_pass_${post.id}`)?.value !== post.password ? (
                       <div className="blog-post-excerpt">
                         <p>This content is password protected.</p>
-                        <Link href={`/${post.slug}`} className="blog-post-read-more">
+                        <Link href={buildPostUrl(post.slug, settings)} className="blog-post-read-more">
                           Enter Password &rarr;
                         </Link>
                       </div>
                     ) : (
                       <div className="blog-post-excerpt">
                         <p>{(post.contentText || '').substring(0, 180)}...</p>
-                        <Link href={`/${post.slug}`} className="blog-post-read-more">
+                        <Link href={buildPostUrl(post.slug, settings)} className="blog-post-read-more">
                           Read more &rarr;
                         </Link>
                       </div>

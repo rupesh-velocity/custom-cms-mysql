@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { isAdministratorSession } from '@/lib/admin-auth';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -8,9 +9,16 @@ export async function GET() {
   try {
     const settings = await prisma.setting.findMany();
 
+    const isAdmin = await isAdministratorSession();
+
+    const sensitive = new Set([
+      'smtp_pass','smtp_user','twilio_auth_token','twilio_account_sid','twilio_verify_service_sid',
+      'google_reviews_api_key','stripe_secret_key','zelle_account_email','forms_recaptcha_secret_key'
+    ]);
+
     const settingsObj = settings.reduce(
       (acc: Record<string, string>, setting) => {
-        acc[setting.key] = setting.value;
+        if (isAdmin || !sensitive.has(setting.key)) acc[setting.key] = setting.value || '';
         return acc;
       },
       {}
@@ -40,6 +48,7 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  if (!(await isAdministratorSession())) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   try {
     const data = await req.json();
 

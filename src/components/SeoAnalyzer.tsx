@@ -54,7 +54,7 @@ interface SeoAnalyzerProps {
 const resolveVariables = (str: string, props: Partial<SeoAnalyzerProps>) => {
   if (typeof str !== 'string') return str;
   
-  const siteName = props.globalSettings?.site_title || 'Custom CMS';
+  const siteName = String(props.globalSettings?.site_title || '').trim();
   const siteUrl = props.globalSettings?.site_url || 'http://localhost:3000';
   const siteIcon = props.globalSettings?.site_icon || `${siteUrl}/logo.png`;
   const defaultThumbnail = props.featuredImage || props.globalSettings?.seo_og_thumbnail || `${siteUrl}/thumbnail.png`;
@@ -403,7 +403,7 @@ const schemaFieldDefinitions: Record<string, SchemaField[]> = {
 };
 
 const CheckItem = ({ check }: { check: any }) => (
-  <div className="flex items-start gap-3 py-2 text-[13px]">
+  <div className="flex items-start gap-3 py-2.5 text-[13px]">
     <div className="mt-0.5 shrink-0">
       {check.pass ? <CheckCircle2 className="w-[18px] h-[18px] text-[#22c55e] fill-[#22c55e]/20" /> : <XCircle className="w-[18px] h-[18px] text-[#ef4444] fill-[#ef4444]/20" />}
     </div>
@@ -413,19 +413,19 @@ const CheckItem = ({ check }: { check: any }) => (
 );
 
 const Accordion = ({ title, errors, expanded, onToggle, checks }: any) => (
-  <div className="border-t border-[#e2e4e7]">
-    <button type="button" onClick={onToggle} className="w-full flex items-center justify-between p-4 bg-[#f9f9f9] hover:bg-gray-50 transition-colors">
+  <div className="border-t border-gray-100">
+    <button type="button" onClick={onToggle} className="w-full flex items-center justify-between px-5 py-4 bg-white hover:bg-gray-50 transition-colors">
       <div className="flex items-center gap-3">
         <span className="font-semibold text-[#1d2327]">{title}</span>
         {errors > 0 ? (
-          <span className="bg-[#ffaba8] text-white text-[11px] font-bold px-2 py-0.5 rounded-full">× {errors} Errors</span>
+          <span className="bg-red-50 text-red-600 border border-red-100 text-[11px] font-semibold px-2.5 py-1 rounded-full">× {errors} Errors</span>
         ) : (
-          <span className="bg-[#22c55e] text-white text-[11px] font-bold px-2 py-0.5 rounded-full">✓ Good</span>
+          <span className="bg-green-50 text-green-700 border border-green-100 text-[11px] font-semibold px-2.5 py-1 rounded-full">✓ Good</span>
         )}
       </div>
       {expanded ? <ChevronUp className="w-5 h-5 text-gray-500" /> : <ChevronDown className="w-5 h-5 text-gray-500" />}
     </button>
-    {expanded && <div className="p-4 bg-white space-y-1">{checks.map((c: any, i: number) => <CheckItem key={i} check={c} />)}</div>}
+    {expanded && <div className="px-5 pb-5 bg-white space-y-1">{checks.map((c: any, i: number) => <CheckItem key={i} check={c} />)}</div>}
   </div>
 );
 
@@ -883,9 +883,11 @@ export default function SeoAnalyzer({
 
   const headings: string[] = fullContent.match(/<h[2-6][^>]*>([\s\S]*?)<\/h[2-6]>/ig) || [];
   const keywordInH2 = hasKeyword && headings.some(h => h.toLowerCase().includes(safeKeyword)); 
-  const keywordInImageAlt = hasKeyword && safeContent.includes(`alt="`) && safeContent.includes(safeKeyword);
-  
-  const keywordCount = hasKeyword ? (safeContent.match(new RegExp(safeKeyword, 'g')) || []).length : 0;
+  const imageAltTexts = Array.from(fullContent.matchAll(/alt=[\"']([^\"']*)[\"']/gi)).map(match => String(match[1] || '').toLowerCase());
+  const keywordInImageAlt = hasKeyword && imageAltTexts.some(alt => alt.includes(safeKeyword));
+
+  const escapedKeyword = safeKeyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const keywordCount = hasKeyword ? (safeContent.match(new RegExp(escapedKeyword, 'g')) || []).length : 0;
   const keywordDensity = wordCount > 0 ? ((keywordCount / wordCount) * 100).toFixed(1) : "0.0";
   const densityGood = parseFloat(keywordDensity) > 0.5 && parseFloat(keywordDensity) < 2.5;
   
@@ -894,11 +896,13 @@ export default function SeoAnalyzer({
   let hasInternalLinks = false;
   let hasOutboundLinks = false;
   
+  const configuredSiteUrl = String(globalSettings?.site_url || '').replace(/\/$/, '');
   hrefMatches.forEach(match => {
-    const url = match.replace(/href="|"/ig, '');
-    if (url.startsWith('/') || url.startsWith(origin || 'http://localhost')) {
+    const url = match.replace(/href="|"/ig, '').trim();
+    if (!url || url.startsWith('#') || url.startsWith('mailto:') || url.startsWith('tel:')) return;
+    if (url.startsWith('/') || (configuredSiteUrl && url.startsWith(configuredSiteUrl))) {
       hasInternalLinks = true;
-    } else if (url.startsWith('http')) {
+    } else if (/^https?:\/\//i.test(url)) {
       hasOutboundLinks = true;
     }
   });
@@ -928,12 +932,13 @@ export default function SeoAnalyzer({
   ];
   const titleErrors = titleChecks.filter(c => !c.pass).length;
 
-  const hasToc = false; 
-  const hasShortParagraphs = !/(<p>[\s\S]*?<\/p>\s*){5,}/i.test(content); 
-  const hasMedia = /<(img|video|iframe)/i.test(content);
+  const hasToc = /(?:id|class)=[\"'][^\"']*(?:table-of-contents|toc)[^\"']*[\"']/i.test(content) || /\[toc\]/i.test(content);
+  const paragraphTexts = Array.from(content.matchAll(/<p[^>]*>([\s\S]*?)<\/p>/gi)).map(match => String(match[1] || '').replace(/<[^>]*>/g, ' ').trim()).filter(Boolean);
+  const hasShortParagraphs = paragraphTexts.length === 0 || paragraphTexts.every(text => text.split(/\s+/).filter(Boolean).length <= 150);
+  const hasMedia = /<(img|video|iframe)\b/i.test(content);
 
   const contentChecks = [
-    { pass: hasToc, text: "You don't seem to be using a Table of Contents plugin.", passedText: "You are using a Table of Contents plugin." },
+    { pass: hasToc, text: "A Table of Contents was not detected in the content.", passedText: "A Table of Contents was detected in the content." },
     { pass: hasShortParagraphs, text: "Your paragraphs are too long. Use short paragraphs.", passedText: "You are using short paragraphs." },
     { pass: hasMedia, text: "You are not using rich media like images or videos.", passedText: "You are using rich media." }
   ];
@@ -954,10 +959,10 @@ export default function SeoAnalyzer({
 
   const seoContext = {
     title,
-    siteName: liveSettings?.site_title || 'Velocity Consultancy',
+    siteName: String(liveSettings?.site_title || globalSettings?.site_title || '').trim(),
     separator: liveSettings?.seo_separator || '-',
     excerpt: content.replace(/<[^>]*>?/gm, '').substring(0, 160),
-    siteDesc: liveSettings?.site_tagline || 'Digital Marketing & Web Agency',
+    siteDesc: liveSettings?.site_tagline || globalSettings?.site_tagline || '',
     authorName: 'Admin', // Fallback for preview
     authorId: '1',
     category: 'Uncategorized', // Fallback for preview
@@ -980,10 +985,10 @@ export default function SeoAnalyzer({
   const resolvedDescLength = getResolvedLength(activeMetaDesc, seoContext);
 
   return (
-    <div className="w-full bg-white border border-[#c3c4c7] shadow-sm font-sans mb-8">
+    <div className="w-full bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden font-sans">
       {/* Meta Box Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-[#c3c4c7] bg-white">
-        <h2 className="text-[14px] font-semibold text-[#1d2327]">SEO</h2>
+      <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 bg-white">
+        <div><h2 className="text-[15px] font-semibold text-gray-900">SEO</h2><p className="text-xs text-gray-500 mt-0.5">Search appearance, metadata, schema and social sharing.</p></div>
         <div className="flex items-center gap-1 text-gray-500">
           <ChevronUp className="w-5 h-5 cursor-pointer hover:text-blue-600" />
           <ChevronDown className="w-5 h-5 cursor-pointer hover:text-blue-600" />
@@ -991,17 +996,17 @@ export default function SeoAnalyzer({
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-[#e2e4e7] bg-[#f9f9f9]">
-        <button type="button" onClick={() => setActiveTab('general')} className={`flex items-center gap-2 px-5 py-3 text-[13px] font-medium border-b-2 transition-colors ${activeTab === 'general' ? 'border-[#0085ba] text-[#0085ba] bg-white' : 'border-transparent text-[#50575e] hover:text-[#0085ba]'}`}><Cog className="w-4 h-4" /> General</button>
-        <button type="button" onClick={() => setActiveTab('advanced')} className={`flex items-center gap-2 px-5 py-3 text-[13px] font-medium border-b-2 transition-colors ${activeTab === 'advanced' ? 'border-[#0085ba] text-[#0085ba] bg-white' : 'border-transparent text-[#50575e] hover:text-[#0085ba]'}`}><Briefcase className="w-4 h-4" /> Advanced</button>
-        <button type="button" onClick={() => setActiveTab('schema')} className={`flex items-center gap-2 px-5 py-3 text-[13px] font-medium border-b-2 transition-colors ${activeTab === 'schema' ? 'border-[#0085ba] text-[#0085ba] bg-white' : 'border-transparent text-[#50575e] hover:text-[#0085ba]'}`}><FileText className="w-4 h-4" /> Schema</button>
-        <button type="button" onClick={() => setActiveTab('social')} className={`flex items-center gap-2 px-5 py-3 text-[13px] font-medium border-b-2 transition-colors ${activeTab === 'social' ? 'border-[#0085ba] text-[#0085ba] bg-white' : 'border-transparent text-[#50575e] hover:text-[#0085ba]'}`}><Share2 className="w-4 h-4" /> Social</button>
+      <div className="flex flex-wrap gap-1 px-4 pt-2 border-b border-gray-100 bg-gray-50/70">
+        <button type="button" onClick={() => setActiveTab('general')} className={`flex items-center gap-2 px-4 py-2.5 text-[13px] font-medium rounded-t-lg border-b-2 transition-colors ${activeTab === 'general' ? 'border-[#5e3fde] text-[#5e3fde] bg-white' : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-white/70'}`}><Cog className="w-4 h-4" /> General</button>
+        <button type="button" onClick={() => setActiveTab('advanced')} className={`flex items-center gap-2 px-4 py-2.5 text-[13px] font-medium rounded-t-lg border-b-2 transition-colors ${activeTab === 'advanced' ? 'border-[#5e3fde] text-[#5e3fde] bg-white' : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-white/70'}`}><Briefcase className="w-4 h-4" /> Advanced</button>
+        <button type="button" onClick={() => setActiveTab('schema')} className={`flex items-center gap-2 px-4 py-2.5 text-[13px] font-medium rounded-t-lg border-b-2 transition-colors ${activeTab === 'schema' ? 'border-[#5e3fde] text-[#5e3fde] bg-white' : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-white/70'}`}><FileText className="w-4 h-4" /> Schema</button>
+        <button type="button" onClick={() => setActiveTab('social')} className={`flex items-center gap-2 px-4 py-2.5 text-[13px] font-medium rounded-t-lg border-b-2 transition-colors ${activeTab === 'social' ? 'border-[#5e3fde] text-[#5e3fde] bg-white' : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-white/70'}`}><Share2 className="w-4 h-4" /> Social</button>
       </div>
 
       {/* Tab Content */}
       {activeTab === 'general' && (
         <div className="bg-white">
-          <div className="p-5 border-b border-[#e2e4e7]">
+          <div className="p-6 border-b border-gray-100">
             <h3 className="text-[13px] font-semibold text-[#1d2327] mb-3">Preview</h3>
             <div className="mb-4">
               <div className="text-[13px] text-[#006621] truncate mb-1">{origin || 'http://localhost:3000'}/{slug || 'sample-page'}/ <span className="text-gray-400">⋮</span></div>
@@ -1012,9 +1017,9 @@ export default function SeoAnalyzer({
                 {resolveSeoVariables(activeMetaDesc, seoContext) || "This is an example page. It's different from a blog post because it will stay in one place and will show up in your site navigation."}
               </div>
             </div>
-            <button type="button" onClick={() => setIsSnippetExpanded(!isSnippetExpanded)} className="bg-[#0085ba] text-white text-[13px] px-4 py-1.5 rounded-[3px] hover:bg-[#0073aa] transition-colors">Edit Snippet</button>
+            <button type="button" onClick={() => setIsSnippetExpanded(!isSnippetExpanded)} className="bg-[#5e3fde] text-white text-[13px] font-medium px-4 py-2 rounded-lg hover:bg-[#4b32b2] transition-colors">Edit Snippet</button>
             {isSnippetExpanded && (
-              <div className="mt-4 p-4 bg-[#f9f9f9] border border-[#e2e4e7] rounded-sm space-y-4">
+              <div className="mt-4 p-4 bg-gray-50 border border-gray-200 rounded-sm space-y-4">
                 <div className="mb-4">
                   <div className="flex items-center justify-between mb-1">
                     <label className="flex items-center gap-2 text-[13px] font-semibold text-[#1d2327]">
@@ -1031,7 +1036,7 @@ export default function SeoAnalyzer({
                       placeholder={fallbackTitle} 
                       value={seoTitle || ''} 
                       onChange={(e) => setSeoTitle && setSeoTitle(e.target.value)} 
-                      className="w-full border border-[#8c8f94] rounded-[3px] pl-3 pr-8 py-1.5 text-[13px] focus:border-[#0085ba] focus:ring-1 focus:ring-[#0085ba] outline-none" 
+                      className="w-full border border-gray-300 rounded-lg pl-3 pr-8 py-1.5 text-[13px] focus:border-[#5e3fde] focus:ring-2 focus:ring-[#5e3fde]/15 outline-none" 
                     />
                     <div className="absolute right-2 top-2">
                       <ChevronDown className="w-4 h-4 text-gray-400 cursor-pointer hover:text-gray-600" onClick={() => {
@@ -1071,7 +1076,7 @@ export default function SeoAnalyzer({
                       {Math.max(0, 75 - slug.length)} characters remaining
                     </span>
                   </div>
-                  <input type="text" value={slug} onChange={(e) => setSlug(e.target.value)} className="w-full border border-[#8c8f94] rounded-[3px] px-3 py-1.5 text-[13px] focus:border-[#0085ba] focus:ring-1 focus:ring-[#0085ba] outline-none" />
+                  <input type="text" value={slug} onChange={(e) => setSlug(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-[13px] focus:border-[#5e3fde] focus:ring-2 focus:ring-[#5e3fde]/15 outline-none" />
                   <div className={`h-1 mt-1 rounded-full ${slug.length > 0 && slug.length <= 75 ? 'bg-green-500' : slug.length > 75 ? 'bg-red-500' : 'bg-gray-300'}`} style={{ width: `${Math.min(100, (slug.length / 75) * 100)}%` }} />
                 </div>
                 <div className="mb-4">
@@ -1090,7 +1095,7 @@ export default function SeoAnalyzer({
                       value={metaDescription || ''} 
                       onChange={(e) => setMetaDescription && setMetaDescription(e.target.value)} 
                       rows={3} 
-                      className="w-full border border-[#8c8f94] rounded-[3px] pl-3 pr-8 py-1.5 text-[13px] focus:border-[#0085ba] focus:ring-1 focus:ring-[#0085ba] outline-none resize-y" 
+                      className="w-full border border-gray-300 rounded-lg pl-3 pr-8 py-1.5 text-[13px] focus:border-[#5e3fde] focus:ring-2 focus:ring-[#5e3fde]/15 outline-none resize-y" 
                     />
                     <div className="absolute right-2 top-2">
                       <ChevronDown className="w-4 h-4 text-gray-400 cursor-pointer hover:text-gray-600" onClick={() => {
@@ -1126,12 +1131,12 @@ export default function SeoAnalyzer({
               </div>
             )}
           </div>
-          <div className="p-5 border-b border-[#e2e4e7]">
+          <div className="p-6 border-b border-gray-100">
             <div className="flex items-center justify-between mb-2">
               <label className="flex items-center gap-1 text-[13px] font-semibold text-[#1d2327]">Focus Keyword <HelpCircle className="w-3.5 h-3.5 text-gray-400" /></label>
               <TrendingUp className="w-5 h-5 text-gray-400 p-0.5 border border-gray-300 rounded-sm shadow-sm" />
             </div>
-            <div className="relative flex items-center flex-wrap gap-1.5 border border-[#8c8f94] rounded-[3px] p-1.5 focus-within:border-[#0085ba] focus-within:ring-1 focus-within:ring-[#0085ba] pr-20 bg-white">
+            <div className="relative flex items-center flex-wrap gap-1.5 border border-gray-300 rounded-lg p-1.5 focus-within:border-[#5e3fde] focus-within:ring-1 focus-within:ring-[#0085ba] pr-20 bg-white">
               {keywordsArray.map((keyword, index) => {
                 const isPrimary = index === 0;
                 return (
@@ -1156,7 +1161,7 @@ export default function SeoAnalyzer({
       )}
 
       {activeTab === 'advanced' && (
-        <div className="bg-white p-5 space-y-6">
+        <div className="bg-white p-6 space-y-6">
           <div className="grid grid-cols-12 gap-4">
             <div className="col-span-4 text-[13px] font-semibold text-[#1d2327] uppercase">Robots Meta</div>
             <div className="col-span-8">
@@ -1196,7 +1201,7 @@ export default function SeoAnalyzer({
                                 newRobots = Array.from(new Set(newRobots));
                                 setSeoRobots(newRobots.join(','));
                               }}
-                              className="text-[#0085ba]" 
+                              className="text-[#5e3fde]" 
                             /> 
                             {robot} {isInherited && <span className="text-[10px] bg-gray-100 px-1 rounded text-gray-500 ml-1">Default</span>} <HelpCircle className="w-3.5 h-3.5 text-gray-400" />
                           </label>
@@ -1218,7 +1223,7 @@ export default function SeoAnalyzer({
               })()}
             </div>
           </div>
-          <hr className="border-[#e2e4e7]" />
+          <hr className="border-gray-200" />
           <div className="grid grid-cols-12 gap-4">
             <div className="col-span-4 text-[13px] font-semibold text-[#1d2327] uppercase">Advanced Robots Meta</div>
             <div className="col-span-8">
@@ -1273,7 +1278,7 @@ export default function SeoAnalyzer({
                              type="checkbox" 
                              checked={'max-snippet' in currentAdvanced} 
                              onChange={e => handleAdvancedChange('max-snippet', e.target.checked, '-1')}
-                             className="text-[#0085ba]" 
+                             className="text-[#5e3fde]" 
                            /> 
                            Max Snippet {isAdvancedInherited && <span className="text-[10px] bg-gray-100 px-1 rounded text-gray-500 ml-1">Default</span>} <HelpCircle className="w-3.5 h-3.5 text-gray-400" />
                          </label>
@@ -1282,7 +1287,7 @@ export default function SeoAnalyzer({
                            value={currentAdvanced['max-snippet'] || ''} 
                            onChange={e => handleAdvancedChange('max-snippet', true, e.target.value)}
                            disabled={!('max-snippet' in currentAdvanced)}
-                           className="border border-[#8c8f94] rounded-[3px] px-3 py-1 w-24 outline-none disabled:bg-gray-100" 
+                           className="border border-gray-300 rounded-lg px-3 py-1 w-24 outline-none disabled:bg-gray-100" 
                          />
                       </div>
                       <div className={`flex items-center gap-4 ${isAdvancedInherited ? 'opacity-70' : ''}`}>
@@ -1291,7 +1296,7 @@ export default function SeoAnalyzer({
                              type="checkbox" 
                              checked={'max-video-preview' in currentAdvanced} 
                              onChange={e => handleAdvancedChange('max-video-preview', e.target.checked, '-1')}
-                             className="text-[#0085ba]" 
+                             className="text-[#5e3fde]" 
                            /> 
                            Max Video Preview {isAdvancedInherited && <span className="text-[10px] bg-gray-100 px-1 rounded text-gray-500 ml-1">Default</span>} <HelpCircle className="w-3.5 h-3.5 text-gray-400" />
                          </label>
@@ -1300,7 +1305,7 @@ export default function SeoAnalyzer({
                            value={currentAdvanced['max-video-preview'] || ''}
                            onChange={e => handleAdvancedChange('max-video-preview', true, e.target.value)}
                            disabled={!('max-video-preview' in currentAdvanced)}
-                           className="border border-[#8c8f94] rounded-[3px] px-3 py-1 w-24 outline-none disabled:bg-gray-100" 
+                           className="border border-gray-300 rounded-lg px-3 py-1 w-24 outline-none disabled:bg-gray-100" 
                          />
                       </div>
                       <div className={`flex items-center gap-4 ${isAdvancedInherited ? 'opacity-70' : ''}`}>
@@ -1309,7 +1314,7 @@ export default function SeoAnalyzer({
                              type="checkbox" 
                              checked={'max-image-preview' in currentAdvanced} 
                              onChange={e => handleAdvancedChange('max-image-preview', e.target.checked, 'large')}
-                             className="text-[#0085ba]" 
+                             className="text-[#5e3fde]" 
                            /> 
                            Max Image Preview {isAdvancedInherited && <span className="text-[10px] bg-gray-100 px-1 rounded text-gray-500 ml-1">Default</span>} <HelpCircle className="w-3.5 h-3.5 text-gray-400" />
                          </label>
@@ -1317,7 +1322,7 @@ export default function SeoAnalyzer({
                            value={currentAdvanced['max-image-preview'] || 'large'}
                            onChange={e => handleAdvancedChange('max-image-preview', true, e.target.value)}
                            disabled={!('max-image-preview' in currentAdvanced)}
-                           className="border border-[#8c8f94] rounded-[3px] px-3 py-1 w-32 outline-none disabled:bg-gray-100"
+                           className="border border-gray-300 rounded-lg px-3 py-1 w-32 outline-none disabled:bg-gray-100"
                          >
                            <option value="large">Large</option>
                            <option value="standard">Standard</option>
@@ -1340,12 +1345,12 @@ export default function SeoAnalyzer({
               })()}
             </div>
           </div>
-          <hr className="border-[#e2e4e7]" />
+          <hr className="border-gray-200" />
           <div className="grid grid-cols-12 gap-4 items-center">
              <div className="col-span-4 text-[13px] font-semibold text-[#1d2327] flex items-center gap-1">Canonical URL <HelpCircle className="w-3.5 h-3.5 text-gray-400" /></div>
-             <div className="col-span-8"><input type="text" placeholder={`${globalSettings?.site_url || origin || 'http://localhost:3000'}/${slug || ''}`} className="w-full border border-[#8c8f94] rounded-[3px] px-3 py-2 text-[13px] outline-none focus:border-[#0085ba]" /></div>
+             <div className="col-span-8"><input type="text" placeholder={`${globalSettings?.site_url || origin || 'http://localhost:3000'}/${slug || ''}`} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-[13px] outline-none focus:border-[#5e3fde]" /></div>
           </div>
-          <hr className="border-[#e2e4e7]" />
+          <hr className="border-gray-200" />
           <div className="grid grid-cols-12 gap-4 items-start">
              <div className="col-span-4 text-[13px] font-semibold text-[#1d2327] mt-1">Redirect</div>
               <div className="col-span-8 space-y-4">
@@ -1353,18 +1358,18 @@ export default function SeoAnalyzer({
                   const newIsRedirect = !isRedirect;
                   setIsRedirect(newIsRedirect);
                   if (!newIsRedirect && setRedirectUrl) setRedirectUrl('');
-                }} className={`w-9 h-5 rounded-full relative cursor-pointer shadow-inner transition-colors ${isRedirect ? 'bg-[#0085ba]' : 'bg-gray-300'}`}>
+                }} className={`w-9 h-5 rounded-full relative cursor-pointer shadow-inner transition-colors ${isRedirect ? 'bg-[#5e3fde]' : 'bg-gray-300'}`}>
                    <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 shadow-sm transition-all ${isRedirect ? 'left-4' : 'left-0.5'}`}></div>
                 </div>
                 {isRedirect && (
-                  <div className="space-y-3 bg-[#f9f9f9] p-4 border border-[#e2e4e7] rounded-[3px]">
+                  <div className="space-y-3 bg-gray-50 p-4 border border-gray-200 rounded-lg">
                      <div>
                        <label className="block text-[12px] font-semibold text-[#1d2327] mb-1">Redirection Type</label>
-                       <select value={redirectType || '301'} onChange={(e) => setRedirectType && setRedirectType(e.target.value)} className="w-full border border-[#8c8f94] rounded-[3px] px-3 py-1.5 text-[13px] outline-none"><option value="301">301 Permanent Move</option><option value="302">302 Temporary Move</option></select>
+                       <select value={redirectType || '301'} onChange={(e) => setRedirectType && setRedirectType(e.target.value)} className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-[13px] outline-none"><option value="301">301 Permanent Move</option><option value="302">302 Temporary Move</option></select>
                      </div>
                      <div>
                        <label className="block text-[12px] font-semibold text-[#1d2327] mb-1">Destination URL</label>
-                       <input type="text" value={redirectUrl || ''} onChange={(e) => setRedirectUrl && setRedirectUrl(e.target.value)} placeholder="https://example.com" className="w-full border border-[#8c8f94] rounded-[3px] px-3 py-1.5 text-[13px] outline-none" />
+                       <input type="text" value={redirectUrl || ''} onChange={(e) => setRedirectUrl && setRedirectUrl(e.target.value)} placeholder="https://example.com" className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-[13px] outline-none" />
                      </div>
                   </div>
                 )}
@@ -1374,25 +1379,25 @@ export default function SeoAnalyzer({
       )}
 
       {activeTab === 'schema' && (
-        <div className="bg-white p-5 space-y-6 min-h-[300px]">
-          <div className="flex items-center justify-between border-b border-[#e2e4e7] pb-4">
+        <div className="bg-white p-6 space-y-6 min-h-[300px]">
+          <div className="flex items-center justify-between border-b border-gray-200 pb-4">
             <h3 className="text-[14px] font-semibold text-[#1d2327]">Schema in Use</h3>
-            <button type="button" onClick={() => { setEditingSchemaIndex(null); setIsSchemaModalOpen(true); }} className="bg-[#0085ba] text-white text-[13px] px-4 py-1.5 rounded-[3px] hover:bg-[#0073aa] transition-colors">Schema Generator</button>
+            <button type="button" onClick={() => { setEditingSchemaIndex(null); setIsSchemaModalOpen(true); }} className="bg-[#5e3fde] text-white text-[13px] px-4 py-1.5 rounded-lg hover:bg-[#4b32b2] transition-colors">Schema Generator</button>
           </div>
           
           {schemas.length === 0 ? (
-            <div className="border border-dashed border-gray-300 rounded-[3px] p-8 text-center text-gray-500 text-[13px]">
+            <div className="border border-dashed border-gray-300 rounded-lg p-8 text-center text-gray-500 text-[13px]">
               No schemas added yet. Click Schema Generator to add one.
             </div>
           ) : (
             <div className="space-y-3">
               {schemas.map((s, i) => (
-                <div key={i} className="border border-[#e2e4e7] rounded-[3px] p-4 flex items-center justify-between hover:border-[#0085ba] transition-colors bg-[#f9f9f9]">
+                <div key={i} className="border border-gray-200 rounded-lg p-4 flex items-center justify-between hover:border-[#5e3fde] transition-colors bg-gray-50">
                   <div className="flex items-center gap-3">
                      <FileText className="w-5 h-5 text-gray-500" />
                      <span className="text-[13px] font-medium text-[#1d2327]">{s['@type'] || (Array.isArray(s['@graph']) ? s['@graph'][0]?.['@type'] : s['@graph']?.['@type']) || 'Custom Schema'}</span>
                   </div>
-                  <div className="flex items-center gap-4 text-[13px] text-[#0085ba] font-semibold">
+                  <div className="flex items-center gap-4 text-[13px] text-[#5e3fde] font-semibold">
                      <button type="button" onClick={() => { 
                        setEditingSchemaIndex(i); 
                        const rawType = s['@type'] || (Array.isArray(s['@graph']) ? s['@graph'][0]?.['@type'] : s['@graph']?.['@type']);
@@ -1485,14 +1490,16 @@ export default function SeoAnalyzer({
       )}
 
       {activeTab === 'social' && (
-        <div className="bg-white p-5 space-y-6 min-h-[300px]">
+        <div className="bg-white p-6 space-y-6 min-h-[300px]">
           <h3 className="text-[14px] font-semibold text-[#1d2327] mb-4">Social Preview</h3>
-          <div className="border border-[#e2e4e7] rounded-[3px] overflow-hidden max-w-sm">
-             <div className="h-40 bg-gray-200 flex items-center justify-center text-gray-400"><Share2 className="w-10 h-10 opacity-50" /></div>
+          <div className="border border-gray-200 rounded-lg overflow-hidden max-w-sm">
+             <div className="h-40 bg-gray-200 flex items-center justify-center text-gray-400 overflow-hidden">
+               {featuredImage ? <img src={featuredImage} alt="Social preview" className="w-full h-full object-cover" /> : <Share2 className="w-10 h-10 opacity-50" />}
+             </div>
              <div className="p-4 bg-[#f2f3f5]">
-               <div className="text-[12px] text-gray-500 uppercase mb-1">yoursite.com</div>
-               <div className="font-semibold text-[#1d2327] line-clamp-1">{title || 'Sample Title'}</div>
-               <div className="text-[13px] text-gray-600 line-clamp-2 mt-1">{metaDescription || 'Sample description for social sharing.'}</div>
+               <div className="text-[12px] text-gray-500 uppercase mb-1">{String(globalSettings?.site_url || 'yoursite.com').replace(/^https?:\/\//, '').replace(/\/$/, '')}</div>
+               <div className="font-semibold text-[#1d2327] line-clamp-1">{resolveSeoVariables(activeSeoTitle, seoContext) || title || 'Sample Title'}</div>
+               <div className="text-[13px] text-gray-600 line-clamp-2 mt-1">{resolveSeoVariables(activeMetaDesc, seoContext) || 'Sample description for social sharing.'}</div>
              </div>
           </div>
         </div>
@@ -1501,15 +1508,15 @@ export default function SeoAnalyzer({
       {/* Schema Generator Modal */}
       {isSchemaModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-[3px] shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
-             <div className="flex items-center justify-between px-6 py-4 border-b border-[#e2e4e7]">
+          <div className="bg-white rounded-lg shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
                <h2 className="text-[16px] font-semibold text-[#1d2327]">Schema Generator</h2>
                <button type="button" onClick={() => setIsSchemaModalOpen(false)} className="hover:bg-gray-100 p-1 rounded transition-colors"><X className="w-5 h-5 text-gray-500" /></button>
              </div>
-             <div className="flex px-6 border-b border-[#e2e4e7] bg-[#f9f9f9]">
-               <button type="button" onClick={() => setSchemaModalTab('templates')} className={`flex items-center gap-2 px-6 py-4 text-[13px] font-medium border-b-2 transition-colors ${schemaModalTab === 'templates' ? 'border-[#0085ba] text-[#0085ba] bg-white' : 'border-transparent text-[#50575e] hover:text-[#0085ba]'}`}><FileText className="w-4 h-4" /> Schema Templates</button>
-               <button type="button" onClick={() => setSchemaModalTab('import')} className={`flex items-center gap-2 px-6 py-4 text-[13px] font-medium border-b-2 transition-colors ${schemaModalTab === 'import' ? 'border-[#0085ba] text-[#0085ba] bg-white' : 'border-transparent text-[#50575e] hover:text-[#0085ba]'}`}><Share2 className="w-4 h-4" /> Import</button>
-               <button type="button" onClick={() => setSchemaModalTab('custom')} className={`flex items-center gap-2 px-6 py-4 text-[13px] font-medium border-b-2 transition-colors ${schemaModalTab === 'custom' ? 'border-[#0085ba] text-[#0085ba] bg-white' : 'border-transparent text-[#50575e] hover:text-[#0085ba]'}`}><PlusCircle className="w-4 h-4" /> Custom Schema</button>
+             <div className="flex px-6 border-b border-gray-200 bg-gray-50">
+               <button type="button" onClick={() => setSchemaModalTab('templates')} className={`flex items-center gap-2 px-6 py-4 text-[13px] font-medium border-b-2 transition-colors ${schemaModalTab === 'templates' ? 'border-[#5e3fde] text-[#5e3fde] bg-white' : 'border-transparent text-[#50575e] hover:text-[#5e3fde]'}`}><FileText className="w-4 h-4" /> Schema Templates</button>
+               <button type="button" onClick={() => setSchemaModalTab('import')} className={`flex items-center gap-2 px-6 py-4 text-[13px] font-medium border-b-2 transition-colors ${schemaModalTab === 'import' ? 'border-[#5e3fde] text-[#5e3fde] bg-white' : 'border-transparent text-[#50575e] hover:text-[#5e3fde]'}`}><Share2 className="w-4 h-4" /> Import</button>
+               <button type="button" onClick={() => setSchemaModalTab('custom')} className={`flex items-center gap-2 px-6 py-4 text-[13px] font-medium border-b-2 transition-colors ${schemaModalTab === 'custom' ? 'border-[#5e3fde] text-[#5e3fde] bg-white' : 'border-transparent text-[#50575e] hover:text-[#5e3fde]'}`}><PlusCircle className="w-4 h-4" /> Custom Schema</button>
              </div>
              <div className="flex-1 overflow-y-auto p-6 bg-white">
                {schemaModalTab === 'templates' && (
@@ -1519,10 +1526,10 @@ export default function SeoAnalyzer({
                         <h3 className="text-[14px] font-semibold text-[#1d2327] mb-3">Schema in Use</h3>
                         <div className="space-y-2">
                           {schemas.map((s, i) => (
-                            <div key={i} className="border border-[#0085ba] rounded-[3px] p-3 flex items-center justify-between bg-white">
+                            <div key={i} className="border border-[#5e3fde] rounded-lg p-3 flex items-center justify-between bg-white">
                               <div className="flex items-center gap-3">
-                                 <div className="w-4 h-4 rounded-full border-2 border-[#0085ba] flex items-center justify-center">
-                                   <div className="w-2 h-2 rounded-full bg-[#0085ba]" />
+                                 <div className="w-4 h-4 rounded-full border-2 border-[#5e3fde] flex items-center justify-center">
+                                   <div className="w-2 h-2 rounded-full bg-[#5e3fde]" />
                                  </div>
                                  <FileText className="w-4 h-4 text-gray-500" />
                                  <span className="text-[13px] text-[#50575e]">{s['@type'] || (Array.isArray(s['@graph']) ? s['@graph'][0]?.['@type'] : s['@graph']?.['@type']) || 'Custom Schema'}</span>
@@ -1607,9 +1614,9 @@ export default function SeoAnalyzer({
                                      setSelectedSchema('Custom');
                                      setIsSchemaBuilderOpen(true);
                                    }
-                                 }} className="flex items-center gap-1 hover:text-[#0085ba] transition-colors"><Edit2 className="w-3.5 h-3.5" /> Edit</button>
+                                 }} className="flex items-center gap-1 hover:text-[#5e3fde] transition-colors"><Edit2 className="w-3.5 h-3.5" /> Edit</button>
                                  <span className="text-gray-300">|</span>
-                                 <button type="button" className="flex items-center gap-1 hover:text-[#0085ba] transition-colors"><Eye className="w-3.5 h-3.5" /> Preview</button>
+                                 <button type="button" className="flex items-center gap-1 hover:text-[#5e3fde] transition-colors"><Eye className="w-3.5 h-3.5" /> Preview</button>
                                  <span className="text-gray-300">|</span>
                                  <button type="button" onClick={() => {
                                    const newSchemas = [...schemas];
@@ -1628,17 +1635,17 @@ export default function SeoAnalyzer({
                         <h3 className="text-[14px] font-semibold text-[#1d2327] mb-3">Available Schema Types</h3>
                         <div className="flex flex-col gap-2">
                           <label className="flex items-center gap-2 cursor-pointer">
-                            <input type="radio" checked={schemaLibraryTab === 'catalog'} onChange={() => setSchemaLibraryTab('catalog')} className="text-[#0085ba] focus:ring-[#0085ba]" />
+                            <input type="radio" checked={schemaLibraryTab === 'catalog'} onChange={() => setSchemaLibraryTab('catalog')} className="text-[#5e3fde] focus:ring-[#0085ba]" />
                             <span className="text-[13px] text-[#1d2327]">Schema Catalog</span>
                           </label>
                           <label className="flex items-center gap-2 cursor-pointer">
-                            <input type="radio" checked={schemaLibraryTab === 'saved'} onChange={() => setSchemaLibraryTab('saved')} className="text-[#0085ba] focus:ring-[#0085ba]" />
+                            <input type="radio" checked={schemaLibraryTab === 'saved'} onChange={() => setSchemaLibraryTab('saved')} className="text-[#5e3fde] focus:ring-[#0085ba]" />
                             <span className="text-[13px] text-[#1d2327]">Your Templates</span>
                           </label>
                         </div>
                       </div>
                       <div className="relative">
-                        <input type="text" placeholder="Search..." className="border border-[#8c8f94] rounded-[3px] px-3 py-1.5 text-[13px] w-56 outline-none focus:border-[#0085ba] focus:ring-1 focus:ring-[#0085ba]" />
+                        <input type="text" placeholder="Search..." className="border border-gray-300 rounded-lg px-3 py-1.5 text-[13px] w-56 outline-none focus:border-[#5e3fde] focus:ring-2 focus:ring-[#5e3fde]/15" />
                       </div>
                     </div>
 
@@ -1646,7 +1653,7 @@ export default function SeoAnalyzer({
                       {schemaLibraryTab === 'catalog' ? (
                         schemaTypes.map((schema) => {
                           return (
-                            <div key={schema.name} className="flex items-center justify-between p-3 border border-[#e2e4e7] rounded-[3px] transition-colors hover:border-gray-300 bg-white">
+                            <div key={schema.name} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg transition-colors hover:border-gray-300 bg-white">
                               <div className="flex items-center gap-3">
                                 <schema.icon className="w-4 h-4 text-gray-400" />
                                 <span className="text-[13px] text-[#50575e]">{schema.name}</span>
@@ -1669,7 +1676,7 @@ export default function SeoAnalyzer({
                                 setIsSchemaBuilderOpen(true);
                                 setEditingSchemaIndex(null);
                                 setBuilderTab('edit');
-                              }} className="flex items-center gap-1 text-[12px] font-medium px-2 py-1 rounded-[3px] border text-gray-500 border-gray-300 hover:bg-gray-50 bg-white">
+                              }} className="flex items-center gap-1 text-[12px] font-medium px-2 py-1 rounded-lg border text-gray-500 border-gray-300 hover:bg-gray-50 bg-white">
                                 <PlusCircle className="w-3.5 h-3.5" /> Use
                               </button>
                             </div>
@@ -1678,7 +1685,7 @@ export default function SeoAnalyzer({
                       ) : (
                         customTemplates.length > 0 ? (
                           customTemplates.map((template, idx) => (
-                            <div key={template.id || idx} className="flex items-center justify-between p-3 border border-[#e2e4e7] rounded-[3px] transition-colors hover:border-gray-300 bg-white">
+                            <div key={template.id || idx} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg transition-colors hover:border-gray-300 bg-white">
                               <div className="flex items-center gap-3">
                                 <FileText className="w-4 h-4 text-gray-400" />
                                 <span className="text-[13px] text-[#50575e]">{template.name}</span>
@@ -1688,7 +1695,7 @@ export default function SeoAnalyzer({
                                 updateSchemas([...schemas, parsedSchema]);
                                 setIsSchemaModalOpen(false);
                                 toast.success('Template loaded!');
-                              }} className="flex items-center gap-1 text-[12px] font-medium px-2 py-1 rounded-[3px] border text-gray-500 border-gray-300 hover:bg-gray-50 bg-white">
+                              }} className="flex items-center gap-1 text-[12px] font-medium px-2 py-1 rounded-lg border text-gray-500 border-gray-300 hover:bg-gray-50 bg-white">
                                 <PlusCircle className="w-3.5 h-3.5" /> Use
                               </button>
                             </div>
@@ -1712,7 +1719,7 @@ export default function SeoAnalyzer({
                         <select 
                           value={importType} 
                           onChange={e => setImportType(e.target.value)} 
-                          className="w-full border border-[#8c8f94] rounded-[3px] px-3 py-2 text-[13px] focus:border-[#0085ba] focus:ring-1 focus:ring-[#0085ba] outline-none text-[#1d2327]"
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-[13px] focus:border-[#5e3fde] focus:ring-2 focus:ring-[#5e3fde]/15 outline-none text-[#1d2327]"
                         >
                           <option value="url">URL / Online Page</option>
                           <option value="html">HTML Code</option>
@@ -1722,23 +1729,23 @@ export default function SeoAnalyzer({
                       
                       {importType === 'url' && (
                         <div>
-                          <input type="text" value={importUrl} onChange={e => setImportUrl(e.target.value)} placeholder="https://example.com/product/123" className="w-full border border-[#8c8f94] rounded-[3px] px-3 py-2 text-[13px] focus:border-[#0085ba] focus:ring-1 focus:ring-[#0085ba] outline-none" />
+                          <input type="text" value={importUrl} onChange={e => setImportUrl(e.target.value)} placeholder="https://example.com/product/123" className="w-full border border-gray-300 rounded-lg px-3 py-2 text-[13px] focus:border-[#5e3fde] focus:ring-2 focus:ring-[#5e3fde]/15 outline-none" />
                         </div>
                       )}
                       
                       {importType === 'html' && (
                         <div>
-                          <textarea value={importHtml} onChange={e => setImportHtml(e.target.value)} placeholder="Paste HTML containing schema here..." className="w-full h-32 border border-[#8c8f94] rounded-[3px] p-3 text-[13px] focus:border-[#0085ba] focus:ring-1 focus:ring-[#0085ba] outline-none font-mono"></textarea>
+                          <textarea value={importHtml} onChange={e => setImportHtml(e.target.value)} placeholder="Paste HTML containing schema here..." className="w-full h-32 border border-gray-300 rounded-lg p-3 text-[13px] focus:border-[#5e3fde] focus:ring-2 focus:ring-[#5e3fde]/15 outline-none font-mono"></textarea>
                         </div>
                       )}
 
                       {importType === 'json' && (
                         <div>
-                          <textarea value={importJson} onChange={e => setImportJson(e.target.value)} placeholder="Paste JSON-LD or custom code here..." className="w-full h-32 border border-[#8c8f94] rounded-[3px] p-3 text-[13px] focus:border-[#0085ba] focus:ring-1 focus:ring-[#0085ba] outline-none font-mono"></textarea>
+                          <textarea value={importJson} onChange={e => setImportJson(e.target.value)} placeholder="Paste JSON-LD or custom code here..." className="w-full h-32 border border-gray-300 rounded-lg p-3 text-[13px] focus:border-[#5e3fde] focus:ring-2 focus:ring-[#5e3fde]/15 outline-none font-mono"></textarea>
                         </div>
                       )}
 
-                      {importError && <div className="text-red-600 text-[13px] bg-red-50 p-3 rounded-[3px] border border-red-200">{importError}</div>}
+                      {importError && <div className="text-red-600 text-[13px] bg-red-50 p-3 rounded-lg border border-red-200">{importError}</div>}
                       <button 
                         onClick={async () => {
                           if (importType === 'url' && !importUrl) return;
@@ -1843,7 +1850,7 @@ export default function SeoAnalyzer({
                           }
                         }}
                         disabled={isImporting}
-                        className="bg-[#0085ba] text-white px-5 py-2 rounded-[3px] text-[13px] font-medium hover:bg-[#0073aa] transition-colors disabled:opacity-50"
+                        className="bg-[#5e3fde] text-white px-5 py-2 rounded-lg text-[13px] font-medium hover:bg-[#4b32b2] transition-colors disabled:opacity-50"
                       >
                         {isImporting ? 'Importing...' : 'Import'}
                       </button>
@@ -1853,7 +1860,7 @@ export default function SeoAnalyzer({
                {schemaModalTab === 'custom' && (
                   <div className="h-full flex flex-col items-center justify-center py-12">
                     <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-4">
-                      <LayoutGrid className="w-8 h-8 text-[#0085ba]" />
+                      <LayoutGrid className="w-8 h-8 text-[#5e3fde]" />
                     </div>
                     <h3 className="text-[16px] font-semibold text-[#1d2327] mb-2">Advanced Schema Builder</h3>
                     <p className="text-[13px] text-gray-500 mb-6 text-center max-w-sm">Build your own custom schema markup from scratch using our advanced recursive property editor.</p>
@@ -1863,7 +1870,7 @@ export default function SeoAnalyzer({
                         setIsSchemaBuilderOpen(true);
                         setIsSchemaModalOpen(false);
                       }} 
-                      className="bg-[#0085ba] text-white px-6 py-2.5 rounded-[3px] text-[13px] font-medium hover:bg-[#0073aa] transition-colors"
+                      className="bg-[#5e3fde] text-white px-6 py-2.5 rounded-lg text-[13px] font-medium hover:bg-[#4b32b2] transition-colors"
                     >
                       Open Advanced Editor
                     </button>
@@ -1877,23 +1884,23 @@ export default function SeoAnalyzer({
       {/* Individual Schema Builder Modal */}
       {isSchemaBuilderOpen && selectedSchema && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-[3px] shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
-             <div className="flex items-center justify-between px-6 py-4 border-b border-[#e2e4e7]">
+          <div className="bg-white rounded-lg shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
+             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
                <h2 className="text-[16px] font-semibold text-[#1d2327]">Schema Builder</h2>
                <button type="button" onClick={() => setIsSchemaBuilderOpen(false)} className="hover:bg-gray-100 p-1 rounded transition-colors"><X className="w-5 h-5 text-gray-500" /></button>
              </div>
              
              {/* Builder Tabs */}
-             <div className="flex items-center px-6 border-b border-[#e2e4e7] bg-white relative">
+             <div className="flex items-center px-6 border-b border-gray-200 bg-white relative">
                <button 
                  onClick={() => setBuilderTab('edit')} 
-                 className={`py-3 px-4 text-[13px] font-medium transition-colors border-b-2 ${builderTab === 'edit' ? 'border-[#0085ba] text-[#0085ba]' : 'border-transparent text-gray-500 hover:text-[#0085ba]'}`}
+                 className={`py-3 px-4 text-[13px] font-medium transition-colors border-b-2 ${builderTab === 'edit' ? 'border-[#5e3fde] text-[#5e3fde]' : 'border-transparent text-gray-500 hover:text-[#5e3fde]'}`}
                >
                  Edit
                </button>
                <button 
                  onClick={() => setBuilderTab('validation')} 
-                 className={`py-3 px-4 text-[13px] font-medium transition-colors border-b-2 ${builderTab === 'validation' ? 'border-[#0085ba] text-[#0085ba]' : 'border-transparent text-gray-500 hover:text-[#0085ba]'}`}
+                 className={`py-3 px-4 text-[13px] font-medium transition-colors border-b-2 ${builderTab === 'validation' ? 'border-[#5e3fde] text-[#5e3fde]' : 'border-transparent text-gray-500 hover:text-[#5e3fde]'}`}
                >
                  Code Validation
                </button>
@@ -1902,11 +1909,11 @@ export default function SeoAnalyzer({
                </div>
              </div>
 
-             <div className="flex-1 overflow-y-auto bg-[#f9f9f9] p-6 relative">
+             <div className="flex-1 overflow-y-auto bg-gray-50 p-6 relative">
                 {builderTab === 'edit' ? (
                   <>
                     {selectedSchema === 'Custom' ? (
-                       <div className="bg-white border border-[#e2e4e7] rounded-[3px] p-4 overflow-x-auto">
+                       <div className="bg-white border border-gray-200 rounded-lg p-4 overflow-x-auto">
                          <div className="min-w-max pr-4">
                            {customSchemaNodes.map(function renderNode(node, idx) {
                              return (
@@ -1916,20 +1923,20 @@ export default function SeoAnalyzer({
                                    type="text" 
                                    value={node.key} 
                                    onChange={(e) => setCustomSchemaNodes(nodes => updateSchemaNode(nodes, node.id, n => ({ ...n, key: e.target.value })))} 
-                                   className="w-48 border border-[#8c8f94] rounded-[3px] px-3 py-1.5 text-[13px] focus:border-[#0085ba] focus:ring-1 focus:ring-[#0085ba] outline-none shadow-inner"
+                                   className="w-48 border border-gray-300 rounded-lg px-3 py-1.5 text-[13px] focus:border-[#5e3fde] focus:ring-2 focus:ring-[#5e3fde]/15 outline-none shadow-inner"
                                  />
                                  {node.type !== 'group' && (
                                  <input 
                                    type="text" 
                                    value={node.value} 
                                    onChange={(e) => setCustomSchemaNodes(nodes => updateSchemaNode(nodes, node.id, n => ({ ...n, value: e.target.value })))} 
-                                   className="flex-1 border border-[#8c8f94] rounded-[3px] px-3 py-1.5 text-[13px] focus:border-[#0085ba] focus:ring-1 focus:ring-[#0085ba] outline-none shadow-inner"
+                                   className="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-[13px] focus:border-[#5e3fde] focus:ring-2 focus:ring-[#5e3fde]/15 outline-none shadow-inner"
                                  />
                                  )}
                                  {node.type === 'group' ? (
                                    <div className="flex items-center gap-3 ml-2">
-                                     <button onClick={() => setCustomSchemaNodes(nodes => addSchemaNode(nodes, node.id, { id: Math.random().toString(36).substr(2, 9), key: '', value: '', type: 'property', children: [] }))} className="flex items-center gap-1 text-[12px] text-gray-500 hover:text-[#0085ba]"><PlusCircle className="w-3.5 h-3.5" /> Add Property</button>
-                                     <button onClick={() => setCustomSchemaNodes(nodes => addSchemaNode(nodes, node.id, { id: Math.random().toString(36).substr(2, 9), key: '', value: '', type: 'group', children: [] }))} className="flex items-center gap-1 text-[12px] text-gray-500 hover:text-[#0085ba]"><PlusCircle className="w-3.5 h-3.5" /> Add Property Group</button>
+                                     <button onClick={() => setCustomSchemaNodes(nodes => addSchemaNode(nodes, node.id, { id: Math.random().toString(36).substr(2, 9), key: '', value: '', type: 'property', children: [] }))} className="flex items-center gap-1 text-[12px] text-gray-500 hover:text-[#5e3fde]"><PlusCircle className="w-3.5 h-3.5" /> Add Property</button>
+                                     <button onClick={() => setCustomSchemaNodes(nodes => addSchemaNode(nodes, node.id, { id: Math.random().toString(36).substr(2, 9), key: '', value: '', type: 'group', children: [] }))} className="flex items-center gap-1 text-[12px] text-gray-500 hover:text-[#5e3fde]"><PlusCircle className="w-3.5 h-3.5" /> Add Property Group</button>
                                      <button onClick={() => setCustomSchemaNodes(nodes => deleteSchemaNode(nodes, node.id))} className="flex items-center gap-1 text-[12px] text-gray-500 hover:text-red-600"><Trash2 className="w-3.5 h-3.5" /> Delete</button>
                                    </div>
                                  ) : (
@@ -1958,7 +1965,7 @@ export default function SeoAnalyzer({
                                         };
                                         setCustomSchemaNodes(copyNodes(customSchemaNodes));
                                       }}
-                                      className="p-1.5 text-gray-400 border border-gray-300 rounded hover:text-[#0085ba] hover:border-[#0085ba]"><Copy className="w-3.5 h-3.5" /></button>
+                                      className="p-1.5 text-gray-400 border border-gray-300 rounded hover:text-[#5e3fde] hover:border-[#5e3fde]"><Copy className="w-3.5 h-3.5" /></button>
                                      <button onClick={() => setCustomSchemaNodes(nodes => deleteSchemaNode(nodes, node.id))} className="p-1.5 text-gray-400 border border-gray-300 rounded hover:text-red-600 hover:border-red-600"><Trash2 className="w-3.5 h-3.5" /></button>
                                    </div>
                                  )}
@@ -1975,7 +1982,7 @@ export default function SeoAnalyzer({
                        </div>
                      ) : (
                        <>
-                         <div className="border border-[#e2e4e7] rounded-[3px] bg-white mb-6">
+                         <div className="border border-gray-200 rounded-lg bg-white mb-6">
                            <div className="p-3 text-[13px] font-bold text-[#1d2327]">{selectedSchema}</div>
                          </div>
                          {(schemaFieldDefinitions[selectedSchema] || []).map((field, idx) => {
@@ -1992,8 +1999,8 @@ export default function SeoAnalyzer({
                            
                            if (field.type === 'info') {
                              return (
-                               <div key={idx} className="border border-[#e2e4e7] rounded-[3px] bg-white mt-4">
-                                 <div className="p-3 text-[11px] font-bold text-[#1d2327] border-b border-[#e2e4e7] uppercase">{field.label}</div>
+                               <div key={idx} className="border border-gray-200 rounded-lg bg-white mt-4">
+                                 <div className="p-3 text-[11px] font-bold text-[#1d2327] border-b border-gray-200 uppercase">{field.label}</div>
                                  <div className="p-4 text-[13px] text-gray-600 whitespace-pre-wrap leading-relaxed">{field.info}</div>
                                </div>
                              );
@@ -2001,14 +2008,14 @@ export default function SeoAnalyzer({
                            
                            if (field.type === 'shortcode') {
                              return (
-                               <div key={idx} className="border border-[#e2e4e7] rounded-[3px] bg-white mt-4">
-                                 <div className="p-3 text-[11px] font-bold text-[#1d2327] border-b border-[#e2e4e7] uppercase">{field.label}</div>
+                               <div key={idx} className="border border-gray-200 rounded-lg bg-white mt-4">
+                                 <div className="p-3 text-[11px] font-bold text-[#1d2327] border-b border-gray-200 uppercase">{field.label}</div>
                                  <div className="p-4">
                                    <input 
                                      type="text" 
                                      readOnly
                                      value={`[rank_math_rich_snippet id="s-${Math.random().toString(36).substring(2, 10)}"]`}
-                                     className="w-full border border-[#8c8f94] rounded-[3px] px-3 py-2 text-[13px] bg-gray-50 outline-none shadow-inner mb-2 text-gray-500" 
+                                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-[13px] bg-gray-50 outline-none shadow-inner mb-2 text-gray-500" 
                                    />
                                    <div className="text-[13px] text-gray-600 leading-relaxed whitespace-pre-wrap">{field.info}</div>
                                  </div>
@@ -2029,13 +2036,13 @@ export default function SeoAnalyzer({
                                    <button type="button" onClick={() => {
                                      const newItems = [...items, {}];
                                      setSchemaData({ ...schemaData, [fieldKey]: JSON.stringify(newItems) });
-                                   }} className="text-[13px] text-gray-500 hover:text-[#0085ba] flex items-center gap-1">
+                                   }} className="text-[13px] text-gray-500 hover:text-[#5e3fde] flex items-center gap-1">
                                      <PlusCircle className="w-4 h-4" /> Add Property Group
                                    </button>
                                  </div>
                                  <div className="space-y-6">
                                    {items.map((item: any, itemIdx: number) => (
-                                      <div key={itemIdx} className="border-l-2 border-[#e2e4e7] pl-5 relative ml-2">
+                                      <div key={itemIdx} className="border-l-2 border-gray-200 pl-5 relative ml-2">
                                         <div className="absolute left-[-2px] top-[14px] w-[16px] h-[2px] bg-[#e2e4e7]"></div>
                                         <div className="flex items-center justify-between mb-3">
                                           <div className="text-[13px] font-bold text-[#1d2327]">{field.itemLabel || 'Item'} {itemIdx + 1}</div>
@@ -2049,7 +2056,7 @@ export default function SeoAnalyzer({
                                         </div>
                                         <div className="space-y-3">
                                           {field.subFields?.map((subField, subIdx) => (
-                                            <div key={subIdx} className="border border-[#e2e4e7] rounded-[3px] bg-white p-3">
+                                            <div key={subIdx} className="border border-gray-200 rounded-lg bg-white p-3">
                                               <div className="text-[11px] font-bold text-[#1d2327] uppercase mb-2">
                                                 {subField.label}
                                               </div>
@@ -2059,14 +2066,14 @@ export default function SeoAnalyzer({
                                                     const newItems = [...items];
                                                     newItems[itemIdx] = { ...newItems[itemIdx], [subField.label.toLowerCase()]: e.target.value };
                                                     setSchemaData({ ...schemaData, [fieldKey]: JSON.stringify(newItems) });
-                                                  }} className="w-full border border-[#8c8f94] rounded-[3px] px-3 py-1.5 text-[13px] focus:border-[#0085ba] focus:ring-1 focus:ring-[#0085ba] outline-none shadow-inner" />
+                                                  }} className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-[13px] focus:border-[#5e3fde] focus:ring-2 focus:ring-[#5e3fde]/15 outline-none shadow-inner" />
                                                 )}
                                                 {subField.type === 'textarea' && (
                                                   <textarea value={item[subField.label.toLowerCase()] || ''} onChange={e => {
                                                     const newItems = [...items];
                                                     newItems[itemIdx] = { ...newItems[itemIdx], [subField.label.toLowerCase()]: e.target.value };
                                                     setSchemaData({ ...schemaData, [fieldKey]: JSON.stringify(newItems) });
-                                                  }} className="w-full border border-[#8c8f94] rounded-[3px] px-3 py-2 text-[13px] focus:border-[#0085ba] focus:ring-1 focus:ring-[#0085ba] outline-none shadow-inner min-h-[80px]" />
+                                                  }} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-[13px] focus:border-[#5e3fde] focus:ring-2 focus:ring-[#5e3fde]/15 outline-none shadow-inner min-h-[80px]" />
                                                 )}
                                               </div>
                                             </div>
@@ -2080,8 +2087,8 @@ export default function SeoAnalyzer({
                            }
 
                            return (
-                             <div key={idx} className="border border-[#e2e4e7] rounded-[3px] bg-white mt-4">
-                               <div className="p-3 text-[11px] font-bold text-[#1d2327] border-b border-[#e2e4e7] uppercase">
+                             <div key={idx} className="border border-gray-200 rounded-lg bg-white mt-4">
+                               <div className="p-3 text-[11px] font-bold text-[#1d2327] border-b border-gray-200 uppercase">
                                  {field.label.replace(/\s*\*\s*$/, '')} {field.label.includes('*') && <span className="text-red-500">*</span>}
                                </div>
                                <div className="p-4">
@@ -2091,7 +2098,7 @@ export default function SeoAnalyzer({
                                      value={val}
                                      onChange={(e) => handleSchemaDataChange(field.label, e.target.value)}
                                      placeholder={field.placeholder}
-                                     className="w-full border border-[#8c8f94] rounded-[3px] px-3 py-2 text-[13px] focus:border-[#0085ba] focus:ring-1 focus:ring-[#0085ba] outline-none shadow-inner" 
+                                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-[13px] focus:border-[#5e3fde] focus:ring-2 focus:ring-[#5e3fde]/15 outline-none shadow-inner" 
                                    />
                                  )}
                                  {field.type === 'textarea' && (
@@ -2099,7 +2106,7 @@ export default function SeoAnalyzer({
                                      value={val}
                                      onChange={(e) => handleSchemaDataChange(field.label, e.target.value)}
                                      placeholder={field.placeholder}
-                                     className="w-full h-24 border border-[#8c8f94] rounded-[3px] px-3 py-2 text-[13px] focus:border-[#0085ba] focus:ring-1 focus:ring-[#0085ba] outline-none shadow-inner" 
+                                     className="w-full h-24 border border-gray-300 rounded-lg px-3 py-2 text-[13px] focus:border-[#5e3fde] focus:ring-2 focus:ring-[#5e3fde]/15 outline-none shadow-inner" 
                                    />
                                  )}
                                  {field.type === 'radio' && (
@@ -2112,7 +2119,7 @@ export default function SeoAnalyzer({
                                            value={opt}
                                            checked={val === opt}
                                            onChange={(e) => handleSchemaDataChange(field.label, e.target.value)}
-                                           className="text-[#0085ba] focus:ring-[#0085ba]"
+                                           className="text-[#5e3fde] focus:ring-[#0085ba]"
                                          /> {opt}
                                        </label>
                                      ))}
@@ -2126,7 +2133,7 @@ export default function SeoAnalyzer({
                      )}
                   </>
                 ) : (
-                  <div className="bg-white p-6 rounded-[3px] border border-[#e2e4e7] h-full flex flex-col">
+                  <div className="bg-white p-6 rounded-lg border border-gray-200 h-full flex flex-col">
                     {(() => {
                       const currentSchemaObj = generateSchemaObj();
                       const currentSchemaJson = JSON.stringify(currentSchemaObj, null, 2);
@@ -2136,7 +2143,7 @@ export default function SeoAnalyzer({
                           <div className="flex items-center justify-between mb-4">
                             <h3 className="text-[14px] font-semibold text-[#1d2327]">JSON-LD Code</h3>
                             <div className="flex items-center gap-2">
-                              <button onClick={() => { navigator.clipboard.writeText(currentSchemaJson); toast.success('Code copied!'); }} className="flex items-center gap-1 border border-gray-300 text-gray-600 px-3 py-1.5 rounded-[3px] text-[12px] font-medium hover:bg-gray-50">
+                              <button onClick={() => { navigator.clipboard.writeText(currentSchemaJson); toast.success('Code copied!'); }} className="flex items-center gap-1 border border-gray-300 text-gray-600 px-3 py-1.5 rounded-lg text-[12px] font-medium hover:bg-gray-50">
                                 <FileText className="w-3.5 h-3.5" /> Copy
                               </button>
                               <button onClick={() => { 
@@ -2153,13 +2160,13 @@ export default function SeoAnalyzer({
                                 document.body.appendChild(form);
                                 form.submit();
                                 document.body.removeChild(form);
-                              }} className="flex items-center gap-1 border border-gray-300 text-gray-600 px-3 py-1.5 rounded-[3px] text-[12px] font-medium hover:bg-gray-50">
+                              }} className="flex items-center gap-1 border border-gray-300 text-gray-600 px-3 py-1.5 rounded-lg text-[12px] font-medium hover:bg-gray-50">
                                 <Search className="w-3.5 h-3.5" /> Test with Google
                               </button>
                             </div>
                           </div>
                           <p className="text-red-500 text-[13px] font-medium mb-4">Note: Please save the post as a draft first to see the actual data.</p>
-                          <div className="flex-1 bg-[#282c34] text-[#abb2bf] font-mono text-[13px] p-4 rounded-[3px] overflow-auto">
+                          <div className="flex-1 bg-[#282c34] text-[#abb2bf] font-mono text-[13px] p-4 rounded-lg overflow-auto">
                             <pre>{currentSchemaJson}</pre>
                           </div>
                         </>
@@ -2168,9 +2175,9 @@ export default function SeoAnalyzer({
                   </div>
                 )}
              </div>
-             <div className="px-6 py-4 border-t border-[#e2e4e7] bg-[#f9f9f9] flex items-center justify-between">
+             <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex items-center justify-between">
                 <div>
-                  <button type="button" className="text-[#0085ba] text-[13px] font-medium hover:underline mr-4">Advanced Editor</button>
+                  <button type="button" className="text-[#5e3fde] text-[13px] font-medium hover:underline mr-4">Advanced Editor</button>
                   <button 
                     type="button" 
                     onClick={() => {
@@ -2191,7 +2198,7 @@ export default function SeoAnalyzer({
                         .catch(() => toast.error('Failed to save template.'));
                       }
                     }}
-                    className="text-[#0085ba] text-[13px] font-medium hover:underline border border-[#0085ba] px-3 py-1 rounded-[3px]"
+                    className="text-[#5e3fde] text-[13px] font-medium hover:underline border border-[#5e3fde] px-3 py-1 rounded-lg"
                   >
                     Save as Template
                   </button>
@@ -2210,7 +2217,7 @@ export default function SeoAnalyzer({
                     setSelectedSchema('Article');
                     setEditingSchemaIndex(null);
                   }}
-                  className="bg-[#0085ba] text-white px-5 py-2.5 rounded-[3px] text-[14px] font-semibold hover:bg-[#0073aa]"
+                  className="bg-[#5e3fde] text-white px-5 py-2.5 rounded-lg text-[14px] font-semibold hover:bg-[#4b32b2]"
                 >
                   Save for this Post
                 </button>

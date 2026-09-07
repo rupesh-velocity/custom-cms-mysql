@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
+import { isAdministratorSession } from '@/lib/admin-auth';
 import { prisma } from '@/lib/prisma';
+import { maybeCreateRevision } from '@/lib/revisions';
 
 export async function GET(req: Request, context: any) {
   try {
@@ -19,9 +21,15 @@ export async function GET(req: Request, context: any) {
 }
 
 export async function PATCH(req: Request, context: any) {
+  if (!(await isAdministratorSession())) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   try {
     const params = await context.params;
     const data = await req.json();
+    const current = await prisma.post.findUnique({
+      where: { id: parseInt(params.id) },
+      include: { categories: true, tags: true },
+    });
+    if (current) await maybeCreateRevision('post', parseInt(params.id), current);
     const post = await prisma.post.update({
       where: { id: parseInt(params.id) },
       data: {
@@ -65,6 +73,7 @@ export async function PATCH(req: Request, context: any) {
 }
 
 export async function DELETE(req: Request, context: any) {
+  if (!(await isAdministratorSession())) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   try {
     const params = await context.params;
     await prisma.post.delete({

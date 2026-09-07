@@ -57,7 +57,7 @@ export default function SetupForm() {
           <div className="mb-6 flex justify-center">
             <Image 
               src={`${BASE_PATH}/velocity-logo.png`} 
-              alt="Velocity Consultancy Logo" 
+              alt="Site setup logo" 
               width={120} 
               height={48} 
               className="object-contain"

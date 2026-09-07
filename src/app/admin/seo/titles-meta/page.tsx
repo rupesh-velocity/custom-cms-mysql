@@ -7,7 +7,7 @@ import MediaModal from '@/components/MediaModal';
 import LocalSeoTab from '@/components/seo/LocalSeoTab';
 import SeoVariableInput from '@/components/seo/SeoVariableInput';
 import SearchableSelect from '@/components/SearchableSelect';
-import { BASE_PATH } from '@/lib/config';
+import { fetchJsonWithRetry } from '@/lib/client-api';
 
 const schemaOptions = [
   { value: "", label: "None (Click here to set one)" },
@@ -88,6 +88,9 @@ export default function TitlesAndMetaSettings() {
     seo_post_autogen_image: 'false',
     seo_post_robots: 'default',
     seo_post_advanced_robots: 'default',
+    seo_post_adv_snippet_val: '-1',
+    seo_post_adv_video_val: '-1',
+    seo_post_adv_image_val: 'Large',
     seo_post_link_suggestions: 'false',
     seo_post_link_suggestion_titles: 'false',
     seo_post_primary_tax: 'categories',
@@ -105,6 +108,9 @@ export default function TitlesAndMetaSettings() {
     seo_page_autodetect_video: 'false',
     seo_page_robots: 'default',
     seo_page_advanced_robots: 'default',
+    seo_page_adv_snippet_val: '-1',
+    seo_page_adv_video_val: '-1',
+    seo_page_adv_image_val: 'Large',
     seo_page_link_suggestions: 'false',
     seo_page_link_suggestion_titles: 'false',
     seo_page_slack_enhanced: 'false',
@@ -146,18 +152,21 @@ export default function TitlesAndMetaSettings() {
     if (typeof window !== 'undefined' && window.location.hash) {
       setActiveTab(window.location.hash.replace('#', ''));
     }
-    fetch(`${BASE_PATH}/api/settings/seo`)
-      .then((res) => res.json())
+    let cancelled = false;
+    fetchJsonWithRetry<Record<string, string>>('/api/settings/seo')
       .then((data) => {
+        if (cancelled) return;
         setSettings((prev) => ({ ...prev, ...data }));
         setInitialSettings((prev) => ({ ...prev, ...data }));
-        setIsLoading(false);
       })
       .catch((err) => {
-        console.error('Failed to load settings', err);
-        toast.error('Failed to load settings');
-        setIsLoading(false);
+        console.error('Failed to load Titles & Meta settings', err);
+        if (!cancelled) toast.error(err instanceof Error ? err.message : 'Failed to load settings');
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false);
       });
+    return () => { cancelled = true; };
   }, []);
 
   const handleChange = (key: string, value: string) => {
@@ -186,15 +195,11 @@ export default function TitlesAndMetaSettings() {
         return;
       }
 
-      const res = await fetch(`${BASE_PATH}/api/settings/seo`, {
+      await fetchJsonWithRetry('/api/settings/seo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(changedSettings)
       });
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(`Failed to save settings: ${errorData.details || errorData.error || res.statusText}`);
-      }
       
       // Update initialSettings so subsequent saves only check for new changes
       setInitialSettings((prev) => ({ ...prev, ...changedSettings }));
@@ -310,7 +315,7 @@ export default function TitlesAndMetaSettings() {
                   <div className="col-span-8">
                     <div className="grid grid-cols-2 gap-y-3 gap-x-4 mb-2">
                       {['Index', 'No Index', 'No Follow', 'No Archive', 'No Image Index', 'No Snippet'].map(robot => {
-                        const val = robot.toLowerCase().replace(' ', '');
+                        const val = robot.toLowerCase().replace(/\s+/g, '');
                         const currentRobots = (settings.seo_global_robots || '').split(',').filter(Boolean);
                         const isChecked = currentRobots.includes(val);
                         
@@ -696,7 +701,7 @@ export default function TitlesAndMetaSettings() {
                     {settings.seo_post_robots !== 'default' && (
                       <div className="grid grid-cols-2 gap-y-3 gap-x-4 mt-2">
                         {['Index', 'No Index', 'No Follow', 'No Archive', 'No Image Index', 'No Snippet'].map(robot => {
-                          const val = robot.toLowerCase().replace(' ', '');
+                          const val = robot.toLowerCase().replace(/\s+/g, '');
                           const currentRobots = (settings.seo_post_robots || '').split(',').filter(Boolean);
                           const isChecked = currentRobots.includes(val);
                           return (
@@ -989,19 +994,19 @@ export default function TitlesAndMetaSettings() {
                         <span className="text-[13px] text-gray-700 block mb-2 flex items-center gap-2">
                           <input type="checkbox" checked={true} readOnly className="rounded border-gray-300 text-[#0085ba]" /> Snippet <span className="inline-flex items-center justify-center w-3 h-3 bg-gray-200 text-gray-500 rounded-full text-[9px] font-bold font-serif italic">i</span>
                         </span>
-                        <input type="text" placeholder="-1" className="w-full border border-gray-300 rounded px-3 py-1.5 text-[14px] outline-none" />
+                        <input type="text" value={settings.seo_page_adv_snippet_val || ''} onChange={(e) => handleChange('seo_page_adv_snippet_val', e.target.value)} placeholder="-1" className="w-full border border-gray-300 rounded px-3 py-1.5 text-[14px] outline-none" />
                       </div>
                       <div>
                         <span className="text-[13px] text-gray-700 block mb-2 flex items-center gap-2">
                           <input type="checkbox" checked={true} readOnly className="rounded border-gray-300 text-[#0085ba]" /> Video Preview <span className="inline-flex items-center justify-center w-3 h-3 bg-gray-200 text-gray-500 rounded-full text-[9px] font-bold font-serif italic">i</span>
                         </span>
-                        <input type="text" placeholder="-1" className="w-full border border-gray-300 rounded px-3 py-1.5 text-[14px] outline-none" />
+                        <input type="text" value={settings.seo_page_adv_video_val || ''} onChange={(e) => handleChange('seo_page_adv_video_val', e.target.value)} placeholder="-1" className="w-full border border-gray-300 rounded px-3 py-1.5 text-[14px] outline-none" />
                       </div>
                       <div>
                         <span className="text-[13px] text-gray-700 block mb-2 flex items-center gap-2">
                           <input type="checkbox" checked={true} readOnly className="rounded border-gray-300 text-[#0085ba]" /> Image Preview <span className="inline-flex items-center justify-center w-3 h-3 bg-gray-200 text-gray-500 rounded-full text-[9px] font-bold font-serif italic">i</span>
                         </span>
-                        <select className="w-full border border-gray-300 rounded px-3 py-1.5 text-[14px] outline-none">
+                        <select value={settings.seo_page_adv_image_val || 'Large'} onChange={(e) => handleChange('seo_page_adv_image_val', e.target.value)} className="w-full border border-gray-300 rounded px-3 py-1.5 text-[14px] outline-none">
                           <option value="Large">Large</option>
                           <option value="Standard">Standard</option>
                           <option value="None">None</option>

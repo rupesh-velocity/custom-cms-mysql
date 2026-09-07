@@ -78,7 +78,7 @@ export default function MobileMenu({
   menuTree, 
   isAuthenticated, 
   userRole,
-  siteTitle = 'Custom CMS',
+  siteTitle = 'Website',
   siteLogo,
   siteIcon
 }: { 
@@ -143,13 +143,14 @@ export default function MobileMenu({
                 <span className="text-xl font-medium whitespace-nowrap text-gray-900 tracking-tight">{siteTitle}</span>
               )}
             </Link>
-            <div 
-              onClick={() => setIsOpen(false)}
-              className="p-2 -mr-2 text-gray-400 bg-gray-50 rounded-full transition-colors cursor-pointer shadow-sm"
-              aria-label="Close Menu"
-            >
-              <X size={22} />
-            </div>
+            <button
+  type="button"
+  onClick={() => setIsOpen(false)}
+  className="p-2 -mr-2 text-gray-400 bg-gray-50 rounded-full transition-colors cursor-pointer shadow-sm border-0"
+  aria-label="Close Menu"
+>
+  <X size={22} aria-hidden="true" />
+</button>
           </div>
 
           {/* Navigation Links */}

@@ -1,5 +1,5 @@
-import nodemailer from 'nodemailer';
 import { prisma } from '@/lib/prisma';
+import { createSmtpTransport, getSmtpSettings } from '@/lib/smtp';
 
 interface SendEmailParams {
   to: string;
@@ -9,28 +9,27 @@ interface SendEmailParams {
 
 export async function sendEmail({ to, subject, html }: SendEmailParams) {
   try {
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST || 'smtp.gmail.com',
-      port: Number(process.env.SMTP_PORT) || 465,
-      secure: true,
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-    });
+    const settings = await getSmtpSettings();
+    if (!settings.enabled) {
+      return { success: false, error: new Error('SMTP add-on is disabled') };
+    }
+    if (!settings.host) {
+      return { success: false, error: new Error('SMTP host is not configured') };
+    }
 
-    // Extract from name if provided
-    let fromAddress = `"${process.env.SMTP_USER}" <${process.env.SMTP_USER}>`;
+    let fromAddress = `"${settings.fromName}" <${settings.fromEmail || settings.user}>`;
     let toAddress = to;
     if (to.includes('__FROM_NAME__')) {
       const parts = to.split('__FROM_NAME__');
-      fromAddress = `"${parts[1]}" <${process.env.SMTP_USER}>`;
+      fromAddress = `"${parts[1] || settings.fromName}" <${settings.fromEmail || settings.user}>`;
       toAddress = parts[0];
     }
 
+    const transporter = createSmtpTransport(settings);
     const info = await transporter.sendMail({
       from: fromAddress,
       to: toAddress,
+      replyTo: settings.replyTo || undefined,
       subject,
       html,
     });
@@ -53,7 +52,7 @@ export async function sendCoursePurchaseEmail(userEmail: string, userName: strin
     return acc;
   }, {} as Record<string, string>);
 
-  const senderName = settingsMap.emailSenderName || 'Velocity CMS';
+  const senderName = settingsMap.emailSenderName || 'Website';
   const logoUrl = settingsMap.emailLogoUrl;
   const primaryColor = settingsMap.emailPrimaryColor || '#5e3fde';
   

@@ -18,22 +18,8 @@ export default async function FormsPage({ searchParams }: { searchParams: Promis
   return (
     <div className="max-w-[1200px]">
       <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-1">Forms</h1>
-          <div className="flex gap-4 text-sm">
-            <Link href="/admin/forms" className={!params.status ? 'text-gray-900 font-semibold' : 'text-[#5e3fde] hover:underline'}>
-              All <span className="text-gray-500 font-normal">({await prisma.form.count()})</span>
-            </Link>
-            <Link href="/admin/forms?status=Published" className={params.status === 'Published' ? 'text-gray-900 font-semibold' : 'text-[#5e3fde] hover:underline'}>
-              Published <span className="text-gray-500 font-normal">({await prisma.form.count({ where: { status: 'Published' } })})</span>
-            </Link>
-            <Link href="/admin/forms?status=Draft" className={params.status === 'Draft' ? 'text-gray-900 font-semibold' : 'text-[#5e3fde] hover:underline'}>
-              Drafts <span className="text-gray-500 font-normal">({await prisma.form.count({ where: { status: 'Draft' } })})</span>
-            </Link>
-            <Link href="/admin/forms?status=Trash" className={params.status === 'Trash' ? 'text-gray-900 font-semibold' : 'text-[#5e3fde] hover:underline'}>
-              Trash <span className="text-gray-500 font-normal">({await prisma.form.count({ where: { status: 'Trash' } })})</span>
-            </Link>
-          </div>
+        <div className="flex items-center gap-4">
+          <h1 className="text-2xl font-bold text-gray-900">Forms</h1>
         </div>
         <Link 
           href="/admin/forms/new"
@@ -42,6 +28,16 @@ export default async function FormsPage({ searchParams }: { searchParams: Promis
           <Plus size={18} />
           Add Form
         </Link>
+      </div>
+
+      <div className="flex text-[14px] mb-4 text-[#50575e]">
+        <Link href="/admin/forms" className={!params.status ? 'font-semibold text-gray-900' : 'text-[#5e3fde] hover:underline'}>All <span className="text-gray-500 font-normal">({await prisma.form.count()})</span></Link>
+        <span className="mx-2 text-gray-300">|</span>
+        <Link href="/admin/forms?status=Published" className={params.status === 'Published' ? 'font-semibold text-gray-900' : 'text-[#5e3fde] hover:underline'}>Published <span className="text-gray-500 font-normal">({await prisma.form.count({ where: { status: 'Published' } })})</span></Link>
+        <span className="mx-2 text-gray-300">|</span>
+        <Link href="/admin/forms?status=Draft" className={params.status === 'Draft' ? 'font-semibold text-gray-900' : 'text-[#5e3fde] hover:underline'}>Drafts <span className="text-gray-500 font-normal">({await prisma.form.count({ where: { status: 'Draft' } })})</span></Link>
+        <span className="mx-2 text-gray-300">|</span>
+        <Link href="/admin/forms?status=Trash" className={params.status === 'Trash' ? 'font-semibold text-gray-900' : 'text-[#5e3fde] hover:underline'}>Trash <span className="text-gray-500 font-normal">({await prisma.form.count({ where: { status: 'Trash' } })})</span></Link>
       </div>
       
       <AdminListClient items={forms} type="forms" />

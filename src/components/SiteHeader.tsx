@@ -35,7 +35,7 @@ export default async function SiteHeader({ hideMenu = false }: { hideMenu?: bool
     return acc;
   }, {});
 
-  const siteTitle = settings.site_title || 'Custom CMS';
+  const siteTitle = String(settings.site_title || '').trim() || 'Website';
   const siteIcon = settings.site_icon;
   const siteLogo = settings.site_logo;
 

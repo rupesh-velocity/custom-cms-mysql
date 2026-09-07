@@ -130,16 +130,20 @@ export default function FontsSettings() {
   }
 
   return (
-    <div className="relative">
+    <div className="relative max-w-[980px] space-y-6">
+      <div>
+        <h2 className="text-xl font-semibold text-gray-900">Fonts</h2>
+        <p className="text-sm text-gray-500 mt-1">Upload and manage custom WOFF2 font families used by the site.</p>
+      </div>
       <MediaModal 
         isOpen={modalTargetVarId !== null}
         onClose={() => setModalTargetVarId(null)}
         onInsert={handleMediaInsert}
       />
-      <form onSubmit={handleSubmit} className="max-w-4xl space-y-10">
+      <form onSubmit={handleSubmit} className="space-y-6">
       
       {/* SECTION 1: Typography */}
-      <section className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm space-y-6">
+      <section className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm space-y-6">
         <div className="border-b border-gray-100 pb-4 flex items-center justify-between">
           <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
             <span className="text-xl">Aa</span> Custom Fonts
@@ -147,7 +151,7 @@ export default function FontsSettings() {
           <button
             type="button"
             onClick={addFontFamily}
-            className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-md hover:bg-blue-100 transition-colors text-sm font-medium"
+            className="flex items-center gap-2 px-3 py-1.5 bg-[#5e3fde]/5 text-[#5e3fde] border border-[#5e3fde]/20 rounded-lg hover:bg-[#5e3fde]/10 transition-colors text-sm font-medium"
           >
             <Plus size={16} /> Add Font Family
           </button>
@@ -173,7 +177,7 @@ export default function FontsSettings() {
                       value={family.name}
                       onChange={(e) => updateFontFamilyName(family.id, e.target.value)}
                       placeholder="e.g. Roboto"
-                      className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                      className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-2 focus:ring-[#5e3fde]/15 focus:border-[#5e3fde] outline-none"
                     />
                   </div>
                   <button
@@ -255,7 +259,7 @@ export default function FontsSettings() {
                     <button
                       type="button"
                       onClick={() => addVariation(family.id)}
-                      className="text-sm font-medium text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                      className="text-sm font-medium text-[#5e3fde] hover:text-[#4b32b2] flex items-center gap-1"
                     >
                       <Plus size={14} /> Add Weight/Variation
                     </button>
@@ -268,11 +272,11 @@ export default function FontsSettings() {
       </section>
 
       {/* Sticky Save Button */}
-      <div className="sticky bottom-0 bg-white/80 backdrop-blur border-t border-gray-200 p-4 -mx-8 px-8 flex justify-end">
+      <div className="sticky bottom-0 bg-white/95 backdrop-blur border border-gray-200 rounded-xl p-4 flex justify-end shadow-sm">
         <button
           type="submit"
           disabled={isSaving}
-          className="flex items-center gap-2 px-8 py-2.5 bg-[#5e3fde] text-white rounded font-medium hover:bg-[#4b32b2] disabled:opacity-50 transition-colors"
+          className="flex items-center gap-2 px-6 py-2.5 bg-[#5e3fde] text-white rounded-lg font-medium hover:bg-[#4b32b2] disabled:opacity-50 transition-colors"
         >
           {isSaving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
           Save Changes

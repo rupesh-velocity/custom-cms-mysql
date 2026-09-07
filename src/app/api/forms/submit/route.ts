@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import nodemailer from 'nodemailer';
+import { createSmtpTransport, getSmtpSettings } from '@/lib/smtp';
 
 export async function POST(req: Request) {
   try {
-    const { formId, data, recaptchaToken, pageUrl } = await req.json();
+    const { formId, data, recaptchaToken, honeypot, pageUrl } = await req.json();
     
     if (!formId) return NextResponse.json({ error: 'Missing formId' }, { status: 400 });
 
@@ -13,14 +13,42 @@ export async function POST(req: Request) {
 
     const settings = form.settings ? JSON.parse(form.settings) : {};
 
-    if (settings.enableRecaptchaV3 && settings.recaptchaSecretKey) {
+    // Spam protection is configured globally under Forms > Settings.
+    const spamRows = await prisma.setting.findMany({
+      where: { key: { in: [
+        'forms_honeypot_enabled',
+        'forms_recaptcha_v3_enabled',
+        'forms_recaptcha_secret_key',
+        'forms_recaptcha_score_threshold'
+      ] } }
+    });
+    const spam = spamRows.reduce((acc: Record<string, string>, row) => {
+      acc[row.key] = row.value || '';
+      return acc;
+    }, {});
+
+    const honeypotEnabled = spam.forms_honeypot_enabled !== 'false';
+    if (honeypotEnabled && String(honeypot || '').trim()) {
+      // Return a normal success response so bots do not learn which trap caught them.
+      return NextResponse.json({ success: true, message: settings.successMessage || 'Thank you for your submission!' });
+    }
+
+    const recaptchaEnabled = spam.forms_recaptcha_v3_enabled === 'true';
+    if (recaptchaEnabled) {
+      const secretKey = spam.forms_recaptcha_secret_key || '';
+      if (!secretKey) return NextResponse.json({ error: 'reCAPTCHA is enabled but not configured.' }, { status: 500 });
       if (!recaptchaToken) return NextResponse.json({ error: 'reCAPTCHA token missing' }, { status: 400 });
-      
-      const verifyUrl = `https://www.google.com/recaptcha/api/siteverify?secret=${settings.recaptchaSecretKey}&response=${recaptchaToken}`;
-      const verifyRes = await fetch(verifyUrl, { method: 'POST' });
+
+      const verifyBody = new URLSearchParams({ secret: secretKey, response: recaptchaToken });
+      const verifyRes = await fetch('https://www.google.com/recaptcha/api/siteverify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: verifyBody.toString()
+      });
       const verifyData = await verifyRes.json();
-      
-      if (!verifyData.success || verifyData.score < 0.5) {
+      const threshold = Math.min(1, Math.max(0, Number(spam.forms_recaptcha_score_threshold || '0.5') || 0.5));
+
+      if (!verifyData.success || Number(verifyData.score || 0) < threshold) {
         return NextResponse.json({ error: 'Spam detected by reCAPTCHA.' }, { status: 400 });
       }
     }
@@ -45,27 +73,15 @@ export async function POST(req: Request) {
     }
 
     if (notifications.length > 0) {
-      // Fetch SMTP settings
-      const smtpSettings = await prisma.setting.findMany({
-        where: { key: { in: ['smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'from_email', 'site_title'] } }
-      });
-      const smtpMap = smtpSettings.reduce((acc: any, s: any) => ({ ...acc, [s.key]: s.value }), {});
-      
-      const host = smtpMap.smtp_host || process.env.SMTP_HOST;
-      const port = parseInt(smtpMap.smtp_port || process.env.SMTP_PORT || '587');
-      const user = smtpMap.smtp_user || process.env.SMTP_USER;
-      const pass = smtpMap.smtp_pass || process.env.SMTP_PASS;
-      const defaultFrom = smtpMap.from_email || process.env.SMTP_FROM || user || 'noreply@example.com';
-      const siteName = smtpMap.site_title || 'Custom CMS';
-      
-      if (host && user && pass) {
-        const transporter = nodemailer.createTransport({
-          host,
-          port,
-          secure: port === 465,
-          auth: { user, pass }
-        });
-        
+      // Provider-independent SMTP configuration. Supports Gmail, hosting SMTP,
+      // Outlook/Office 365, Zoho, Mailgun/SendGrid SMTP relays, and custom servers.
+      const smtp = await getSmtpSettings();
+      const defaultFrom = smtp.fromEmail || smtp.user || 'noreply@example.com';
+      const siteTitleSetting = await prisma.setting.findUnique({ where: { key: 'site_title' } });
+      const siteName = siteTitleSetting?.value || 'Website';
+
+      if (smtp.enabled && smtp.host && (smtp.authMode === 'none' || (smtp.user && smtp.pass))) {
+        const transporter = createSmtpTransport(smtp);
         let fields: any[] = [];
         try { fields = JSON.parse(form.fields || '[]'); } catch(e) {}
 

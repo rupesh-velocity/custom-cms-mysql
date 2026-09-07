@@ -95,9 +95,6 @@ export default function CourseViewerClient({ course }: CourseViewerClientProps) 
             })}
           </div>
 
-          <button className="w-full bg-[#5e3fde] text-white py-3 rounded-lg font-medium hover:bg-[#4b32b2] transition-all transform hover:scale-[1.02] shadow-md shadow-[#5e3fde]/20">
-            Mark Course Complete
-          </button>
         </div>
       </div>
     </div>

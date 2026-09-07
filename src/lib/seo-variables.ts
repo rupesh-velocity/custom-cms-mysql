@@ -27,7 +27,16 @@ export function resolveSeoVariables(text: string | undefined | null, context: Se
   const currentMonth = now.toLocaleDateString('en-US', { month: 'long' });
   const currentYear = now.getFullYear().toString();
 
-  let resolved = text
+  let template = text;
+  if (!siteName) {
+    // If Site Title is empty, remove the common separator + sitename pair
+    // instead of inventing a CMS/agency brand fallback.
+    template = template
+      .replace(/\s*%sep%\s*%sitename%/gi, '')
+      .replace(/%sitename%\s*%sep%\s*/gi, '');
+  }
+
+  let resolved = template
     .replace(/%title%/gi, title)
     .replace(/%sitename%/gi, siteName)
     .replace(/%sep%/gi, separator)

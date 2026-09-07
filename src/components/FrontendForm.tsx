@@ -17,6 +17,7 @@ export default function FrontendForm({ id }: { id: string }) {
   const [error, setError] = useState('');
   const [formData, setFormData] = useState<any>({});
   const [honeypot, setHoneypot] = useState('');
+  const [spamSettings, setSpamSettings] = useState({ enableHoneypot: true, enableRecaptchaV3: false, recaptchaSiteKey: '' });
 
   useEffect(() => {
     fetch(`${BASE_PATH}/api/forms/${id}`)
@@ -44,15 +45,28 @@ export default function FrontendForm({ id }: { id: string }) {
       });
   }, [id]);
 
-  const settings = form?.settings ? JSON.parse(form.settings) : {
+  useEffect(() => {
+    fetch(`${BASE_PATH}/api/settings`, { cache: 'no-store' })
+      .then(res => res.json())
+      .then(data => {
+        if (data?.error) return;
+        setSpamSettings({
+          enableHoneypot: data.forms_honeypot_enabled !== 'false',
+          enableRecaptchaV3: data.forms_recaptcha_v3_enabled === 'true',
+          recaptchaSiteKey: data.forms_recaptcha_site_key || ''
+        });
+      })
+      .catch(err => console.error('Failed to load global form spam settings:', err));
+  }, []);
+
+  const formSettings = form?.settings ? JSON.parse(form.settings) : {
     submitText: 'Submit Form',
     successAction: 'message',
     successMessage: 'Your submission has been received successfully.',
-    redirectUrl: '',
-    enableHoneypot: form?.settings?.includes('enableSpamProtection') || form?.settings?.includes('"spamProtectionType":"honeypot"') ? true : false,
-    enableRecaptchaV3: false,
-    recaptchaSiteKey: ''
+    redirectUrl: ''
   };
+
+  const settings = { ...formSettings, ...spamSettings };
 
   useEffect(() => {
     if (settings.enableRecaptchaV3 && settings.recaptchaSiteKey) {
@@ -122,7 +136,7 @@ export default function FrontendForm({ id }: { id: string }) {
       const res = await fetch(`${BASE_PATH}/api/forms/submit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ formId: id, data: formData, recaptchaToken, pageUrl: window.location.href })
+        body: JSON.stringify({ formId: id, data: formData, recaptchaToken, honeypot, pageUrl: window.location.href })
       });
       const data = await res.json();
       

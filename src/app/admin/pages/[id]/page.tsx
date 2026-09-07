@@ -9,6 +9,7 @@ import LinkSuggestionsSidebar from '@/components/LinkSuggestionsSidebar';
 import SeoAnalyzer from '@/components/SeoAnalyzer';
 import toast from 'react-hot-toast';
 import { BASE_PATH } from '@/lib/config';
+import RevisionHistory from '@/components/RevisionHistory';
 
 export default function EditPage() {
   const router = useRouter();
@@ -53,7 +54,8 @@ export default function EditPage() {
       .then(res => res.json())
       .then(data => {
         if (data.error) {
-          toast.error('Page not found');
+          setIsLoading(false);
+          toast.error(data.error || 'Page not found');
           router.push('/admin/pages');
           return;
         }
@@ -80,26 +82,31 @@ export default function EditPage() {
         setFeaturedImage(data.featuredImage || null);
         setHeroDescription(data.heroDescription || '');
         
-        // Check if this is the homepage
+        // Page data is enough to render the editor. Do not block the editor
+        // while the global settings request is still loading.
+        setIsLoading(false);
+
+        // Fetch global settings once, then use the same response for homepage
+        // detection and SEO/editor settings.
         fetch(`${BASE_PATH}/api/settings`)
-          .then(res => res.json())
+          .then(res => {
+            if (!res.ok) throw new Error(`Settings request failed (${res.status})`);
+            return res.json();
+          })
           .then(settings => {
-            if (settings.homepage_displays === 'static_page' && settings.homepage_page_id === params?.id) {
-              setIsHomepage(true);
-            }
-            setIsLoading(false);
-          })
-          .catch(() => setIsLoading(false));
-          
-        // Fetch global settings
-        fetch(`${BASE_PATH}/api/settings`)
-          .then(res => res.json())
-          .then(data => {
-            if (!data.error) {
-              setGlobalSettings(data);
+            if (!settings.error) {
+              setGlobalSettings(settings);
+              if (
+                settings.homepage_displays === 'static_page' &&
+                String(settings.homepage_page_id || '') === String(params?.id || '')
+              ) {
+                setIsHomepage(true);
+              }
             }
           })
-          .catch(console.error);
+          .catch(err => {
+            console.error('Failed to load page settings:', err);
+          });
       })
       .catch(err => {
         console.error(err);
@@ -167,16 +174,21 @@ export default function EditPage() {
     return <div className="p-8 text-center text-gray-500">Loading editor...</div>;
   }
 
+  const trailingSlash = globalSettings?.permalink_trailing_slash !== 'false';
+  const effectiveSlug = slug || title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+  const previewPath = isHomepage ? '/' : `/${effectiveSlug}${trailingSlash ? '/' : ''}`;
+  const previewUrl = `${BASE_PATH}${previewPath}` || '/';
+
   return (
-    <div className="max-w-[1200px] mx-auto pt-4">
-      <div className="flex items-center gap-3 mb-4">
-        <h1 className="text-[23px] text-[#1d2327]">Edit Page</h1>
-        <Link href="/admin/pages/new" className="border border-[#5e3fde] text-[#5e3fde] hover:bg-[#f6f7f7] px-2.5 py-0.5 text-[13px] rounded-[3px] font-medium transition-colors">
+    <div className="max-w-[1280px] mx-auto py-6 px-2">
+      <div className="flex items-center justify-between gap-3 mb-5">
+        <div><h1 className="text-2xl font-semibold text-gray-900">Edit Page</h1><p className="text-sm text-gray-500 mt-1">Update page content, publishing and SEO settings.</p></div>
+        <Link href="/admin/pages/new" className="border border-[#5e3fde] text-[#5e3fde] hover:bg-[#5e3fde]/5 px-3 py-2 text-sm rounded-lg font-medium transition-colors">
           Add Page
         </Link>
       </div>
-      <div className="flex gap-4">
-        <div className="flex-1 min-w-0 flex flex-col gap-4">
+      <div className="flex gap-6 items-start">
+        <div className="flex-1 min-w-0 flex flex-col gap-5">
         <ClassicEditor 
           title={title}
           setTitle={setTitle}
@@ -188,10 +200,13 @@ export default function EditPage() {
           heroDescription={heroDescription}
           setHeroDescription={setHeroDescription}
           isHomepage={isHomepage}
+          permalinkBase=""
+          trailingSlash={trailingSlash}
+          modern={true}
         />
         
         {globalSettings?.seo_page_add_seo_controls !== 'false' && (
-          <div className="mt-4">
+          <div>
             <SeoAnalyzer 
               title={title} setTitle={setTitle}
               slug={slug} setSlug={setSlug}
@@ -211,9 +226,11 @@ export default function EditPage() {
             />
           </div>
         )}
+
+        <RevisionHistory type="page" id={String(params?.id || '')} enabled={true} />
       </div>
 
-      <div className="w-[280px] shrink-0">
+      <div className="w-[300px] shrink-0 flex flex-col gap-4">
         <ClassicSidebar 
           status={status}
           setStatus={setStatus}
@@ -231,6 +248,8 @@ export default function EditPage() {
           featuredImage={featuredImage}
           setFeaturedImage={setFeaturedImage}
           isPost={false}
+          previewUrl={previewUrl}
+          modern={true}
         />
         <LinkSuggestionsSidebar 
           globalSettings={globalSettings} 

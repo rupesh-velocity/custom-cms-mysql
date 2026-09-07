@@ -1,8 +1,11 @@
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
 import { BASE_PATH } from '@/lib/config';
+import { buildPostUrl } from '@/lib/permalinks';
+import { getPermalinkSettings } from '@/lib/permalink-settings';
 
 export default async function BlogSidebar() {
+  const permalinkSettings = await getPermalinkSettings();
   const recentPosts = await prisma.post.findMany({
     where: { status: 'Published' },
     orderBy: { publishedAt: 'desc' },
@@ -34,7 +37,7 @@ export default async function BlogSidebar() {
         <div className="recent-posts-list">
           {recentPosts.length > 0 ? recentPosts.map(post => (
             <div key={post.id}>
-              <Link href={`/${post.slug}`} className="recent-post-item">
+              <Link href={buildPostUrl(post.slug, permalinkSettings)} className="recent-post-item">
                 <h4 className="recent-post-title">
                   {post.title}
                 </h4>

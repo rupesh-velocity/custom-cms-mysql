@@ -3,14 +3,27 @@ import Header from '@/components/Header';
 import { Toaster } from 'react-hot-toast';
 import { prisma } from '@/lib/prisma';
 import { BASE_PATH } from '@/lib/config';
+import { getSessionUser } from '@/lib/admin-auth';
+import type { Metadata } from 'next';
 
 export const dynamic = 'force-dynamic';
 
+export async function generateMetadata(): Promise<Metadata> {
+  try {
+    const row = await prisma.setting.findUnique({ where: { key: 'site_title' } });
+    const siteTitle = String(row?.value || '').trim() || 'Website';
+    return { title: `Admin Panel – ${siteTitle}` };
+  } catch {
+    return { title: 'Admin Panel' };
+  }
+}
+
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   let enableProducts = false;
-  let siteTitle = 'Velocity CMS';
-  let siteIcon = `${BASE_PATH}/velocity-logo.png`;
+  let siteTitle = 'Website';
+  let siteIcon = '';
   let dbError = null;
+  let currentUserName = 'Admin';
 
   try {
     const settings = await prisma.setting.findMany({
@@ -24,6 +37,20 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       if (setting.key === 'site_title' && setting.value) siteTitle = setting.value;
       if (setting.key === 'site_icon' && setting.value) siteIcon = setting.value;
     });
+
+    const sessionUser = await getSessionUser();
+    if (sessionUser?.id) {
+      const profile = await prisma.user.findUnique({
+        where: { id: sessionUser.id },
+        select: { firstName: true, lastName: true, username: true, email: true },
+      });
+      if (profile) {
+        const fullName = `${profile.firstName || ''} ${profile.lastName || ''}`.trim();
+        currentUserName = fullName || profile.username || profile.email || sessionUser.username || 'Admin';
+      } else {
+        currentUserName = sessionUser.username || 'Admin';
+      }
+    }
   } catch (error: any) {
     console.error("Database connection failed in AdminLayout:", error);
     dbError = error.message;
@@ -52,7 +79,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <Toaster position="top-right" />
         <Sidebar enableProducts={enableProducts} siteTitle={siteTitle} siteIcon={siteIcon} />
         <div className="flex-1 flex flex-col">
-          <Header />
+          <Header userName={currentUserName} />
           <main className="flex-1 p-8">
             {children}
           </main>

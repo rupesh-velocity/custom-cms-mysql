@@ -24,6 +24,8 @@ export default function NewPage() {
   const [redirectUrl, setRedirectUrl] = useState('');
   const [redirectType, setRedirectType] = useState('301');
   const [noIndex, setNoIndex] = useState(false);
+  const [seoRobots, setSeoRobots] = useState<string | null>(null);
+  const [seoAdvancedRobots, setSeoAdvancedRobots] = useState<string | null>(null);
   const [schemaJson, setSchemaJson] = useState('');
   const [slug, setSlug] = useState('');
 
@@ -47,6 +49,8 @@ export default function NewPage() {
       .catch(console.error);
   }, []);
 
+  const trailingSlash = globalSettings?.permalink_trailing_slash !== 'false';
+
   const handlePublish = async (overrideStatus?: string) => {
     if (!title) {
       toast.error('Please enter a title');
@@ -66,9 +70,12 @@ export default function NewPage() {
           contentText,
           metaDescription,
           focusKeyword,
+          seoTitle,
           redirectUrl,
           redirectType,
           noIndex,
+          seoRobots,
+          seoAdvancedRobots,
           status: finalStatus,
           visibility,
           password,
@@ -97,8 +104,12 @@ export default function NewPage() {
   };
 
   return (
-    <div className="flex gap-4 max-w-[1200px] mx-auto pt-4">
-      <div className="flex-1 min-w-0 flex flex-col gap-4">
+    <div className="max-w-[1280px] mx-auto py-6 px-2">
+      <div className="flex items-center justify-between gap-3 mb-5">
+        <div><h1 className="text-2xl font-semibold text-gray-900">Add Page</h1><p className="text-sm text-gray-500 mt-1">Create a new page for your website.</p></div>
+      </div>
+      <div className="flex gap-6 items-start">
+      <div className="flex-1 min-w-0 flex flex-col gap-5">
         <ClassicEditor 
           title={title}
           setTitle={setTitle}
@@ -109,10 +120,13 @@ export default function NewPage() {
           setContentText={setContentText}
           heroDescription={heroDescription}
           setHeroDescription={setHeroDescription}
+          permalinkBase=""
+          trailingSlash={trailingSlash}
+          modern={true}
         />
         
         {globalSettings?.seo_page_add_seo_controls !== 'false' && (
-          <div className="mt-4">
+          <div>
             <SeoAnalyzer 
               title={title}
               setTitle={setTitle}
@@ -123,12 +137,18 @@ export default function NewPage() {
               content={contentText}
               focusKeyword={focusKeyword}
               setFocusKeyword={setFocusKeyword}
+              seoTitle={seoTitle}
+              setSeoTitle={setSeoTitle}
               redirectUrl={redirectUrl}
               setRedirectUrl={setRedirectUrl}
               redirectType={redirectType}
               setRedirectType={setRedirectType}
               noIndex={noIndex}
               setNoIndex={setNoIndex}
+              seoRobots={seoRobots}
+              setSeoRobots={setSeoRobots}
+              seoAdvancedRobots={seoAdvancedRobots}
+              setSeoAdvancedRobots={setSeoAdvancedRobots}
               schemaJson={schemaJson}
               setSchemaJson={setSchemaJson}
               onScoreChange={setSeoScore}
@@ -139,7 +159,7 @@ export default function NewPage() {
         )}
       </div>
 
-      <div className="w-[280px] shrink-0">
+      <div className="w-[300px] shrink-0">
         <ClassicSidebar 
           status={status}
           setStatus={setStatus}
@@ -158,6 +178,7 @@ export default function NewPage() {
           featuredImage={featuredImage}
           setFeaturedImage={setFeaturedImage}
           isPost={false}
+          modern={true}
         />
         <LinkSuggestionsSidebar 
           globalSettings={globalSettings} 
@@ -168,6 +189,7 @@ export default function NewPage() {
           isPillar={isPillar}
           setIsPillar={setIsPillar}
         />
+      </div>
       </div>
     </div>
   );

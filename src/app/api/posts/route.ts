@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server';
+import { isAdministratorSession } from '@/lib/admin-auth';
 import { prisma } from '@/lib/prisma';
 import { cookies } from 'next/headers';
 import { jwtVerify } from 'jose';
 
 export async function POST(req: Request) {
+  if (!(await isAdministratorSession())) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   try {
     const data = await req.json();
     
@@ -42,6 +44,8 @@ export async function POST(req: Request) {
         redirectUrl: data.redirectUrl,
         redirectType: data.redirectType,
         noIndex: data.noIndex || false,
+        seoRobots: data.seoRobots !== undefined ? data.seoRobots : null,
+        seoAdvancedRobots: data.seoAdvancedRobots !== undefined ? data.seoAdvancedRobots : null,
         status: data.status || 'Draft',
         visibility: data.visibility || 'Public',
         password: data.password || null,

@@ -1,127 +1,35 @@
-import { ShoppingCart, Eye, Search, Filter } from 'lucide-react';
+import { Eye, Search, ShoppingCart, CheckCircle2, Clock3, DollarSign, Download } from 'lucide-react';
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
 import SearchFilterClient from '@/components/SearchFilterClient';
 
-export const dynamic = 'force-dynamic';
+export const dynamic='force-dynamic';
 
-export default async function OrdersPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
-  const resolvedParams = await searchParams;
-  const q = resolvedParams.q || '';
-  
-  const where: any = q ? {
-    OR: [
-      { orderNumber: { contains: q, mode: 'insensitive' } },
-      { customerEmail: { contains: q, mode: 'insensitive' } },
-      { billingAddress: { contains: q, mode: 'insensitive' } }
-    ]
-  } : {};
+const statusClass:Record<string,string>={COMPLETED:'bg-emerald-50 text-emerald-700 border-emerald-100',PROCESSING:'bg-blue-50 text-blue-700 border-blue-100',PENDING:'bg-amber-50 text-amber-700 border-amber-100',CANCELLED:'bg-red-50 text-red-700 border-red-100'};
 
-  const orders = await prisma.order.findMany({
-    where,
-    orderBy: { createdAt: 'desc' },
-    include: {
-      customer: true,
-      items: true
-    }
-  });
+export default async function OrdersPage({searchParams}:{searchParams:Promise<{q?:string}>}){
+  const {q=''}=await searchParams;
+  const where:any=q?{OR:[{orderNumber:{contains:q,mode:'insensitive'}},{customerEmail:{contains:q,mode:'insensitive'}},{billingAddress:{contains:q,mode:'insensitive'}}]}:{};
+  const orders=await prisma.order.findMany({where,orderBy:{createdAt:'desc'},include:{customer:true,items:true}});
+  const completed=orders.filter(o=>o.status==='COMPLETED');
+  const pending=orders.filter(o=>o.status==='PENDING'||o.status==='PROCESSING');
+  const revenue=completed.reduce((s,o)=>s+o.totalAmount,0);
 
-  return (
-    <div className="max-w-7xl mx-auto p-8 text-[#2c3338]">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-normal">Orders</h1>
-        <a href="/api/orders/export" download className="px-4 py-2 bg-[#5e3fde] text-white rounded text-[13px] font-medium hover:bg-[#4b32b2] transition-colors">
-          Export Orders
-        </a>
-      </div>
+  return <div className="max-w-[1240px] space-y-6">
+    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4"><div><h1 className="text-2xl font-bold text-gray-900">Orders</h1><p className="text-sm text-gray-500 mt-1.5">Review purchases, payment status and customer order activity.</p></div><a href="/api/orders/export" download className="inline-flex items-center gap-2 bg-[#5e3fde] !text-white px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-[#4b32b2]"><Download size={16}/> Export Orders</a></div>
 
-      <div className="bg-white border border-[#c3c4c7] shadow-sm mb-6 flex items-center justify-between p-3">
-        <div className="flex items-center gap-4">
-          <SearchFilterClient placeholder="Search orders..." />
-          <button className="flex items-center gap-2 px-3 py-1.5 border border-[#8c8f94] rounded-[3px] text-[13px] hover:bg-gray-50">
-            <Filter size={14} /> Filter
-          </button>
-        </div>
-        <div className="text-[13px] text-gray-500">
-          Showing {orders.length} orders
-        </div>
-      </div>
-
-      {orders.length === 0 ? (
-        <div className="bg-white border border-[#c3c4c7] p-12 text-center">
-          <div className="flex justify-center mb-4">
-            <div className="p-4 bg-gray-50 rounded-full">
-              <ShoppingCart size={40} className="text-gray-400" />
-            </div>
-          </div>
-          <h2 className="text-xl font-medium text-gray-900 mb-2">No orders yet</h2>
-          <p className="text-gray-500 mb-6">When customers place orders on your store, they will appear here.</p>
-        </div>
-      ) : (
-        <div className="bg-white border border-[#c3c4c7]">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-[13px]">
-              <thead className="bg-[#f6f7f7] border-b border-[#c3c4c7]">
-                <tr>
-                  <th className="px-4 py-3 font-semibold text-gray-700">Order</th>
-                  <th className="px-4 py-3 font-semibold text-gray-700">Date</th>
-                  <th className="px-4 py-3 font-semibold text-gray-700">Status</th>
-                  <th className="px-4 py-3 font-semibold text-gray-700">Billing</th>
-                  <th className="px-4 py-3 font-semibold text-gray-700">Total</th>
-                  <th className="px-4 py-3 font-semibold text-gray-700 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#c3c4c7]">
-                {orders.map(order => {
-                  let billingInfo = 'N/A';
-                  try {
-                    const parsed = JSON.parse(order.billingAddress);
-                    billingInfo = `${parsed.firstName} ${parsed.lastName}`.trim();
-                  } catch(e) {}
-                  
-                  if (!billingInfo || billingInfo === 'undefined undefined' || billingInfo === 'N/A') {
-                    billingInfo = order.customerEmail || 'Guest';
-                  }
-
-                  const statusColors: any = {
-                    COMPLETED: 'bg-green-100 text-green-800',
-                    PROCESSING: 'bg-blue-100 text-blue-800',
-                    PENDING: 'bg-yellow-100 text-yellow-800',
-                    CANCELLED: 'bg-red-100 text-red-800',
-                  };
-                  
-                  return (
-                    <tr key={order.id} className="hover:bg-[#f6f7f7] transition-colors group">
-                      <td className="px-4 py-3 font-medium text-[#5e3fde]">
-                        {order.orderNumber}
-                      </td>
-                      <td className="px-4 py-3 text-gray-600">
-                        {new Date(order.createdAt).toLocaleDateString()} at {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[order.status] || 'bg-gray-100 text-gray-800'}`}>
-                          {order.status}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-gray-900">
-                        {billingInfo}
-                      </td>
-                      <td className="px-4 py-3 font-medium">
-                        ${order.totalAmount.toFixed(2)}
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <Link href={`/admin/orders/${order.id}`} className="inline-flex items-center gap-1 text-gray-400 hover:text-[#5e3fde] transition-colors">
-                          <Eye size={16} /> <span className="text-xs font-medium">View</span>
-                        </Link>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
+    <div className="grid sm:grid-cols-3 gap-4">
+      <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm"><div className="flex items-center gap-2 text-xs text-gray-500"><ShoppingCart size={15}/> Total orders</div><div className="text-2xl font-bold text-gray-900 mt-2">{orders.length}</div></div>
+      <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm"><div className="flex items-center gap-2 text-xs text-gray-500"><Clock3 size={15}/> Pending / processing</div><div className="text-2xl font-bold text-gray-900 mt-2">{pending.length}</div></div>
+      <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm"><div className="flex items-center gap-2 text-xs text-gray-500"><DollarSign size={15}/> Completed revenue</div><div className="text-2xl font-bold text-gray-900 mt-2">${revenue.toFixed(2)}</div></div>
     </div>
-  );
+
+    <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+      <div className="p-4 border-b border-gray-100 bg-gray-50/60 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"><SearchFilterClient placeholder="Search orders..."/><span className="text-xs text-gray-500">Showing {orders.length} order{orders.length===1?'':'s'}</span></div>
+      {orders.length===0?<div className="py-16 text-center"><ShoppingCart size={38} className="text-gray-300 mx-auto"/><h2 className="text-base font-semibold text-gray-900 mt-4">No orders found</h2><p className="text-sm text-gray-500 mt-1">Orders will appear here after checkout.</p></div>:<div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr className="bg-gray-50/40 border-b border-gray-100"><th className="px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Order</th><th className="px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Date</th><th className="px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</th><th className="px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Customer</th><th className="px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Total</th><th className="px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide text-right">Action</th></tr></thead><tbody className="divide-y divide-gray-100">{orders.map(order=>{
+        let billing='';try{const x=JSON.parse(order.billingAddress);billing=`${x.firstName||''} ${x.lastName||''}`.trim();}catch{};billing=billing||order.customerEmail||'Guest';
+        return <tr key={order.id} className="hover:bg-gray-50/60 transition-colors"><td className="px-5 py-4"><Link href={`/admin/orders/${order.id}`} className="font-semibold text-[#5e3fde] hover:underline">{order.orderNumber}</Link><div className="text-xs text-gray-400 mt-1">{order.items.length} item{order.items.length===1?'':'s'}</div></td><td className="px-5 py-4 text-gray-600">{new Date(order.createdAt).toLocaleDateString()}<div className="text-xs text-gray-400 mt-1">{new Date(order.createdAt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div></td><td className="px-5 py-4"><span className={`inline-flex border px-2.5 py-1 rounded-full text-xs font-semibold ${statusClass[order.status]||'bg-gray-50 text-gray-600 border-gray-100'}`}>{order.status}</span></td><td className="px-5 py-4"><div className="font-medium text-gray-900">{billing}</div><div className="text-xs text-gray-500 mt-1">{order.customerEmail}</div></td><td className="px-5 py-4 font-semibold text-gray-900">${order.totalAmount.toFixed(2)}</td><td className="px-5 py-4 text-right"><Link href={`/admin/orders/${order.id}`} className="inline-flex items-center gap-1.5 text-sm font-medium text-[#5e3fde] hover:underline"><Eye size={15}/> View</Link></td></tr>;
+      })}</tbody></table></div>}
+    </div>
+  </div>;
 }

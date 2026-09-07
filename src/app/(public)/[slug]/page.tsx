@@ -17,6 +17,8 @@ import ContentRenderer from '@/components/ContentRenderer';
 import PageHeroBanner from '@/components/PageHeroBanner';
 import BodyClassInjector from '@/components/BodyClassInjector';
 import { BASE_PATH } from '@/lib/config';
+import { buildPostUrl, buildCategoryUrl } from '@/lib/permalinks';
+import { getPermalinkSettings } from '@/lib/permalink-settings';
 const TwitterIcon = ({ className }: { className?: string }) => (
   <svg className={className} fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
     <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z" />
@@ -68,6 +70,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     };
   }
 
+  const permalinkSettings = await getPermalinkSettings();
   const seoContext: any = {
     title: data.seoTitle,
     rawTitle: data.title,
@@ -82,8 +85,10 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     isPost: data.__type === 'post',
     type: data.__type === 'post' ? 'article' : 'website',
     noIndex: data.noIndex,
+    robots: data.seoRobots,
+    advancedRobots: data.seoAdvancedRobots,
     image: data.featuredImage,
-    url: `/${slug}`,
+    url: data.__type === 'post' ? buildPostUrl(slug, permalinkSettings) : `/${slug}`,
   };
 
   return generateFullMetadata(seoContext);
@@ -141,7 +146,7 @@ export default async function PublicPage(props: { params: Promise<{ slug: string
       OR: [
         { key: { startsWith: 'seo_' } }, 
         { key: { startsWith: 'breadcrumbs_' } },
-        { key: { in: ['site_title', 'site_tagline'] } }
+        { key: { in: ['site_title', 'site_tagline', 'site_url', 'permalink_post_base', 'permalink_category_base', 'permalink_tag_base', 'permalink_trailing_slash'] } }
       ] 
     }
   });
@@ -300,7 +305,7 @@ export default async function PublicPage(props: { params: Promise<{ slug: string
        }
        return resolveSeoVariables(titleFormat, {
          title: item.title,
-         siteName: seoSettings['site_title'] || 'Custom CMS',
+         siteName: String(seoSettings['site_title'] || '').trim(),
          separator: seoSettings['seo_separator'] || '-',
          siteDesc: seoSettings['site_tagline'] || '',
          capitalizeTitles: seoSettings['seo_capitalize_titles'] === 'true'
@@ -413,7 +418,7 @@ export default async function PublicPage(props: { params: Promise<{ slug: string
                   {posts.map((post: any) => (
                  <article key={post.id} className="blog-post-card">
                       {post.featuredImage && (
-                        <Link href={`/${post.slug}`} className="blog-post-img-wrap">
+                        <Link href={buildPostUrl(post.slug, seoSettings)} className="blog-post-img-wrap">
                           <img src={post.featuredImage} alt={post.title} className="blog-post-img" />
                           <div className="blog-post-img-spacer"></div>
                         </Link>
@@ -422,11 +427,11 @@ export default async function PublicPage(props: { params: Promise<{ slug: string
                         <div className="blog-post-category">
                           {post.categories?.map((cat: any, i: number) => (
                             <span key={cat.id}>
-                              <Link href={`/category/${cat.slug}`}>{cat.name}</Link>
+                              <Link href={buildCategoryUrl(cat.slug, seoSettings)}>{cat.name}</Link>
                             </span>
                           ))}
                         </div>
-                        <Link href={`/${post.slug}`} className="block group">
+                        <Link href={buildPostUrl(post.slug, seoSettings)} className="block group">
                           <h2 className="blog-post-title">
                             {post.title}
                           </h2>
@@ -444,14 +449,14 @@ export default async function PublicPage(props: { params: Promise<{ slug: string
                         {post.visibility === 'Password Protected' && cookieStore.get(`post_pass_${post.id}`)?.value !== post.password ? (
                           <div className="blog-post-excerpt">
                             <p>This content is password protected.</p>
-                            <Link href={`/${post.slug}`} className="blog-post-read-more">
+                            <Link href={buildPostUrl(post.slug, seoSettings)} className="blog-post-read-more">
                               Enter Password &rarr;
                             </Link>
                           </div>
                         ) : (
                           <div className="blog-post-excerpt">
                             <p>{(post.contentText || '').substring(0, 180)}...</p>
-                            <Link href={`/${post.slug}`} className="blog-post-read-more">
+                            <Link href={buildPostUrl(post.slug, seoSettings)} className="blog-post-read-more">
                               Read more &rarr;
                             </Link>
                           </div>
@@ -494,7 +499,7 @@ export default async function PublicPage(props: { params: Promise<{ slug: string
                 <div className="flex justify-center flex-wrap items-center gap-2 text-sm text-[#a5b4fc] font-bold tracking-wide uppercase">
                   {data.categories?.map((cat: any, i: number) => (
                     <span key={cat.id}>
-                      <Link href={`/category/${cat.slug}`} className="hover:text-white transition-colors">{cat.name}</Link>
+                      <Link href={buildCategoryUrl(cat.slug, seoSettings)} className="hover:text-white transition-colors">{cat.name}</Link>
                       {i < data.categories.length - 1 ? ' • ' : ''}
                     </span>
                   ))}
@@ -529,21 +534,28 @@ export default async function PublicPage(props: { params: Promise<{ slug: string
                 })()}
                 
                 {/* Share Buttons */}
-                <div className="mt-16 pt-8 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-6">
-                  <h3 className="text-gray-900 font-bold font-outfit text-xl">Share this article</h3>
-                  <div className="flex items-center gap-3">
-                    <a href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(data.title)}&url=YOUR_DOMAIN/${data.slug}`} target="_blank" rel="noopener noreferrer" className="w-12 h-12 flex items-center justify-center rounded-full bg-gray-50 text-gray-600 hover:bg-[#1DA1F2] hover:text-white transition-colors">
-                      <TwitterIcon className="w-5 h-5" />
-                    </a>
-                    <a href={`https://www.facebook.com/sharer/sharer.php?u=YOUR_DOMAIN/${data.slug}`} target="_blank" rel="noopener noreferrer" className="w-12 h-12 flex items-center justify-center rounded-full bg-gray-50 text-gray-600 hover:bg-[#4267B2] hover:text-white transition-colors">
-                      <FacebookIcon className="w-5 h-5" />
-                    </a>
-                    <a href={`https://www.linkedin.com/shareArticle?mini=true&url=YOUR_DOMAIN/${data.slug}&title=${encodeURIComponent(data.title)}`} target="_blank" rel="noopener noreferrer" className="w-12 h-12 flex items-center justify-center rounded-full bg-gray-50 text-gray-600 hover:bg-[#0077B5] hover:text-white transition-colors">
-                      <LinkedinIcon className="w-5 h-5" />
-                    </a>
-                    <CopyLinkButton url={`https://YOUR_DOMAIN/${data.slug}`} />
-                  </div>
-                </div>
+                {(() => {
+                  const configuredSiteUrl = String(seoSettings.site_url || 'http://localhost:3000').replace(/\/$/, '');
+                  const postPath = buildPostUrl(data.slug, seoSettings);
+                  const postUrl = `${configuredSiteUrl}${postPath.startsWith('/') ? postPath : `/${postPath}`}`;
+                  return (
+                    <div className="mt-16 pt-8 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-6">
+                      <h3 className="text-gray-900 font-bold font-outfit text-xl">Share this article</h3>
+                      <div className="flex items-center gap-3">
+                        <a href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(data.title)}&url=${encodeURIComponent(postUrl)}`} target="_blank" rel="noopener noreferrer" className="w-12 h-12 flex items-center justify-center rounded-full bg-gray-50 text-gray-600 hover:bg-[#1DA1F2] hover:text-white transition-colors" aria-label="Share on X">
+                          <TwitterIcon className="w-5 h-5" />
+                        </a>
+                        <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(postUrl)}`} target="_blank" rel="noopener noreferrer" className="w-12 h-12 flex items-center justify-center rounded-full bg-gray-50 text-gray-600 hover:bg-[#4267B2] hover:text-white transition-colors" aria-label="Share on Facebook">
+                          <FacebookIcon className="w-5 h-5" />
+                        </a>
+                        <a href={`https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(postUrl)}&title=${encodeURIComponent(data.title)}`} target="_blank" rel="noopener noreferrer" className="w-12 h-12 flex items-center justify-center rounded-full bg-gray-50 text-gray-600 hover:bg-[#0077B5] hover:text-white transition-colors" aria-label="Share on LinkedIn">
+                          <LinkedinIcon className="w-5 h-5" />
+                        </a>
+                        <CopyLinkButton url={postUrl} />
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* Author Box */}
                 {showAuthorBox && data.author && (
@@ -553,8 +565,8 @@ export default async function PublicPage(props: { params: Promise<{ slug: string
                     </div>
                     <div className="text-center sm:text-left">
                       <h4 className="text-xl font-bold text-gray-900 font-outfit mb-2">{data.author.firstName} {data.author.lastName}</h4>
-                      <p className="text-gray-600 leading-relaxed">
-                        Author at this blog. Writing about technology, design, and modern web development.
+                      <p className="text-gray-600 leading-relaxed whitespace-pre-line">
+                        {data.author.bio || 'Author at this blog.'}
                       </p>
                     </div>
                   </div>

@@ -3,18 +3,45 @@ import { prisma } from '@/lib/prisma';
 export const dynamic = 'force-dynamic';
 
 export default async function AdminDashboard() {
-  const [totalPosts, totalPages, totalUsers, recentPages, recentPosts] = await Promise.all([
+  const userSelect = { id: true, firstName: true, lastName: true, username: true, email: true } as const;
+  const [totalPosts, totalPages, totalUsers, recentPages, recentPosts, siteTitleSetting] = await Promise.all([
     prisma.post.count(),
     prisma.page.count(),
     prisma.user.count(),
-    prisma.page.findMany({ orderBy: { updatedAt: 'desc' }, take: 5 }),
-    prisma.post.findMany({ orderBy: { updatedAt: 'desc' }, take: 5 }),
+    prisma.page.findMany({ orderBy: { updatedAt: 'desc' }, take: 5, include: { author: { select: userSelect } } }),
+    prisma.post.findMany({ orderBy: { updatedAt: 'desc' }, take: 5, include: { author: { select: userSelect } } }),
+    prisma.setting.findUnique({ where: { key: 'site_title' } }),
   ]);
-  
-  // Combine and sort recent activity
-  const recentActivity = [...recentPages.map(p => ({ ...p, type: 'Page' })), ...recentPosts.map(p => ({ ...p, type: 'Post' }))]
+  const siteTitle = String(siteTitleSetting?.value || '').trim() || 'Website';
+
+  const recentBase = [...recentPages.map(p => ({ ...p, type: 'Page' as const })), ...recentPosts.map(p => ({ ...p, type: 'Post' as const }))]
     .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
     .slice(0, 5);
+
+  const revisionFilters = recentBase.map(item => ({ contentType: item.type.toLowerCase(), contentId: item.id }));
+  const recentRevisions = revisionFilters.length ? await prisma.revision.findMany({
+    where: { OR: revisionFilters },
+    orderBy: { createdAt: 'desc' },
+    select: { contentType: true, contentId: true, authorId: true, authorName: true },
+  }) : [];
+
+  const editorIds = [...new Set(recentRevisions.map(r => r.authorId).filter((id): id is number => Boolean(id)))];
+  const editors = editorIds.length ? await prisma.user.findMany({ where: { id: { in: editorIds } }, select: userSelect }) : [];
+  const editorById = new Map(editors.map(user => [user.id, user]));
+  const latestRevisionByItem = new Map<string, (typeof recentRevisions)[number]>();
+  for (const revision of recentRevisions) {
+    const key = `${revision.contentType}:${revision.contentId}`;
+    if (!latestRevisionByItem.has(key)) latestRevisionByItem.set(key, revision);
+  }
+  const displayName = (user: { firstName: string | null; lastName: string | null; username: string; email: string } | null | undefined) =>
+    user ? (`${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username || user.email) : '';
+
+  const recentActivity = recentBase.map(item => {
+    const revision = latestRevisionByItem.get(`${item.type.toLowerCase()}:${item.id}`);
+    const revisionUser = revision?.authorId ? editorById.get(revision.authorId) : null;
+    const updatedByName = displayName(revisionUser) || revision?.authorName || displayName(item.author) || 'System';
+    return { ...item, updatedByName };
+  });
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-12">
@@ -22,7 +49,7 @@ export default async function AdminDashboard() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-8 rounded-2xl shadow-sm border border-gray-100 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-[#5e3fde]/10 to-transparent rounded-bl-full pointer-events-none"></div>
         <div className="relative z-10">
-          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Welcome to Velocity CMS</h1>
+          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Welcome to {siteTitle}</h1>
           <p className="text-gray-500 mt-2 text-lg">Your dashboard is looking great today. Here's what's happening.</p>
         </div>
         <div className="relative z-10">
@@ -60,7 +87,7 @@ export default async function AdminDashboard() {
                 </div>
                 <div className="flex items-center gap-3">
                   <svg className="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" /></svg>
-                  <span className="text-[14px] text-gray-600 font-medium">Velocity Theme</span>
+                  <span className="text-[14px] text-gray-600 font-medium">Site: {siteTitle}</span>
                 </div>
               </div>
             </div>
@@ -124,7 +151,7 @@ export default async function AdminDashboard() {
                         </span>
                       </div>
                       <p className="text-sm text-gray-600 mt-1">
-                        Was updated by <span className="font-medium text-gray-900">Admin</span>. 
+                        Was updated by <span className="font-medium text-gray-900">{item.updatedByName}</span>. 
                         <a href={`/admin/${item.type.toLowerCase()}s/${item.id}`} className="ml-2 text-[#5e3fde] hover:underline">Edit</a>
                       </p>
                     </div>

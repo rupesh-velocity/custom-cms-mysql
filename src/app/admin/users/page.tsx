@@ -1,14 +1,27 @@
 import Link from 'next/link';
 import { Plus, Shield, User as UserIcon } from 'lucide-react';
-import ActionButtons from '@/components/ActionButtons';
+import UserActions from '@/components/UserActions';
 import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
 export default async function UsersPage() {
   const users = await prisma.user.findMany({
-    orderBy: { createdAt: 'desc' }
+    orderBy: { createdAt: 'desc' },
+    include: {
+      _count: {
+        select: { posts: true, pages: true, createdCourses: true, createdProducts: true, forms: true }
+      }
+    }
   });
+
+  const candidates = users.map((user) => ({
+    id: user.id,
+    username: user.username,
+    email: user.email,
+    firstName: user.firstName,
+    lastName: user.lastName,
+  }));
 
   return (
     <div>
@@ -57,7 +70,17 @@ export default async function UsersPage() {
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <ActionButtons id={user.id} type="users" />
+                    <UserActions
+                      user={{ id: user.id, username: user.username, email: user.email, firstName: user.firstName, lastName: user.lastName }}
+                      candidates={candidates}
+                      counts={{
+                        pages: user._count.pages,
+                        posts: user._count.posts,
+                        courses: user._count.createdCourses,
+                        products: user._count.createdProducts,
+                        forms: user._count.forms,
+                      }}
+                    />
                   </td>
                 </tr>
               ))}

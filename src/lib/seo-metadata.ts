@@ -9,6 +9,8 @@ export interface PageSeoContext {
   image?: string | null;
   type?: 'website' | 'article' | 'profile';
   noIndex?: boolean; // Page specific override
+  robots?: string | null; // Page/post-level robots override
+  advancedRobots?: string | null; // Page/post-level advanced robots override
   
   // Provide raw data to resolve variables
   rawTitle?: string | null;
@@ -46,10 +48,11 @@ export async function generateFullMetadata(context: PageSeoContext): Promise<Met
             in: [
               'site_title', 'site_tagline', 'site_icon', 'site_url',
               'seo_separator', 'seo_capitalize_titles', 
-              'seo_page_title', 'seo_post_title',
+              'seo_page_title', 'seo_post_title', 'seo_page_desc', 'seo_post_desc',
               'seo_global_robots', 'seo_global_advanced_robots',
-              'seo_page_robots', 'seo_page_advanced_robots',
-              'seo_post_robots', 'seo_post_advanced_robots',
+              'seo_global_adv_snippet', 'seo_global_adv_snippet_val', 'seo_global_adv_video', 'seo_global_adv_video_val', 'seo_global_adv_image', 'seo_global_adv_image_val',
+              'seo_page_robots', 'seo_page_advanced_robots', 'seo_page_adv_snippet_val', 'seo_page_adv_video_val', 'seo_page_adv_image_val',
+              'seo_post_robots', 'seo_post_advanced_robots', 'seo_post_adv_snippet_val', 'seo_post_adv_video_val', 'seo_post_adv_image_val',
               'seo_og_thumbnail', 'seo_twitter_card',
               'seo_social_fb_url', 'seo_social_twitter_username',
               'seo_google_verify', 'seo_bing_verify', 'seo_baidu_verify', 
@@ -69,7 +72,7 @@ export async function generateFullMetadata(context: PageSeoContext): Promise<Met
     return acc;
   }, {});
 
-  const siteName = settings.site_title || 'Custom CMS';
+  const siteName = String(settings.site_title || '').trim();
   const siteUrl = settings.site_url || 'http://localhost:3000';
   const capitalizeTitles = settings.seo_capitalize_titles === 'true';
 
@@ -101,7 +104,13 @@ export async function generateFullMetadata(context: PageSeoContext): Promise<Met
 
   const finalTitle = resolveSeoVariables(titleFormat, varContext);
   
-  const rawDescription = resolveSeoVariables(context.description || '%excerpt%', varContext) || varContext.excerpt;
+  let descriptionFormat = context.description || '';
+  if (!descriptionFormat) {
+    descriptionFormat = context.isPost
+      ? (settings.seo_post_desc || '%excerpt%')
+      : (settings.seo_page_desc || '%excerpt%');
+  }
+  const rawDescription = resolveSeoVariables(descriptionFormat, varContext) || varContext.excerpt;
   const finalDescription = rawDescription?.replace(/\r?\n|\r/g, ' ').replace(/\s+/g, ' ').trim() || '';
 
   // Images
@@ -114,15 +123,40 @@ export async function generateFullMetadata(context: PageSeoContext): Promise<Met
   let isNoImageIndex = false;
   let isNoSnippet = false;
 
+  const makeAdvanced = (prefix: string, fallback = '') => {
+    const values: string[] = [];
+    const snippet = settings[`${prefix}_snippet_val`];
+    const video = settings[`${prefix}_video_val`];
+    const image = settings[`${prefix}_image_val`];
+    const snippetEnabled = settings[`${prefix}_snippet`];
+    const videoEnabled = settings[`${prefix}_video`];
+    const imageEnabled = settings[`${prefix}_image`];
+    if ((snippetEnabled === undefined || snippetEnabled === 'true') && snippet !== undefined && snippet !== '') values.push(`max-snippet:${snippet}`);
+    if ((videoEnabled === undefined || videoEnabled === 'true') && video !== undefined && video !== '') values.push(`max-video-preview:${video}`);
+    if ((imageEnabled === undefined || imageEnabled === 'true') && image !== undefined && image !== '') values.push(`max-image-preview:${String(image).toLowerCase()}`);
+    const hasExplicitToggles = [snippetEnabled, videoEnabled, imageEnabled].some((value) => value !== undefined);
+    if (hasExplicitToggles) return values.join(',');
+    return values.length ? values.join(',') : fallback;
+  };
+
   let robotsSetting = settings.seo_global_robots || 'index';
-  let advancedRobotsSetting = settings.seo_global_advanced_robots;
+  let advancedRobotsSetting = makeAdvanced('seo_global_adv', settings.seo_global_advanced_robots || '');
 
   if (context.isPost && settings.seo_post_robots && settings.seo_post_robots !== 'default') {
     robotsSetting = settings.seo_post_robots;
-    advancedRobotsSetting = settings.seo_post_advanced_robots || advancedRobotsSetting;
+    advancedRobotsSetting = makeAdvanced('seo_post_adv', settings.seo_post_advanced_robots === 'default' ? advancedRobotsSetting : (settings.seo_post_advanced_robots || advancedRobotsSetting));
   } else if (!context.isPost && settings.seo_page_robots && settings.seo_page_robots !== 'default') {
     robotsSetting = settings.seo_page_robots;
-    advancedRobotsSetting = settings.seo_page_advanced_robots || advancedRobotsSetting;
+    advancedRobotsSetting = makeAdvanced('seo_page_adv', settings.seo_page_advanced_robots === 'default' ? advancedRobotsSetting : (settings.seo_page_advanced_robots || advancedRobotsSetting));
+  }
+
+  // A page/post override always wins over the global/type defaults. Null means
+  // inherit; an empty string is an explicit index/follow style override.
+  if (context.robots !== null && context.robots !== undefined) {
+    robotsSetting = context.robots.trim() || 'index';
+  }
+  if (context.advancedRobots !== null && context.advancedRobots !== undefined) {
+    advancedRobotsSetting = context.advancedRobots.trim();
   }
 
   const robotTokens = robotsSetting.split(',').map((s: string) => s.toLowerCase().replace(/\s+/g, ''));
@@ -140,14 +174,20 @@ export async function generateFullMetadata(context: PageSeoContext): Promise<Met
     nosnippet: isNoSnippet,
   };
 
-  if (advancedRobotsSetting) {
-    // format: snippet:-1,video:-1,image:large
+  if (advancedRobotsSetting && advancedRobotsSetting !== 'default') {
+    // Supports both the legacy "snippet:-1" format and the editor's
+    // "max-snippet:-1" format.
     const advParts = advancedRobotsSetting.split(',');
     advParts.forEach((part: string) => {
-      const [k, v] = part.split(':').map((s: string) => s.trim());
-      if (k === 'snippet' && v === '-1') robots.maxSnippet = -1;
-      if (k === 'video' && v === '-1') robots.maxVideoPreview = -1;
-      if (k === 'image' && v === 'large') robots.maxImagePreview = 'large';
+      const separatorIndex = part.indexOf(':');
+      if (separatorIndex < 0) return;
+      const k = part.slice(0, separatorIndex).trim().toLowerCase();
+      const v = part.slice(separatorIndex + 1).trim().toLowerCase();
+      if (k === 'snippet' || k === 'max-snippet') robots.maxSnippet = Number.isFinite(Number(v)) ? Number(v) : v;
+      if (k === 'video' || k === 'max-video-preview') robots.maxVideoPreview = Number.isFinite(Number(v)) ? Number(v) : v;
+      if (k === 'image' || k === 'max-image-preview') {
+        if (['large', 'standard', 'none'].includes(v)) robots.maxImagePreview = v;
+      }
     });
   }
 
@@ -174,10 +214,11 @@ export async function generateFullMetadata(context: PageSeoContext): Promise<Met
       site: settings.seo_social_twitter_username || undefined,
       images: ogImage ? [ogImage] : [],
     },
-    icons: settings.site_icon ? [
-      { rel: 'icon', url: settings.site_icon },
-      { rel: 'apple-touch-icon', url: settings.site_icon },
-    ] : undefined,
+    icons: settings.site_icon ? {
+      icon: [{ url: settings.site_icon }],
+      shortcut: [{ url: settings.site_icon }],
+      apple: [{ url: settings.site_icon }],
+    } : undefined,
     verification: {
       google: settings.seo_google_verify,
       yahoo: settings.seo_bing_verify,

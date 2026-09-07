@@ -11,7 +11,9 @@ interface User {
   email: string;
   firstName: string;
   lastName: string;
+  bio?: string;
   role: string;
+  phone?: string;
 }
 
 interface UserFormProps {
@@ -30,6 +32,8 @@ export default function UserForm({ initialData, isEdit }: UserFormProps) {
     password: '',
     firstName: initialData?.firstName || '',
     lastName: initialData?.lastName || '',
+    bio: initialData?.bio || '',
+    phone: initialData?.phone || '',
     role: initialData?.role || 'Subscriber',
   });
 
@@ -127,6 +131,36 @@ const res = await fetch(url, {
             value={formData.lastName}
             onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
           />
+        </div>
+      </div>
+
+      <div className="mb-6">
+        <label className="block text-sm font-medium text-gray-700 mb-1">Author Description</label>
+        <textarea
+          rows={4}
+          placeholder="Write a short biography shown in the author box on blog posts."
+          className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all resize-y"
+          value={formData.bio}
+          onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+        />
+        <p className="text-xs text-gray-500 mt-1">Shown publicly below posts written by this user when the author box is enabled.</p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Mobile Number</label>
+          <input
+            type="tel"
+            placeholder="+15551234567"
+            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+            value={formData.phone}
+            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+          />
+          <p className="text-xs text-gray-500 mt-1">Use E.164 format, including country code.</p>
+        </div>
+        <div className="rounded-lg border border-purple-100 bg-purple-50 px-4 py-3">
+          <div className="text-sm font-medium text-gray-900">OTP Login Number</div>
+          <p className="text-xs text-gray-600 mt-1 leading-5">When the Twilio OTP add-on is enabled, this registered number is used to sign in. No per-user 2FA toggle is required.</p>
         </div>
       </div>
 

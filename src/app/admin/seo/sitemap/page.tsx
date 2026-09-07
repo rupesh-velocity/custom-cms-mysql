@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Save, Settings, Image as ImageIcon, FileText, File, List, Users, Paperclip, Briefcase, Folder, Tag, MapPin } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { BASE_PATH } from '@/lib/config';
+import { fetchJsonWithRetry } from '@/lib/client-api';
 
 export default function SitemapSettings() {
   const [activeTab, setActiveTab] = useState('general');
@@ -38,25 +38,29 @@ export default function SitemapSettings() {
       setActiveTab(window.location.hash.replace('#', ''));
     }
     setOrigin(window.location.origin);
-    fetch(`${BASE_PATH}/api/settings/seo`)
-      .then((res) => res.json())
+    let cancelled = false;
+
+    fetchJsonWithRetry<Record<string, string>>('/api/settings/seo')
       .then((data) => {
+        if (cancelled) return;
         setSettings((prev) => ({ ...prev, ...data }));
         setInitialSettings((prev) => ({ ...prev, ...data }));
-        setIsLoading(false);
       })
       .catch((err) => {
-        console.error('Failed to load settings', err);
-        toast.error('Failed to load settings');
-        setIsLoading(false);
+        console.error('Failed to load sitemap settings', err);
+        if (!cancelled) toast.error(err instanceof Error ? err.message : 'Failed to load sitemap settings');
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false);
       });
 
-    fetch(`${BASE_PATH}/api/pages`)
-      .then(res => res.json())
+    fetchJsonWithRetry<any[]>('/api/pages')
       .then(data => {
-        if (Array.isArray(data)) setPagesList(data);
+        if (!cancelled && Array.isArray(data)) setPagesList(data);
       })
-      .catch(console.error);
+      .catch((err) => console.error('Failed to load pages for sitemap settings', err));
+
+    return () => { cancelled = true; };
   }, []);
 
   const handleChange = (key: string, value: string) => {
@@ -83,17 +87,12 @@ export default function SitemapSettings() {
         return;
       }
 
-      const res = await fetch(`${BASE_PATH}/api/settings/seo`, {
+      await fetchJsonWithRetry('/api/settings/seo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(changedSettings)
       });
-      
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.details || errData.error || 'Failed to save');
-      }
-      
+
       setInitialSettings((prev) => ({ ...prev, ...changedSettings }));
       toast.success('Sitemap Settings saved successfully');
     } catch (error: any) {

@@ -1,20 +1,20 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { buildCategoryUrl } from '@/lib/permalinks';
+import { escapeXml, requestBaseUrl, sitemapResponseHeaders } from '@/lib/sitemap-utils';
 
 export const revalidate = 0;
 
 export async function GET(request: Request) {
   try {
-    const host = request.headers.get('host') || 'localhost:3000';
-    const protocol = host.includes('localhost') ? 'http' : 'https';
-    const appUrl = `${protocol}://${host}`;
-    
     const settings = await prisma.setting.findMany({
       where: {
-        key: { in: ['seo_sitemap_include_categories', 'seo_sitemap_empty_categories'] }
+        key: { in: ['seo_sitemap_include_categories', 'seo_sitemap_empty_categories', 'permalink_category_base', 'permalink_trailing_slash', 'site_url'] }
       }
     });
 
+    const settingMap = settings.reduce((acc:Record<string,string>, row:any) => { acc[row.key]=row.value||''; return acc; }, {});
+    const appUrl = requestBaseUrl(request, settingMap.site_url);
     const includeCategories = settings.find(s => s.key === 'seo_sitemap_include_categories')?.value !== 'false';
     const includeEmpty = settings.find(s => s.key === 'seo_sitemap_empty_categories')?.value === 'true';
 
@@ -38,7 +38,7 @@ export async function GET(request: Request) {
 
     for (const cat of filteredCategories) {
       xml += `  <url>\n`;
-      xml += `    <loc>${appUrl}/category/${cat.slug}</loc>\n`;
+      xml += `    <loc>${escapeXml(`${appUrl}${buildCategoryUrl(cat.slug, settingMap)}`)}</loc>\n`;
       xml += `    <lastmod>${new Date(cat.updatedAt).toISOString()}</lastmod>\n`;
       xml += `  </url>\n`;
     }
@@ -46,9 +46,7 @@ export async function GET(request: Request) {
     xml += `</urlset>`;
 
     return new NextResponse(xml, {
-      headers: {
-        'Content-Type': 'application/xml',
-      },
+      headers: sitemapResponseHeaders,
     });
   } catch (error) {
     console.error('Error generating category sitemap:', error);

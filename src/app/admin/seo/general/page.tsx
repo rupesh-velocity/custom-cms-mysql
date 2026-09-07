@@ -67,17 +67,38 @@ export default function SeoGeneralSettings() {
   });
 
   useEffect(() => {
-    fetch(`${BASE_PATH}/api/settings/seo`)
-      .then((res) => res.json())
-      .then((data) => {
-        setSettings((prev) => ({ ...prev, ...data }));
-        setIsLoading(false);
-      })
-      .catch((err) => {
-        console.error('Failed to load settings', err);
-        toast.error('Failed to load settings');
-        setIsLoading(false);
-      });
+    let cancelled = false;
+
+    const loadSettings = async (attempt = 0) => {
+      try {
+        const res = await fetch(`${BASE_PATH}/api/settings/seo`, {
+          credentials: 'same-origin',
+          cache: 'no-store',
+        });
+        if (!res.ok) {
+          const payload = await res.json().catch(() => ({}));
+          throw new Error(payload.error || `SEO settings request failed (${res.status})`);
+        }
+        const data = await res.json();
+        if (!cancelled) setSettings((prev) => ({ ...prev, ...data }));
+      } catch (err) {
+        // Dev servers can briefly abort a request while Webpack recompiles.
+        // Retry once so the SEO screen does not fail on a transient rebuild.
+        if (attempt === 0 && !cancelled) {
+          await new Promise((resolve) => window.setTimeout(resolve, 350));
+          return loadSettings(1);
+        }
+        console.error('Failed to load SEO settings', err);
+        if (!cancelled) toast.error(err instanceof Error ? err.message : 'Failed to load SEO settings');
+      } finally {
+        if (!cancelled && attempt > 0) setIsLoading(false);
+      }
+    };
+
+    loadSettings().finally(() => {
+      if (!cancelled) setIsLoading(false);
+    });
+    return () => { cancelled = true; };
   }, []);
 
   const handleChange = (key: string, value: string) => {

@@ -1,158 +1,30 @@
-import { Users, Search, Filter, ExternalLink } from 'lucide-react';
+import { Download, ExternalLink, Mail, ShoppingBag, Users, WalletCards } from 'lucide-react';
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
 import SearchFilterClient from '@/components/SearchFilterClient';
 
-export const dynamic = 'force-dynamic';
+export const dynamic='force-dynamic';
 
-export default async function CustomersPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
-  const resolvedParams = await searchParams;
-  const q = resolvedParams.q || '';
-
-  // Fetch all orders to compute unique customers
-  const allOrders = await prisma.order.findMany({
-    include: { customer: true },
-    orderBy: { createdAt: 'desc' }
-  });
-
-  const customersMap = new Map();
-
-  allOrders.forEach(order => {
-    const email = order.customerEmail;
-    
-    // Parse billing to try to get a better name for guests
-    let name = 'Guest';
-    if (order.customer) {
-      name = `${order.customer.firstName || ''} ${order.customer.lastName || ''}`.trim() || order.customer.username;
-    } else {
-      try {
-        const parsed = JSON.parse(order.billingAddress);
-        if (parsed.firstName || parsed.lastName) {
-          name = `${parsed.firstName || ''} ${parsed.lastName || ''}`.trim();
-        }
-      } catch (e) {}
-    }
-
-    if (!customersMap.has(email)) {
-      customersMap.set(email, {
-        email,
-        name,
-        userId: order.customerId,
-        orderCount: 0,
-        totalSpent: 0,
-        lastOrderDate: order.createdAt
-      });
-    }
-
-    const customer = customersMap.get(email);
-    customer.orderCount += 1;
-    if (order.status === 'COMPLETED') {
-      customer.totalSpent += order.totalAmount;
-    }
-    
-    // Update last order date if this order is more recent
-    if (new Date(order.createdAt) > new Date(customer.lastOrderDate)) {
-      customer.lastOrderDate = order.createdAt;
-    }
-  });
-
-  let customers = Array.from(customersMap.values());
-  // Sort by most recent order
-  customers.sort((a, b) => new Date(b.lastOrderDate).getTime() - new Date(a.lastOrderDate).getTime());
-
-  if (q) {
-    const lowerQ = q.toLowerCase();
-    customers = customers.filter(c => 
-      c.name.toLowerCase().includes(lowerQ) || 
-      c.email.toLowerCase().includes(lowerQ)
-    );
+export default async function CustomersPage({searchParams}:{searchParams:Promise<{q?:string}>}){
+  const {q=''}=await searchParams;
+  const allOrders=await prisma.order.findMany({include:{customer:true},orderBy:{createdAt:'desc'}});
+  const map=new Map<string,any>();
+  for(const order of allOrders){
+    const email=order.customerEmail;let name='Guest';
+    if(order.customer) name=`${order.customer.firstName||''} ${order.customer.lastName||''}`.trim()||order.customer.username;
+    else try{const a=JSON.parse(order.billingAddress);name=`${a.firstName||''} ${a.lastName||''}`.trim()||'Guest';}catch{}
+    if(!map.has(email))map.set(email,{email,name,userId:order.customerId,orderCount:0,totalSpent:0,lastOrderDate:order.createdAt});
+    const c=map.get(email);c.orderCount++;if(order.status==='COMPLETED')c.totalSpent+=order.totalAmount;if(new Date(order.createdAt)>new Date(c.lastOrderDate))c.lastOrderDate=order.createdAt;
   }
+  let customers=Array.from(map.values()).sort((a,b)=>new Date(b.lastOrderDate).getTime()-new Date(a.lastOrderDate).getTime());
+  if(q){const t=q.toLowerCase();customers=customers.filter(c=>c.name.toLowerCase().includes(t)||c.email.toLowerCase().includes(t));}
+  const totalSpent=customers.reduce((s,c)=>s+c.totalSpent,0);const registered=customers.filter(c=>c.userId).length;
 
-  return (
-    <div className="max-w-7xl mx-auto p-8 text-[#2c3338]">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-normal">Customers</h1>
-        <a href="/api/customers/export" download className="px-4 py-2 bg-[#5e3fde] text-white rounded text-[13px] font-medium hover:bg-[#4b32b2] transition-colors">
-          Export Customers
-        </a>
-      </div>
-
-      <div className="bg-white border border-[#c3c4c7] shadow-sm mb-6 flex items-center justify-between p-3">
-        <div className="flex items-center gap-4">
-          <SearchFilterClient placeholder="Search customers..." />
-          <button className="flex items-center gap-2 px-3 py-1.5 border border-[#8c8f94] rounded-[3px] text-[13px] hover:bg-gray-50">
-            <Filter size={14} /> Filter
-          </button>
-        </div>
-        <div className="text-[13px] text-gray-500">
-          Showing {customers.length} customers
-        </div>
-      </div>
-
-      {customers.length === 0 ? (
-        <div className="bg-white border border-[#c3c4c7] p-12 text-center">
-          <div className="flex justify-center mb-4">
-            <div className="p-4 bg-gray-50 rounded-full">
-              <Users size={40} className="text-gray-400" />
-            </div>
-          </div>
-          <h2 className="text-xl font-medium text-gray-900 mb-2">No customers yet</h2>
-          <p className="text-gray-500 mb-6">When people place orders, they will appear here as customers.</p>
-        </div>
-      ) : (
-        <div className="bg-white border border-[#c3c4c7]">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-[13px]">
-              <thead className="bg-[#f6f7f7] border-b border-[#c3c4c7]">
-                <tr>
-                  <th className="px-4 py-3 font-semibold text-gray-700">Name</th>
-                  <th className="px-4 py-3 font-semibold text-gray-700">Email</th>
-                  <th className="px-4 py-3 font-semibold text-gray-700">Last Order</th>
-                  <th className="px-4 py-3 font-semibold text-gray-700">Orders</th>
-                  <th className="px-4 py-3 font-semibold text-gray-700">Total Spent</th>
-                  <th className="px-4 py-3 font-semibold text-gray-700 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#c3c4c7]">
-                {customers.map((customer, idx) => (
-                  <tr key={idx} className="hover:bg-[#f6f7f7] transition-colors group">
-                    <td className="px-4 py-3 font-medium text-gray-900 flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-full bg-[#5e3fde]/10 flex items-center justify-center text-[#5e3fde] font-bold text-[10px]">
-                        {customer.name.charAt(0).toUpperCase()}
-                      </div>
-                      {customer.name}
-                      {!customer.userId && (
-                        <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded border border-gray-200">Guest</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-[#5e3fde]">
-                      <a href={`mailto:${customer.email}`}>{customer.email}</a>
-                    </td>
-                    <td className="px-4 py-3 text-gray-600">
-                      {new Date(customer.lastOrderDate).toLocaleDateString()}
-                    </td>
-                    <td className="px-4 py-3 text-gray-600">
-                      {customer.orderCount}
-                    </td>
-                    <td className="px-4 py-3 font-medium text-green-700">
-                      ${customer.totalSpent.toFixed(2)}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      {customer.userId ? (
-                        <Link href={`/admin/users/${customer.userId}`} className="inline-flex items-center gap-1 text-gray-400 hover:text-[#5e3fde] transition-colors">
-                          <ExternalLink size={14} /> <span className="text-xs font-medium">Profile</span>
-                        </Link>
-                      ) : (
-                        <span className="text-gray-400 text-xs">-</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
+  return <div className="max-w-[1240px] space-y-6">
+    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4"><div><h1 className="text-2xl font-bold text-gray-900">Customers</h1><p className="text-sm text-gray-500 mt-1.5">See customer purchasing history and account status in one place.</p></div><a href="/api/customers/export" download className="inline-flex items-center gap-2 bg-[#5e3fde] !text-white px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-[#4b32b2]"><Download size={16}/> Export Customers</a></div>
+    <div className="grid sm:grid-cols-3 gap-4"><div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm"><div className="flex items-center gap-2 text-xs text-gray-500"><Users size={15}/> Customers</div><div className="text-2xl font-bold text-gray-900 mt-2">{customers.length}</div></div><div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm"><div className="flex items-center gap-2 text-xs text-gray-500"><ShoppingBag size={15}/> Registered accounts</div><div className="text-2xl font-bold text-gray-900 mt-2">{registered}</div></div><div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm"><div className="flex items-center gap-2 text-xs text-gray-500"><WalletCards size={15}/> Completed spend</div><div className="text-2xl font-bold text-gray-900 mt-2">${totalSpent.toFixed(2)}</div></div></div>
+    <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden"><div className="p-4 border-b border-gray-100 bg-gray-50/60 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"><SearchFilterClient placeholder="Search customers..."/><span className="text-xs text-gray-500">Showing {customers.length} customer{customers.length===1?'':'s'}</span></div>
+      {customers.length===0?<div className="py-16 text-center"><Users size={38} className="text-gray-300 mx-auto"/><h2 className="text-base font-semibold text-gray-900 mt-4">No customers found</h2></div>:<div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr className="bg-gray-50/40 border-b border-gray-100"><th className="px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Customer</th><th className="px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Last Order</th><th className="px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Orders</th><th className="px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Total Spent</th><th className="px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide text-right">Action</th></tr></thead><tbody className="divide-y divide-gray-100">{customers.map((c,i)=><tr key={`${c.email}-${i}`} className="hover:bg-gray-50/60"><td className="px-5 py-4"><div className="flex items-center gap-3"><div className="w-9 h-9 rounded-full bg-[#5e3fde]/10 text-[#5e3fde] flex items-center justify-center font-bold text-sm">{c.name.charAt(0).toUpperCase()}</div><div><div className="font-semibold text-gray-900 flex items-center gap-2">{c.name}{!c.userId&&<span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">Guest</span>}</div><a href={`mailto:${c.email}`} className="text-xs text-[#5e3fde] hover:underline inline-flex items-center gap-1 mt-1"><Mail size={11}/>{c.email}</a></div></div></td><td className="px-5 py-4 text-gray-600">{new Date(c.lastOrderDate).toLocaleDateString()}</td><td className="px-5 py-4 font-medium text-gray-900">{c.orderCount}</td><td className="px-5 py-4 font-semibold text-emerald-700">${c.totalSpent.toFixed(2)}</td><td className="px-5 py-4 text-right">{c.userId?<Link href={`/admin/users/${c.userId}`} className="inline-flex items-center gap-1.5 text-sm font-medium text-[#5e3fde] hover:underline"><ExternalLink size={14}/> Profile</Link>:<span className="text-xs text-gray-400">Guest</span>}</td></tr>)}</tbody></table></div>}
     </div>
-  );
+  </div>;
 }

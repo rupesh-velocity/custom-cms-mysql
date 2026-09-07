@@ -13,6 +13,8 @@ export default function AdminListClient({ items, type }: { items: any[], type: '
   const [search, setSearch] = useState('');
   const [bulkAction, setBulkAction] = useState('');
   const [globalSettings, setGlobalSettings] = useState<any>({});
+  const [page, setPage] = useState(1);
+  const pageSize = 20;
   const router = useRouter();
 
   const filteredItems = items.filter(item => 
@@ -20,6 +22,11 @@ export default function AdminListClient({ items, type }: { items: any[], type: '
     item.author?.firstName?.toLowerCase().includes(search.toLowerCase()) || 
     item.author?.username?.toLowerCase().includes(search.toLowerCase())
   );
+  const totalPages = Math.max(1, Math.ceil(filteredItems.length / pageSize));
+  const visibleItems = filteredItems.slice((page - 1) * pageSize, page * pageSize);
+  const showCompactActions = type === 'forms';
+  const visibleIds = visibleItems.map(item => item.id);
+  const allVisibleSelected = visibleIds.length > 0 && visibleIds.every(id => selectedIds.includes(id));
 
   useEffect(() => {
     fetch(`${BASE_PATH}/api/auth/me`)
@@ -42,14 +49,16 @@ export default function AdminListClient({ items, type }: { items: any[], type: '
       .catch(() => {});
   }, []);
 
+  useEffect(() => { setPage(1); }, [search, items.length]);
+
   const bulkEditingSetting = type === 'pages' ? globalSettings?.seo_page_bulk_editing : globalSettings?.seo_post_bulk_editing;
   const showSeoDetails = type !== 'forms' && type !== 'courses' && bulkEditingSetting !== 'Disabled';
 
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) {
-      setSelectedIds(items.map(i => i.id));
+      setSelectedIds(prev => Array.from(new Set([...prev, ...visibleIds])));
     } else {
-      setSelectedIds([]);
+      setSelectedIds(prev => prev.filter(id => !visibleIds.includes(id)));
     }
   };
 
@@ -100,6 +109,61 @@ export default function AdminListClient({ items, type }: { items: any[], type: '
     } catch (e) {
       toast.error('Error deleting');
     }
+  };
+
+  const handlePublish = async (id: number) => {
+    try {
+      const sourceRes = await fetch(`${BASE_PATH}/api/${type}/${id}`);
+      const source = await sourceRes.json();
+      if (!sourceRes.ok) throw new Error(source.error || 'Could not read item');
+      const payload: any = { ...source, status: 'Published', publishedAt: source.publishedAt || new Date().toISOString() };
+      if (type === 'posts') {
+        payload.categoryIds = (source.categories || []).map((x:any) => x.id);
+        payload.tagIds = (source.tags || []).map((x:any) => x.id);
+      }
+      const res = await fetch(`${BASE_PATH}/api/${type}/${id}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) { toast.success('Published'); router.refresh(); }
+      else toast.error('Could not publish');
+    } catch { toast.error('Could not publish'); }
+  };
+
+  const handleDuplicate = async (id: number) => {
+    if (type !== 'pages' && type !== 'posts') return;
+    try {
+      const sourceRes = await fetch(`${BASE_PATH}/api/${type}/${id}`);
+      const source = await sourceRes.json();
+      if (!sourceRes.ok) throw new Error(source.error || 'Could not read item');
+      delete source.id; delete source.createdAt; delete source.updatedAt;
+      source.title = `${source.title || 'Untitled'} Copy`;
+      source.slug = `${source.slug || 'copy'}-copy`;
+      source.status = 'Draft';
+      source.publishedAt = null;
+      if (type === 'posts') {
+        source.categoryIds = (source.categories || []).map((x:any) => x.id);
+        source.tagIds = (source.tags || []).map((x:any) => x.id);
+      }
+      const res = await fetch(`${BASE_PATH}/api/${type}`, {
+        method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(source)
+      });
+      const created = await res.json();
+      if (res.ok) { toast.success('Duplicated as draft'); router.push(`/admin/${type}/${created.id}`); }
+      else toast.error(created.error || 'Could not duplicate');
+    } catch(error:any) { toast.error(error.message || 'Could not duplicate'); }
+  };
+
+  const publicUrl = (item:any) => {
+    const withBasePath = (path:string) => `${BASE_PATH}${path.startsWith('/') ? path : `/${path}`}` || '/';
+    if (type === 'courses') return withBasePath(`/courses/${item.slug}`);
+    if (type === 'pages') return withBasePath(`/${item.slug}${globalSettings?.permalink_trailing_slash === 'false' ? '' : '/'}`);
+    if (type === 'posts') {
+      const base=String(globalSettings?.permalink_post_base||'').replace(/^\/+|\/+$/g,'');
+      const path=`/${base ? base+'/' : ''}${item.slug}`;
+      return withBasePath(`${path}${globalSettings?.permalink_trailing_slash === 'false' ? '' : '/'}`);
+    }
+    return withBasePath(`/${item.slug || ''}`);
   };
 
   const handleBulkApply = async () => {
@@ -207,7 +271,7 @@ export default function AdminListClient({ items, type }: { items: any[], type: '
                 <input 
                   type="checkbox" 
                   onChange={handleSelectAll} 
-                  checked={items.length > 0 && selectedIds.length === items.length} 
+                  checked={allVisibleSelected} 
                   className="rounded text-[#5e3fde] focus:ring-[#5e3fde]" 
                 />
               </th>
@@ -222,11 +286,13 @@ export default function AdminListClient({ items, type }: { items: any[], type: '
               {showSeoDetails && (
                 <th className="py-3 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider w-[20%]">SEO Details</th>
               )}
-              <th className="py-3 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider w-[12%] text-right">Actions</th>
+              {showCompactActions && (
+                <th className="py-3 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider w-[12%] text-right">Actions</th>
+              )}
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {filteredItems.map(item => (
+            {visibleItems.map(item => (
               <tr key={item.id} className="hover:bg-gray-50/50 transition-colors group">
                 <td className="py-4 px-6 text-center">
                   <input 
@@ -251,6 +317,17 @@ export default function AdminListClient({ items, type }: { items: any[], type: '
                         </span>
                       )}
                     </div>
+                    {(type === 'pages' || type === 'posts' || type === 'courses') && item.status !== 'Trash' && (
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Link href={type === 'courses' ? `/admin/courses/${item.id}/edit` : `/admin/${type}/${item.id}`} className="text-[#5e3fde] hover:underline font-medium">Edit</Link>
+                        {(type === 'pages' || type === 'posts') && <><span className="text-gray-300">|</span><button onClick={() => handleDuplicate(item.id)} className="text-[#5e3fde] hover:underline font-medium">Duplicate</button></>}
+                        {item.status !== 'Published' && <><span className="text-gray-300">|</span><button onClick={() => handlePublish(item.id)} className="text-green-700 hover:underline font-medium">Publish</button></>}
+                        <span className="text-gray-300">|</span>
+                        <a href={publicUrl(item)} target="_blank" rel="noopener noreferrer" className="text-[#5e3fde] hover:underline font-medium">Preview</a>
+                        <span className="text-gray-300">|</span>
+                        <button onClick={() => handleTrash(item.id)} className="text-red-600 hover:underline font-medium">Move to Trash</button>
+                      </div>
+                    )}
                     {item.status === 'Trash' && (
                       <div className="flex items-center gap-2 text-[12px] opacity-0 group-hover:opacity-100 transition-opacity">
                         <button onClick={() => handleRestore(item.id)} className="text-[#0071a1] hover:underline font-medium">Restore</button>
@@ -320,36 +397,39 @@ export default function AdminListClient({ items, type }: { items: any[], type: '
                     </div>
                   </td>
                 )}
-                <td className="py-4 px-6 text-right">
-                  <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Link 
-                      href={(type === 'courses' || type === 'forms') ? `/admin/${type}/${item.id}/edit` : `/admin/${type}/${item.id}`} 
-                      className="p-2 text-gray-400 hover:text-[#5e3fde] hover:bg-[#5e3fde]/10 rounded-lg transition-colors"
-                      title="Edit"
-                    >
-                      <Edit2 size={16} />
-                    </Link>
-                    {type !== 'forms' && (
+                {showCompactActions && (
+                  <td className="py-4 px-6 text-right">
+                    <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <Link 
-                        href={type === 'courses' ? `/courses/${item.slug}` : `/${item.slug}`} 
-                        target="_blank"
+                        href={(type === 'courses' || type === 'forms') ? `/admin/${type}/${item.id}/edit` : `/admin/${type}/${item.id}`} 
                         className="p-2 text-gray-400 hover:text-[#5e3fde] hover:bg-[#5e3fde]/10 rounded-lg transition-colors"
-                        title="View"
+                        title="Edit"
                       >
-                        <ExternalLink size={16} />
+                        <Edit2 size={16} />
                       </Link>
-                    )}
-                    {item.status !== 'Trash' && (
-                      <button 
-                        onClick={() => handleTrash(item.id)} 
-                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                        title="Trash"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    )}
-                  </div>
-                </td>
+                      {type !== 'forms' && (
+                        <a 
+                          href={publicUrl(item)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-2 text-gray-400 hover:text-[#5e3fde] hover:bg-[#5e3fde]/10 rounded-lg transition-colors"
+                          title="View"
+                        >
+                          <ExternalLink size={16} />
+                        </a>
+                      )}
+                      {item.status !== 'Trash' && (
+                        <button 
+                          onClick={() => handleTrash(item.id)} 
+                          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Trash"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                )}
               </tr>
             ))}
             {filteredItems.length === 0 && (
@@ -362,6 +442,15 @@ export default function AdminListClient({ items, type }: { items: any[], type: '
           </tbody>
         </table>
       </div>
+      {filteredItems.length > pageSize && (
+        <div className="px-4 py-3 border-t border-gray-100 flex items-center justify-between bg-gray-50/50">
+          <span className="text-xs text-gray-500">{filteredItems.length} items · Page {page} of {totalPages}</span>
+          <div className="flex gap-2">
+            <button disabled={page<=1} onClick={()=>setPage(p=>Math.max(1,p-1))} className="px-3 py-1.5 border border-gray-200 bg-white rounded text-xs disabled:opacity-40">Previous</button>
+            <button disabled={page>=totalPages} onClick={()=>setPage(p=>Math.min(totalPages,p+1))} className="px-3 py-1.5 border border-gray-200 bg-white rounded text-xs disabled:opacity-40">Next</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

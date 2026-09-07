@@ -3,12 +3,15 @@ import Link from 'next/link';
 import BlogSidebar from '@/components/BlogSidebar';
 import PageHeroBanner from '@/components/PageHeroBanner';
 import BodyClassInjector from '@/components/BodyClassInjector';
+import { buildPostUrl, buildCategoryUrl } from '@/lib/permalinks';
+import { getPermalinkSettings } from '@/lib/permalink-settings';
 
 export const dynamic = 'force-dynamic';
 
 export default async function SearchPage(props: { searchParams: Promise<{ q?: string }> }) {
   const searchParams = await props.searchParams;
   const q = searchParams.q || '';
+  const permalinkSettings = await getPermalinkSettings();
   
   const posts = await prisma.post.findMany({
     where: {
@@ -63,7 +66,7 @@ export default async function SearchPage(props: { searchParams: Promise<{ q?: st
               {allResults.map((post: any) => (
                 <article key={`${post.__type}-${post.id}`} className="bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow flex flex-col sm:flex-row overflow-hidden group/card">
                   {post.featuredImage && (
-                    <Link href={`/${post.slug}`} className="block w-full sm:w-1/3 lg:w-[30%] shrink-0 overflow-hidden relative">
+                    <Link href={post.__type === 'post' ? buildPostUrl(post.slug, permalinkSettings) : `/${post.slug}`} className="block w-full sm:w-1/3 lg:w-[30%] shrink-0 overflow-hidden relative">
                       <div className="absolute inset-0">
                         <img src={post.featuredImage} alt={post.title} className="w-full h-full object-cover group-hover/card:scale-105 transition-transform duration-700" />
                       </div>
@@ -74,12 +77,12 @@ export default async function SearchPage(props: { searchParams: Promise<{ q?: st
                     <div className="flex flex-wrap items-center gap-2 text-sm text-[#5e3fde] font-semibold mb-2">
                       {post.categories?.map((cat: any, i: number) => (
                         <span key={cat.id}>
-                          <Link href={`/category/${cat.slug}`} className="hover:underline">{cat.name}</Link>
+                          <Link href={buildCategoryUrl(cat.slug, permalinkSettings)} className="hover:underline">{cat.name}</Link>
                           {i < post.categories.length - 1 ? ' • ' : ''}
                         </span>
                       ))}
                     </div>
-                    <Link href={`/${post.slug}`} className="block group">
+                    <Link href={post.__type === 'post' ? buildPostUrl(post.slug, permalinkSettings) : `/${post.slug}`} className="block group">
                       <h2 className="text-2xl font-bold text-gray-900 group-hover:text-[#5e3fde] transition-colors font-outfit leading-tight" style={{ marginBottom: '16px' }}>
                         {post.title}
                       </h2>
@@ -96,7 +99,7 @@ export default async function SearchPage(props: { searchParams: Promise<{ q?: st
                     
                     <div className="prose prose-blue max-w-none text-gray-700 text-sm md:text-base">
                       <p>{(post.contentText || '').substring(0, 180)}...</p>
-                      <Link href={`/${post.slug}`} className="text-[#5e3fde] font-medium hover:underline mt-3 inline-flex items-center gap-1">
+                      <Link href={post.__type === 'post' ? buildPostUrl(post.slug, permalinkSettings) : `/${post.slug}`} className="text-[#5e3fde] font-medium hover:underline mt-3 inline-flex items-center gap-1">
                         Read more &rarr;
                       </Link>
                     </div>

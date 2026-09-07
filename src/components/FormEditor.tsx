@@ -37,11 +37,7 @@ export default function FormEditor({ form }: { form?: any }) {
       submitText: 'Submit Form',
       successAction: 'message',
       successMessage: 'Your submission has been received successfully.',
-      redirectUrl: '',
-      enableHoneypot: true,
-      enableRecaptchaV3: false,
-      recaptchaSiteKey: '',
-      recaptchaSecretKey: ''
+      redirectUrl: ''
     }
   );
   
@@ -105,7 +101,12 @@ export default function FormEditor({ form }: { form?: any }) {
     
     setIsSaving(true);
     try {
-      const payload: any = { title, notificationEmail, fields, settings, status };
+      const cleanSettings = { ...settings };
+      delete cleanSettings.enableHoneypot;
+      delete cleanSettings.enableRecaptchaV3;
+      delete cleanSettings.recaptchaSiteKey;
+      delete cleanSettings.recaptchaSecretKey;
+      const payload: any = { title, notificationEmail, fields, settings: cleanSettings, status };
       if (form) payload.id = form.id; // Include ID so the server knows to update
       
       const url = `${BASE_PATH}/api/forms`; // Always use the root URL that your host allows

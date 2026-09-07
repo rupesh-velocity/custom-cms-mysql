@@ -1,14 +1,11 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { escapeXml, requestBaseUrl, sitemapResponseHeaders } from '@/lib/sitemap-utils';
 
 export const revalidate = 0;
 
 export async function GET(request: Request) {
   try {
-    const host = request.headers.get('host') || 'localhost:3000';
-    const protocol = host.includes('localhost') ? 'http' : 'https';
-    const appUrl = `${protocol}://${host}`;
-    
     // Fetch settings to check if sitemaps are enabled
     const settings = await prisma.setting.findMany({
       where: {
@@ -17,10 +14,14 @@ export async function GET(request: Request) {
           'seo_sitemap_include_pages',
           'seo_sitemap_include_categories',
           'seo_sitemap_include_tags',
-          'seo_sitemap_include_kml'
+          'seo_sitemap_include_kml',
+          'site_url'
         ] }
       }
     });
+
+    const settingMap = settings.reduce<Record<string,string>>((acc, row) => { acc[row.key] = row.value || ''; return acc; }, {});
+    const appUrl = requestBaseUrl(request, settingMap.site_url);
 
     const includePosts = settings.find(s => s.key === 'seo_sitemap_include_posts')?.value !== 'false';
     const includePages = settings.find(s => s.key === 'seo_sitemap_include_pages')?.value !== 'false';
@@ -34,41 +35,39 @@ export async function GET(request: Request) {
 
     if (includePosts) {
       xml += `  <sitemap>\n`;
-      xml += `    <loc>${appUrl}/post-sitemap.xml</loc>\n`;
+      xml += `    <loc>${escapeXml(`${appUrl}/post-sitemap.xml`)}</loc>\n`;
       // You can add lastmod here based on latest post
       xml += `  </sitemap>\n`;
     }
 
     if (includePages) {
       xml += `  <sitemap>\n`;
-      xml += `    <loc>${appUrl}/page-sitemap.xml</loc>\n`;
+      xml += `    <loc>${escapeXml(`${appUrl}/page-sitemap.xml`)}</loc>\n`;
       xml += `  </sitemap>\n`;
     }
 
     if (includeCategories) {
       xml += `  <sitemap>\n`;
-      xml += `    <loc>${appUrl}/category-sitemap.xml</loc>\n`;
+      xml += `    <loc>${escapeXml(`${appUrl}/category-sitemap.xml`)}</loc>\n`;
       xml += `  </sitemap>\n`;
     }
 
     if (includeTags) {
       xml += `  <sitemap>\n`;
-      xml += `    <loc>${appUrl}/post_tag-sitemap.xml</loc>\n`;
+      xml += `    <loc>${escapeXml(`${appUrl}/post_tag-sitemap.xml`)}</loc>\n`;
       xml += `  </sitemap>\n`;
     }
 
     if (includeKml) {
       xml += `  <sitemap>\n`;
-      xml += `    <loc>${appUrl}/locations.kml</loc>\n`;
+      xml += `    <loc>${escapeXml(`${appUrl}/locations.kml`)}</loc>\n`;
       xml += `  </sitemap>\n`;
     }
 
     xml += `</sitemapindex>`;
 
     return new NextResponse(xml, {
-      headers: {
-        'Content-Type': 'application/xml',
-      },
+      headers: sitemapResponseHeaders,
     });
   } catch (error) {
     console.error('Error generating sitemap index:', error);

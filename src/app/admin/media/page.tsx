@@ -8,6 +8,7 @@ import {
   CheckSquare,
   Square,
   FileText,
+  RefreshCw,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { BASE_PATH } from '@/lib/config';
@@ -20,6 +21,11 @@ interface Media {
   size: number;
   altText: string | null;
   createdAt: string;
+  optimized?: boolean;
+  originalFilename?: string | null;
+  originalMimeType?: string | null;
+  originalSize?: number | null;
+  originalUrl?: string | null;
 }
 
 export default function MediaLibrary() {
@@ -33,6 +39,8 @@ export default function MediaLibrary() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedMediaIds, setSelectedMediaIds] = useState<number[]>([]);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [isBulkImageWorking, setIsBulkImageWorking] = useState(false);
+  const [isOptimizing, setIsOptimizing] = useState(false);
 
   const fetchMedia = useCallback(async () => {
     try {
@@ -276,6 +284,30 @@ export default function MediaLibrary() {
     }
   };
 
+
+  const handleBulkImageOperation = async (operation: 'optimize' | 'restore') => {
+    if (selectedMediaIds.length === 0) return;
+    const selected = media.filter(item => selectedMediaIds.includes(item.id) && ['image/jpeg','image/jpg','image/png','image/webp'].includes(item.mimeType));
+    if (!selected.length) { toast.error('Select at least one JPG, PNG or WebP image'); return; }
+    if (operation === 'restore' && !confirm(`Restore original files for ${selected.length} selected image(s) when backups are available?`)) return;
+    setIsBulkImageWorking(true);
+    let success = 0;
+    let failed = 0;
+    for (const item of selected) {
+      try {
+        const res = await fetch(`${BASE_PATH}/api/media/${operation}`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: item.id })
+        });
+        if (res.ok) success++; else failed++;
+      } catch { failed++; }
+    }
+    await fetchMedia();
+    setSelectedMediaIds([]);
+    setIsBulkImageWorking(false);
+    if (success) toast.success(`${operation === 'optimize' ? 'Optimized' : 'Restored'} ${success} image${success === 1 ? '' : 's'}`);
+    if (failed) toast.error(`${failed} image${failed === 1 ? '' : 's'} could not be ${operation === 'optimize' ? 'optimized' : 'restored'}`);
+  };
+
   const toggleSelection = (
     id: number,
     e: React.MouseEvent
@@ -359,6 +391,30 @@ export default function MediaLibrary() {
     }
   };
 
+  const handleImageOperation = async (operation: 'optimize' | 'restore') => {
+    if (!selectedMedia) return;
+    setIsOptimizing(true);
+    try {
+      const res = await fetch(`${BASE_PATH}/api/media/${operation}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: selectedMedia.id }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setSelectedMedia(data);
+        setMedia(prev => prev.map(item => item.id === data.id ? data : item));
+        toast.success(operation === 'optimize' ? 'Image optimized' : 'Original restored');
+      } else {
+        toast.error(data.error || 'Image operation failed');
+      }
+    } catch {
+      toast.error('Image operation failed');
+    } finally {
+      setIsOptimizing(false);
+    }
+  };
+
   const formatBytes = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
 
@@ -426,31 +482,12 @@ export default function MediaLibrary() {
         </div>
 
         {selectedMediaIds.length > 0 && (
-          <div className="flex items-center gap-3 bg-red-50 px-4 py-1.5 rounded border border-red-100">
-            <span className="text-[13px] text-red-700 font-medium">
-              {selectedMediaIds.length} selected
-            </span>
-
-            <button
-              type="button"
-              onClick={handleBulkDelete}
-              disabled={isBulkDeleting}
-              className="flex items-center gap-1.5 bg-red-600 text-white px-3 py-1 rounded text-xs font-medium hover:bg-red-700 disabled:opacity-50 transition-colors"
-            >
-              <Trash2 size={14} />
-
-              {isBulkDeleting
-                ? 'Deleting...'
-                : 'Delete Selected'}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setSelectedMediaIds([])}
-              className="text-xs text-red-600 hover:underline"
-            >
-              Cancel
-            </button>
+          <div className="flex flex-wrap items-center gap-2 bg-white px-4 py-2 rounded-lg border border-gray-200 shadow-sm">
+            <span className="text-[13px] text-gray-700 font-semibold mr-1">{selectedMediaIds.length} selected</span>
+            <button type="button" onClick={() => handleBulkImageOperation('optimize')} disabled={isBulkImageWorking} className="flex items-center gap-1.5 border border-[#5e3fde] text-[#5e3fde] px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-[#5e3fde]/5 disabled:opacity-50"><RefreshCw size={13}/>{isBulkImageWorking ? 'Working...' : 'Optimize'}</button>
+            <button type="button" onClick={() => handleBulkImageOperation('restore')} disabled={isBulkImageWorking} className="flex items-center gap-1.5 border border-gray-300 text-gray-700 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-gray-50 disabled:opacity-50">Restore Original</button>
+            <button type="button" onClick={handleBulkDelete} disabled={isBulkDeleting || isBulkImageWorking} className="flex items-center gap-1.5 bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-red-700 disabled:opacity-50 transition-colors"><Trash2 size={13}/>{isBulkDeleting ? 'Deleting...' : 'Delete'}</button>
+            <button type="button" onClick={() => setSelectedMediaIds([])} className="text-xs text-gray-500 hover:underline ml-1">Cancel</button>
           </div>
         )}
       </div>
@@ -558,6 +595,16 @@ export default function MediaLibrary() {
                 )}
               </button>
 
+              {item.optimized && String(item.mimeType || '').startsWith('image/') && (() => {
+                const saved = item.originalSize ? Math.max(0, item.originalSize - item.size) : 0;
+                const pct = item.originalSize && saved > 0 ? Math.round((saved / item.originalSize) * 100) : 0;
+                return (
+                  <span className="absolute left-2 bottom-2 z-20 bg-green-600/90 text-white text-[10px] font-semibold px-2 py-1 rounded-full shadow">
+                    {pct > 0 ? `Optimized · ${pct}% saved` : 'Optimized'}
+                  </span>
+                );
+              })()}
+
               {item.mimeType.startsWith('image/') ? (
                 <img
                   src={item.url}
@@ -656,6 +703,28 @@ export default function MediaLibrary() {
                     )}
                   </div>
                 </div>
+
+                {['image/jpeg','image/png','image/webp'].includes(selectedMedia.mimeType) && (
+                  <div className="pt-2 border-t border-gray-200 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-500">Optimization</span>
+                      <span className={`text-xs font-semibold ${selectedMedia.optimized ? 'text-green-700' : 'text-gray-500'}`}>{selectedMedia.optimized ? 'Optimized' : 'Original'}</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <button type="button" disabled={isOptimizing} onClick={() => handleImageOperation('optimize')} className="text-[#5e3fde] border border-[#5e3fde] px-2.5 py-1 rounded-lg text-xs font-medium hover:bg-[#5e3fde]/5 disabled:opacity-50">
+                        {isOptimizing ? 'Working…' : (selectedMedia.optimized ? 'Re-optimize' : 'Optimize')}
+                      </button>
+                      {selectedMedia.originalUrl && (
+                        <button type="button" disabled={isOptimizing} onClick={() => handleImageOperation('restore')} className="text-gray-700 border border-gray-300 px-2.5 py-1 rounded-lg text-xs font-medium hover:bg-gray-100 disabled:opacity-50">Restore Original</button>
+                      )}
+                    </div>
+                    {selectedMedia.originalSize && selectedMedia.optimized && (() => {
+                      const saved = Math.max(0, selectedMedia.originalSize - selectedMedia.size);
+                      const pct = selectedMedia.originalSize ? Math.round((saved / selectedMedia.originalSize) * 100) : 0;
+                      return <div className="bg-white border border-gray-200 rounded-lg p-2.5 text-[11px] text-gray-600 space-y-1"><div className="flex justify-between"><span>Original</span><strong>{formatBytes(selectedMedia.originalSize)}</strong></div><div className="flex justify-between"><span>Optimized</span><strong>{formatBytes(selectedMedia.size)}</strong></div><div className="flex justify-between text-green-700"><span>Saved</span><strong>{formatBytes(saved)} ({pct}%)</strong></div></div>;
+                    })()}
+                  </div>
+                )}
 
                 <div className="pt-2">
                   <button

@@ -11,6 +11,8 @@ import { Metadata } from 'next';
 export const dynamic = 'force-dynamic';
 
 import { generateFullMetadata } from '@/lib/seo-metadata';
+import { buildPostUrl, buildCategoryUrl } from '@/lib/permalinks';
+import { getPermalinkSettings } from '@/lib/permalink-settings';
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
@@ -22,6 +24,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     };
   }
 
+  const permalinkSettings = await getPermalinkSettings();
   return generateFullMetadata({
     title: `${category.name} Archives`,
     rawTitle: `${category.name} Archives`,
@@ -29,7 +32,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     rawContentText: `Browse all posts in the ${category.name} category.`,
     category: category.name,
     type: 'website',
-    url: `/category/${category.slug}`,
+    url: buildCategoryUrl(category.slug, permalinkSettings),
   });
 }
 
@@ -46,7 +49,7 @@ export default async function CategoryPage(props: { params: Promise<{ slug: stri
 
   const settingsRecords = await prisma.setting.findMany({
     where: {
-      key: { in: ['blog_pages_at_most', 'feed_include'] }
+      key: { in: ['blog_pages_at_most', 'feed_include', 'permalink_post_base', 'permalink_category_base', 'permalink_tag_base', 'permalink_trailing_slash'] }
     }
   });
 
@@ -114,7 +117,7 @@ export default async function CategoryPage(props: { params: Promise<{ slug: stri
               {posts.map((post: any) => (
                <article key={post.id} className="blog-post-card">
                       {post.featuredImage && (
-                        <Link href={`/${post.slug}`} className="blog-post-img-wrap">
+                        <Link href={buildPostUrl(post.slug, settings)} className="blog-post-img-wrap">
                           <img src={post.featuredImage} alt={post.title} className="blog-post-img" />
                           <div className="blog-post-img-spacer"></div>
                         </Link>
@@ -123,11 +126,11 @@ export default async function CategoryPage(props: { params: Promise<{ slug: stri
                         <div className="blog-post-category">
                           {post.categories?.map((cat: any, i: number) => (
                             <span key={cat.id}>
-                              <Link href={`/category/${cat.slug}`}>{cat.name}</Link>
+                              <Link href={buildCategoryUrl(cat.slug, settings)}>{cat.name}</Link>
                             </span>
                           ))}
                         </div>
-                        <Link href={`/${post.slug}`} className="block group">
+                        <Link href={buildPostUrl(post.slug, settings)} className="block group">
                           <h2 className="blog-post-title">
                             {post.title}
                           </h2>
@@ -145,14 +148,14 @@ export default async function CategoryPage(props: { params: Promise<{ slug: stri
                         {post.visibility === 'Password Protected' && cookieStore.get(`post_pass_${post.id}`)?.value !== post.password ? (
                           <div className="blog-post-excerpt">
                             <p>This content is password protected.</p>
-                            <Link href={`/${post.slug}`} className="blog-post-read-more">
+                            <Link href={buildPostUrl(post.slug, settings)} className="blog-post-read-more">
                               Enter Password &rarr;
                             </Link>
                           </div>
                         ) : (
                           <div className="blog-post-excerpt">
                             <p>{(post.contentText || '').substring(0, 180)}...</p>
-                            <Link href={`/${post.slug}`} className="blog-post-read-more">
+                            <Link href={buildPostUrl(post.slug, settings)} className="blog-post-read-more">
                               Read more &rarr;
                             </Link>
                           </div>
@@ -166,7 +169,7 @@ export default async function CategoryPage(props: { params: Promise<{ slug: stri
                   {Array.from({ length: totalPages }).map((_, i) => (
                     <Link
                       key={i}
-                      href={`/category/${slug}?page=${i + 1}`}
+                      href={`${buildCategoryUrl(slug, settings)}?page=${i + 1}`}
                       className={`w-10 h-10 flex items-center justify-center rounded-lg font-medium transition-colors ${
                         currentPage === i + 1 
                           ? 'bg-[#5e3fde] text-white' 

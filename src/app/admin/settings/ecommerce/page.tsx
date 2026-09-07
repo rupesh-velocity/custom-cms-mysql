@@ -109,18 +109,16 @@ export default function EcommerceSettingsPage() {
   if (isLoading) return <div className="flex justify-center p-12"><Loader2 className="animate-spin text-gray-400" /></div>;
 
   return (
-    <div className="relative max-w-[1200px] text-[#2c3338]">
+    <div className="relative max-w-[1240px] text-[#2c3338] space-y-6 [&_input]:rounded-lg [&_input]:border-gray-300 [&_select]:rounded-lg [&_select]:border-gray-300 [&_textarea]:rounded-lg [&_textarea]:border-gray-300">
       <MediaModal 
         isOpen={isMediaModalOpen}
         onClose={() => setIsMediaModalOpen(false)}
         onInsert={handleMediaInsert}
       />
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-normal">Settings</h1>
-      </div>
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4"><div><h1 className="text-2xl font-bold text-gray-900">E-Commerce Settings</h1><p className="text-sm text-gray-500 mt-1.5">Configure store details, shipping, taxes, payments and customer emails.</p></div><button onClick={handleSave} disabled={isSaving} className="inline-flex items-center gap-2 bg-[#5e3fde] text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-[#4b32b2] disabled:opacity-50">{isSaving ? <Loader2 size={15} className="animate-spin"/> : <Save size={15}/>} Save Changes</button></div>
 
       {/* WooCommerce style horizontal tabs */}
-      <div className="flex border-b border-[#c3c4c7] mb-6 overflow-x-auto scrollbar-hide">
+      <div className="flex bg-white border border-gray-200 rounded-xl px-3 pt-2 overflow-x-auto scrollbar-hide shadow-sm">
         {['General', 'Shipping'].map(tab => (
           <button
             type="button"
@@ -171,7 +169,7 @@ export default function EcommerceSettingsPage() {
         })}
       </div>
 
-      <div className="bg-white border border-[#c3c4c7] p-8">
+      <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 md:p-8">
         {activeTab === 'general' && (
           <div className="space-y-8">
             <h2 className="text-lg font-semibold border-b border-gray-100 pb-2 mb-4">Store Address</h2>
@@ -557,11 +555,11 @@ export default function EcommerceSettingsPage() {
         )}
       </div>
 
-      <div className="mt-6">
+      <div className="mt-6 flex justify-end">
         <button
           onClick={handleSave}
           disabled={isSaving}
-          className="px-4 py-2 bg-[#5e3fde] text-white rounded-[3px] text-[13px] font-medium hover:bg-[#4b32b2] disabled:opacity-50 flex items-center gap-2"
+          className="px-5 py-2.5 bg-[#5e3fde] text-white rounded-lg text-sm font-semibold hover:bg-[#4b32b2] disabled:opacity-50 flex items-center gap-2"
         >
           {isSaving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
           Save changes

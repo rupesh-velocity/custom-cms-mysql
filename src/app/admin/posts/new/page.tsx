@@ -21,6 +21,8 @@ export default function NewPost() {
   const [redirectUrl, setRedirectUrl] = useState('');
   const [redirectType, setRedirectType] = useState('301');
   const [noIndex, setNoIndex] = useState(false);
+  const [seoRobots, setSeoRobots] = useState<string | null>(null);
+  const [seoAdvancedRobots, setSeoAdvancedRobots] = useState<string | null>(null);
   const [schemaJson, setSchemaJson] = useState('');
   
   const [focusKeyword, setFocusKeyword] = useState('');
@@ -48,6 +50,8 @@ export default function NewPost() {
   }, []);
   const [categoryIds, setCategoryIds] = useState<number[]>([]);
   const [tagIds, setTagIds] = useState<number[]>([]);
+  const trailingSlash = globalSettings?.permalink_trailing_slash !== 'false';
+  const postBase = String(globalSettings?.permalink_post_base || '').trim().replace(/^\/+|\/+$/g, '');
 
   const handlePublish = async (overrideStatus?: string) => {
     if (!title) {
@@ -68,13 +72,17 @@ export default function NewPost() {
           contentText,
           metaDescription,
           focusKeyword,
+          seoTitle,
           redirectUrl,
           redirectType,
           noIndex,
+          seoRobots,
+          seoAdvancedRobots,
           status: finalStatus,
           visibility,
           password,
           publishedAt: publishDate ? publishDate : undefined,
+          schemaJson,
           seoScore,
           isPillar,
           featuredImage,
@@ -98,8 +106,12 @@ export default function NewPost() {
   };
 
   return (
-    <div className="flex gap-4 max-w-[1200px] mx-auto pt-4">
-      <div className="flex-1 min-w-0 flex flex-col gap-4">
+    <div className="max-w-[1280px] mx-auto py-6 px-2">
+      <div className="flex items-center justify-between gap-3 mb-5">
+        <div><h1 className="text-2xl font-semibold text-gray-900">Add Post</h1><p className="text-sm text-gray-500 mt-1">Create a new blog post.</p></div>
+      </div>
+      <div className="flex gap-6 items-start">
+      <div className="flex-1 min-w-0 flex flex-col gap-5">
         <ClassicEditor 
           title={title}
           setTitle={setTitle}
@@ -108,19 +120,25 @@ export default function NewPost() {
           contentHtml={contentHtml}
           setContentHtml={setContentHtml}
           setContentText={setContentText}
+          permalinkBase={postBase}
+          trailingSlash={trailingSlash}
+          modern={true}
         />
         
         {globalSettings?.seo_post_add_seo_controls !== 'false' && (
-          <div className="mt-4">
+          <div>
             <SeoAnalyzer 
               title={title} setTitle={setTitle}
               slug={slug} setSlug={setSlug}
               metaDescription={metaDescription} setMetaDescription={setMetaDescription}
               content={contentText}
               focusKeyword={focusKeyword} setFocusKeyword={setFocusKeyword}
+              seoTitle={seoTitle} setSeoTitle={setSeoTitle}
               redirectUrl={redirectUrl} setRedirectUrl={setRedirectUrl}
               redirectType={redirectType} setRedirectType={setRedirectType}
               noIndex={noIndex} setNoIndex={setNoIndex}
+              seoRobots={seoRobots} setSeoRobots={setSeoRobots}
+              seoAdvancedRobots={seoAdvancedRobots} setSeoAdvancedRobots={setSeoAdvancedRobots}
               schemaJson={schemaJson} setSchemaJson={setSchemaJson}
               onScoreChange={setSeoScore}
               isPost={true}
@@ -131,7 +149,7 @@ export default function NewPost() {
         )}
       </div>
 
-      <div className="w-[280px] shrink-0">
+      <div className="w-[300px] shrink-0">
         <ClassicSidebar 
           status={status}
           setStatus={setStatus}
@@ -152,6 +170,7 @@ export default function NewPost() {
           tagIds={tagIds}
           setTagIds={setTagIds}
           isPost={true}
+          modern={true}
         />
         <LinkSuggestionsSidebar 
           globalSettings={globalSettings} 
@@ -162,6 +181,7 @@ export default function NewPost() {
           isPillar={isPillar}
           setIsPillar={setIsPillar}
         />
+      </div>
       </div>
     </div>
   );

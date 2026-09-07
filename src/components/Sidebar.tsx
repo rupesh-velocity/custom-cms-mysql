@@ -6,7 +6,7 @@ import { LayoutDashboard, FileText, Files, Users, Settings, ChevronDown, Chevron
 import clsx from 'clsx';
 import { BASE_PATH } from '@/lib/config';
 
-export default function Sidebar({ enableProducts = false, siteTitle = "Velocity CMS", siteIcon = `${BASE_PATH}/velocity-logo.png` }: { enableProducts?: boolean, siteTitle?: string, siteIcon?: string }) {
+export default function Sidebar({ enableProducts = false, siteTitle = "Website", siteIcon = "" }: { enableProducts?: boolean, siteTitle?: string, siteIcon?: string }) {
   const pathname = usePathname() || '';
   
   // Settings is considered active if we are on /admin/settings or any of its subpages
@@ -19,7 +19,7 @@ export default function Sidebar({ enableProducts = false, siteTitle = "Velocity 
     <aside className="w-64 bg-white border-r border-gray-100 text-gray-600 flex flex-col h-screen sticky top-0 shadow-sm">
       {/* Brand */}
       <div className="p-6 mb-2 flex items-center gap-3">
-        <img src={siteIcon} alt={`${siteTitle} Logo`} className="h-8 w-auto object-contain" onError={(e) => { e.currentTarget.src = `${BASE_PATH}/velocity-logo.png`; }} />
+        {siteIcon ? <img src={siteIcon} alt={`${siteTitle} Logo`} className="h-8 w-auto object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} /> : null}
         <h1 className="text-xl font-bold text-gray-900 tracking-tight">{siteTitle}</h1>
       </div>
       
@@ -87,7 +87,7 @@ export default function Sidebar({ enableProducts = false, siteTitle = "Velocity 
           
           <div className={clsx(
             "overflow-hidden transition-all duration-300 ease-in-out",
-            pathname.startsWith('/admin/forms') ? "max-h-40 opacity-100" : "max-h-0 opacity-0"
+            pathname.startsWith('/admin/forms') ? "max-h-56 opacity-100" : "max-h-0 opacity-0"
           )}>
             <div className="pl-3 py-1 space-y-1 border-l-2 border-gray-100 ml-8 mt-1">
               <Link href="/admin/forms" className={clsx("block px-3 py-2 rounded-lg text-[13px] transition-colors whitespace-nowrap", pathname === '/admin/forms' ? "bg-[#5e3fde]/10 text-[#5e3fde] font-medium" : "text-gray-500 hover:text-gray-900 hover:bg-gray-50")}>
@@ -98,6 +98,9 @@ export default function Sidebar({ enableProducts = false, siteTitle = "Velocity 
               </Link>
               <Link href="/admin/forms/entries" className={clsx("block px-3 py-2 rounded-lg text-[13px] transition-colors whitespace-nowrap", pathname === '/admin/forms/entries' || pathname.includes('/submissions') ? "bg-[#5e3fde]/10 text-[#5e3fde] font-medium" : "text-gray-500 hover:text-gray-900 hover:bg-gray-50")}>
                 Entries
+              </Link>
+              <Link href="/admin/forms/settings" className={clsx("block px-3 py-2 rounded-lg text-[13px] transition-colors whitespace-nowrap", pathname === '/admin/forms/settings' ? "bg-[#5e3fde]/10 text-[#5e3fde] font-medium" : "text-gray-500 hover:text-gray-900 hover:bg-gray-50")}>
+                Settings
               </Link>
             </div>
           </div>
@@ -213,9 +216,16 @@ export default function Sidebar({ enableProducts = false, siteTitle = "Velocity 
               <Link href="/admin/seo/sitemap" className={clsx("block px-3 py-2 rounded-lg text-[13px] transition-colors whitespace-nowrap", pathname.startsWith('/admin/seo/sitemap') ? "bg-[#5e3fde]/10 text-[#5e3fde] font-medium" : "text-gray-500 hover:text-gray-900 hover:bg-gray-50")}>
                 Sitemap Settings
               </Link>
+              <Link href="/admin/seo/import-export" className={clsx("block px-3 py-2 rounded-lg text-[13px] transition-colors whitespace-nowrap", pathname.startsWith('/admin/seo/import-export') ? "bg-[#5e3fde]/10 text-[#5e3fde] font-medium" : "text-gray-500 hover:text-gray-900 hover:bg-gray-50")}>
+                Import / Export
+              </Link>
             </div>
           </div>
         </div>
+
+        <Link href="/admin/addons" className={clsx("flex items-center gap-3 px-4 py-3 rounded-lg transition-colors", pathname.startsWith('/admin/addons') ? "bg-[#5e3fde]/10 text-[#5e3fde] font-medium" : "hover:bg-gray-50 hover:text-gray-900")}>
+          <Package size={20} /> Add-ons
+        </Link>
 
         <Link href="/admin/users" className={clsx("flex items-center gap-3 px-4 py-3 rounded-lg transition-colors", pathname.startsWith('/admin/users') ? "bg-[#5e3fde]/10 text-[#5e3fde] font-medium" : "hover:bg-gray-50 hover:text-gray-900")}>
           <Users size={20} /> Users
@@ -238,7 +248,7 @@ export default function Sidebar({ enableProducts = false, siteTitle = "Velocity 
           {/* Sub-options for Settings */}
           <div className={clsx(
             "overflow-hidden transition-all duration-300 ease-in-out",
-            isSettingsActive ? "max-h-60 opacity-100" : "max-h-0 opacity-0"
+            isSettingsActive ? "max-h-80 opacity-100" : "max-h-0 opacity-0"
           )}>
             <div className="pl-3 py-1 space-y-1 border-l-2 border-gray-100 ml-8 mt-1">
               <Link href="/admin/settings/general" className={clsx("block px-3 py-2 rounded-lg text-[13px] transition-colors whitespace-nowrap", pathname === '/admin/settings/general' ? "bg-[#5e3fde]/10 text-[#5e3fde] font-medium" : "text-gray-500 hover:text-gray-900 hover:bg-gray-50")}>

@@ -9,6 +9,7 @@ import LinkSuggestionsSidebar from '@/components/LinkSuggestionsSidebar';
 import SeoAnalyzer from '@/components/SeoAnalyzer';
 import toast from 'react-hot-toast';
 import { BASE_PATH } from '@/lib/config';
+import RevisionHistory from '@/components/RevisionHistory';
 
 export default function EditPost() {
   const router = useRouter();
@@ -157,16 +158,22 @@ export default function EditPost() {
     return <div className="p-8 text-center text-gray-500">Loading editor...</div>;
   }
 
+  const trailingSlash = globalSettings?.permalink_trailing_slash !== 'false';
+  const effectiveSlug = slug || title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+  const postBase = String(globalSettings?.permalink_post_base || '').trim().replace(/^\/+|\/+$/g, '');
+  const previewPath = `/${postBase ? `${postBase}/` : ''}${effectiveSlug}${trailingSlash ? '/' : ''}`;
+  const previewUrl = `${BASE_PATH}${previewPath}` || '/';
+
   return (
-    <div className="max-w-[1200px] mx-auto pt-4">
-      <div className="flex items-center gap-3 mb-4">
-        <h1 className="text-[23px] text-[#1d2327]">Edit Post</h1>
-        <Link href="/admin/posts/new" className="border border-[#5e3fde] text-[#5e3fde] hover:bg-[#f6f7f7] px-2.5 py-0.5 text-[13px] rounded-[3px] font-medium transition-colors">
+    <div className="max-w-[1280px] mx-auto py-6 px-2">
+      <div className="flex items-center justify-between gap-3 mb-5">
+        <div><h1 className="text-2xl font-semibold text-gray-900">Edit Post</h1><p className="text-sm text-gray-500 mt-1">Update post content, publishing and SEO settings.</p></div>
+        <Link href="/admin/posts/new" className="border border-[#5e3fde] text-[#5e3fde] hover:bg-[#5e3fde]/5 px-3 py-2 text-sm rounded-lg font-medium transition-colors">
           Add Post
         </Link>
       </div>
-      <div className="flex gap-4">
-        <div className="flex-1 min-w-0 flex flex-col gap-4">
+      <div className="flex gap-6 items-start">
+        <div className="flex-1 min-w-0 flex flex-col gap-5">
         <ClassicEditor 
           title={title}
           setTitle={setTitle}
@@ -175,10 +182,13 @@ export default function EditPost() {
           contentHtml={contentHtml}
           setContentHtml={setContentHtml}
           setContentText={setContentText}
+          permalinkBase={postBase}
+          trailingSlash={trailingSlash}
+          modern={true}
         />
         
         {globalSettings?.seo_post_add_seo_controls !== 'false' && (
-          <div className="mt-4">
+          <div>
             <SeoAnalyzer 
             title={title} setTitle={setTitle}
             slug={slug} setSlug={setSlug}
@@ -199,9 +209,11 @@ export default function EditPost() {
           />
           </div>
         )}
+
+        <RevisionHistory type="post" id={String(params?.id || '')} enabled={true} />
       </div>
 
-      <div className="w-[280px] shrink-0">
+      <div className="w-[300px] shrink-0 flex flex-col gap-4">
         <ClassicSidebar 
           status={status}
           setStatus={setStatus}
@@ -221,6 +233,8 @@ export default function EditPost() {
           tagIds={tagIds}
           setTagIds={setTagIds}
           isPost={true}
+          previewUrl={previewUrl}
+          modern={true}
         />
         <LinkSuggestionsSidebar 
           globalSettings={globalSettings} 

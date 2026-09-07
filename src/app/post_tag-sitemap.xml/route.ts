@@ -1,20 +1,20 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { buildTagUrl } from '@/lib/permalinks';
+import { escapeXml, requestBaseUrl, sitemapResponseHeaders } from '@/lib/sitemap-utils';
 
 export const revalidate = 0;
 
 export async function GET(request: Request) {
   try {
-    const host = request.headers.get('host') || 'localhost:3000';
-    const protocol = host.includes('localhost') ? 'http' : 'https';
-    const appUrl = `${protocol}://${host}`;
-    
     const settings = await prisma.setting.findMany({
       where: {
-        key: { in: ['seo_sitemap_include_tags', 'seo_sitemap_empty_tags'] }
+        key: { in: ['seo_sitemap_include_tags', 'seo_sitemap_empty_tags', 'permalink_tag_base', 'permalink_trailing_slash', 'site_url'] }
       }
     });
 
+    const settingMap = settings.reduce((acc:Record<string,string>, row:any) => { acc[row.key]=row.value||''; return acc; }, {});
+    const appUrl = requestBaseUrl(request, settingMap.site_url);
     const includeTags = settings.find(s => s.key === 'seo_sitemap_include_tags')?.value === 'true';
     const includeEmpty = settings.find(s => s.key === 'seo_sitemap_empty_tags')?.value === 'true';
 
@@ -38,7 +38,7 @@ export async function GET(request: Request) {
     
     for (const tag of filteredTags) {
       xml += `  <url>\n`;
-      xml += `    <loc>${appUrl}/tag/${tag.slug}</loc>\n`;
+      xml += `    <loc>${escapeXml(`${appUrl}${buildTagUrl(tag.slug, settingMap)}`)}</loc>\n`;
       xml += `    <lastmod>${new Date(tag.updatedAt).toISOString()}</lastmod>\n`;
       xml += `  </url>\n`;
     }
@@ -46,9 +46,7 @@ export async function GET(request: Request) {
     xml += `</urlset>`;
 
     return new NextResponse(xml, {
-      headers: {
-        'Content-Type': 'application/xml',
-      },
+      headers: sitemapResponseHeaders,
     });
   } catch (error) {
     console.error('Error generating tags sitemap:', error);

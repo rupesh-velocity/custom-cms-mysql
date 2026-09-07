@@ -27,6 +27,8 @@ interface ClassicSidebarProps {
   tagIds?: number[];
   setTagIds?: (val: number[]) => void;
   isPost?: boolean;
+  previewUrl?: string;
+  modern?: boolean;
 }
 
 export default function ClassicSidebar({ 
@@ -34,7 +36,7 @@ export default function ClassicSidebar({
   visibility = 'Public', setVisibility, password, setPassword, 
   publishDate, setPublishDate, isNew = false,
   featuredImage, setFeaturedImage, categoryIds = [], setCategoryIds, 
-  tagIds = [], setTagIds, isPost = false
+  tagIds = [], setTagIds, isPost = false, previewUrl, modern = false
 }: ClassicSidebarProps) {
   const [expanded, setExpanded] = useState({
     publish: true,
@@ -162,9 +164,9 @@ export default function ClassicSidebar({
   if (score >= 80) scoreColor = 'bg-[#c6e1c6] text-[#007017]';
 
   return (
-    <div className="w-full max-w-[280px] font-sans">
-      <Accordion id="publish" title="Publish" expanded={expanded.publish} toggleAccordion={() => toggleAccordion('publish')} noPadding>
-        <div className="p-3 bg-white">
+    <div className={`w-full max-w-[300px] font-sans ${modern ? 'flex flex-col gap-4' : ''}`}>
+      <Accordion id="publish" title="Publish" expanded={expanded.publish} toggleAccordion={() => toggleAccordion('publish')} noPadding modern={modern}>
+        <div className={modern ? "p-4 bg-white" : "p-3 bg-white"}>
           <div className={`flex ${status !== 'Published' ? 'justify-between' : 'justify-end'} mb-4`}>
             {status !== 'Published' && (
               <button 
@@ -175,9 +177,15 @@ export default function ClassicSidebar({
                 Save Draft
               </button>
             )}
-            <button className="bg-[#f3f5f6] border border-[#0071a1] text-[#0071a1] px-3 py-1 rounded-[3px] text-[13px] hover:bg-[#f1f1f1]">
-              Preview
-            </button>
+            {previewUrl ? (
+              <a href={previewUrl} target="_blank" rel="noopener noreferrer" className={`border px-3 py-1.5 text-[13px] font-medium transition-colors ${modern ? 'bg-white border-gray-200 text-[#5e3fde] rounded-lg hover:border-[#5e3fde] hover:bg-[#5e3fde]/5' : 'bg-[#f3f5f6] border-[#0071a1] text-[#0071a1] rounded-[3px] hover:bg-[#f1f1f1]'}`}>
+                Preview
+              </a>
+            ) : (
+              <button type="button" disabled className={`border px-3 py-1.5 text-[13px] opacity-50 cursor-not-allowed ${modern ? 'bg-white border-gray-200 text-gray-500 rounded-lg' : 'bg-[#f3f5f6] border-[#8c8f94] text-[#50575e] rounded-[3px]'}`}>
+                Preview
+              </button>
+            )}
           </div>
           
           <div className="space-y-3 text-[13px] text-[#50575e] mb-4">
@@ -264,12 +272,12 @@ export default function ClassicSidebar({
            <TrendingUp className="w-4 h-4" /> SEO: {score} / 100
         </div>
 
-        <div className="p-3 bg-[#f6f7f7] flex items-center justify-between rounded-b-[3px]">
+        <div className={`p-3 flex items-center justify-between ${modern ? 'bg-gray-50 border-t border-gray-100' : 'bg-[#f6f7f7] rounded-b-[3px]'}`}>
            <button onClick={() => onPublish('Trash')} className="text-[#b32d2e] text-[13px] hover:underline disabled:opacity-50" disabled={isSaving}>Move to Trash</button>
            <button 
              onClick={() => onPublish('Published')}
              disabled={isSaving}
-             className="bg-[#5e3fde] text-white px-4 py-1.5 rounded-[3px] text-[13px] font-semibold hover:bg-[#4b32b2] disabled:opacity-50"
+             className={`bg-[#5e3fde] text-white px-4 py-1.5 text-[13px] font-semibold hover:bg-[#4b32b2] disabled:opacity-50 ${modern ? 'rounded-lg shadow-sm' : 'rounded-[3px]'}`}
            >
              {isSaving ? 'Updating...' : (status === 'Published' && !isNew ? 'Update' : 'Publish')}
            </button>
@@ -277,7 +285,7 @@ export default function ClassicSidebar({
       </Accordion>
 
       {isPost && (
-        <Accordion id="categories" title="Categories" expanded={expanded.categories} toggleAccordion={() => toggleAccordion('categories')}>
+        <Accordion id="categories" title="Categories" expanded={expanded.categories} toggleAccordion={() => toggleAccordion('categories')} modern={modern}>
           <div className="max-h-48 overflow-y-auto mb-2 border border-[#ddd] p-2 bg-white">
             {categories.map(cat => (
               <label key={cat.id} className="flex items-center gap-2 mb-1 text-[13px] text-[#1d2327]">
@@ -320,7 +328,7 @@ export default function ClassicSidebar({
       )}
 
       {isPost && (
-        <Accordion id="tags" title="Tags" expanded={expanded.tags} toggleAccordion={() => toggleAccordion('tags')}>
+        <Accordion id="tags" title="Tags" expanded={expanded.tags} toggleAccordion={() => toggleAccordion('tags')} modern={modern}>
           <div className="flex gap-2 mb-2">
             <input 
               type="text" 
@@ -366,7 +374,7 @@ export default function ClassicSidebar({
       )}
 
       {!isPost && (
-        <Accordion id="pageAttributes" title="Page Attributes" expanded={expanded.pageAttributes} toggleAccordion={() => toggleAccordion('pageAttributes')}>
+        <Accordion id="pageAttributes" title="Page Attributes" expanded={expanded.pageAttributes} toggleAccordion={() => toggleAccordion('pageAttributes')} modern={modern}>
           <div className="text-[13px] text-[#1d2327]">
              <label className="block font-semibold mb-1">Parent</label>
              <select className="w-full border border-[#8c8f94] rounded-[3px] px-2 py-1 outline-none mb-3">
@@ -379,7 +387,7 @@ export default function ClassicSidebar({
         </Accordion>
       )}
 
-      <Accordion id="featuredImage" title="Featured image" expanded={expanded.featuredImage} toggleAccordion={() => toggleAccordion('featuredImage')}>
+      <Accordion id="featuredImage" title="Featured image" expanded={expanded.featuredImage} toggleAccordion={() => toggleAccordion('featuredImage')} modern={modern}>
         {featuredImage ? (
           <div className="text-center">
             <img src={featuredImage} alt="Featured" className="w-full h-auto mb-2 rounded border border-gray-200" />
@@ -399,7 +407,7 @@ export default function ClassicSidebar({
       </Accordion>
 
       {!isPost && (
-        <Accordion id="pageSettings" title="Page Settings" expanded={expanded.pageSettings} toggleAccordion={() => toggleAccordion('pageSettings')}>
+        <Accordion id="pageSettings" title="Page Settings" expanded={expanded.pageSettings} toggleAccordion={() => toggleAccordion('pageSettings')} modern={modern}>
           <div className="text-[13px] text-[#1d2327]">
              {setHideTitle !== undefined && (
                <label className="flex items-center gap-2 cursor-pointer">
@@ -424,20 +432,21 @@ function TrendingUp(props: any) {
   return <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>;
 }
 
-export function Accordion({ id, title, children, expanded, toggleAccordion, noPadding = false }: { id: string, title: string, children: React.ReactNode, expanded: boolean, toggleAccordion: () => void, noPadding?: boolean }) {
+export function Accordion({ id, title, children, expanded, toggleAccordion, noPadding = false, modern = false }: { id: string, title: string, children: React.ReactNode, expanded: boolean, toggleAccordion: () => void, noPadding?: boolean, modern?: boolean }) {
   return (
-    <div className="bg-white border border-[#c3c4c7] shadow-sm mb-4">
+    <div className={`bg-white overflow-hidden ${modern ? 'border border-gray-200 rounded-xl shadow-sm mb-0' : 'border border-[#c3c4c7] shadow-sm mb-4'}`}>
       <button 
+        type="button"
         onClick={toggleAccordion}
-        className="w-full flex items-center justify-between px-3 py-2 border-b border-transparent bg-white hover:bg-[#f6f7f7] transition-colors"
+        className={`w-full flex items-center justify-between bg-white transition-colors ${modern ? 'px-4 py-3 hover:bg-gray-50' : 'px-3 py-2 border-b border-transparent hover:bg-[#f6f7f7]'}`}
       >
-        <h2 className="text-[14px] font-semibold text-[#1d2327]">{title}</h2>
-        <div className="flex gap-1 text-gray-500">
-          {expanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+        <h2 className={`font-semibold text-[#1d2327] ${modern ? 'text-sm' : 'text-[14px]'}`}>{title}</h2>
+        <div className="flex gap-1 text-gray-400">
+          {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
         </div>
       </button>
       {expanded && (
-        <div className={`border-t border-[#c3c4c7] ${noPadding ? '' : 'p-3'}`}>
+        <div className={`${modern ? 'border-t border-gray-100' : 'border-t border-[#c3c4c7]'} ${noPadding ? '' : modern ? 'p-4' : 'p-3'}`}>
           {children}
         </div>
       )}

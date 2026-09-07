@@ -1,6 +1,26 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+function normalizeRedirectPath(value: string | null | undefined) {
+  if (!value) return '/';
+  let input = String(value).trim();
+
+  try {
+    if (/^https?:\/\//i.test(input)) {
+      const url = new URL(input);
+      input = `${url.pathname}${url.search}`;
+    }
+  } catch {
+    // Fall back to treating the value as a relative path.
+  }
+
+  if (!input.startsWith('/')) input = `/${input}`;
+
+  const [pathname, query = ''] = input.split('?');
+  const normalizedPathname = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname;
+  return query ? `${normalizedPathname}?${query}` : normalizedPathname;
+}
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -11,64 +31,55 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Path is required' }, { status: 400 });
     }
 
-    const pathWithoutSlash = path.startsWith('/') ? path.slice(1) : path;
-    const pathWithSlash = path.startsWith('/') ? path : `/${path}`;
+    // Passenger/proxies can expose an internal host/port in request.url. Compare
+    // normalized pathnames instead so full public URLs and relative paths behave
+    // identically (e.g. https://fitnessarts.com/about-us and /about-us).
+    const candidates = Array.from(
+      new Set([
+        normalizeRedirectPath(path),
+        fullUrl ? normalizeRedirectPath(fullUrl) : null,
+      ].filter(Boolean) as string[])
+    );
 
-    // Try exact match first (both relative path and absolute fullUrl)
-    let redirection = await prisma.redirection.findFirst({
+    const activeRedirections = await prisma.redirection.findMany({
       where: {
-        OR: [
-          { sourceUrl: path },
-          { sourceUrl: pathWithoutSlash },
-          { sourceUrl: pathWithSlash },
-          ...(fullUrl ? [{ sourceUrl: fullUrl }] : [])
-        ],
         status: true,
-        isTrashed: false
-      }
+        isTrashed: false,
+      },
+      orderBy: { id: 'asc' },
     });
 
-    // If no exact match, try case-insensitive match
+    const redirection = activeRedirections.find((item) => {
+      const source = normalizeRedirectPath(item.sourceUrl);
+      return candidates.some((candidate) =>
+        item.ignoreCase
+          ? source.toLowerCase() === candidate.toLowerCase()
+          : source === candidate
+      );
+    });
+
     if (!redirection) {
-      const caseInsensitiveRedirects = await prisma.redirection.findMany({
-        where: {
-          ignoreCase: true,
-          status: true,
-          isTrashed: false
-        }
-      });
-      
-      const lowerPath = path.toLowerCase();
-      const lowerPathWithoutSlash = lowerPath.startsWith('/') ? lowerPath.slice(1) : lowerPath;
-      const lowerPathWithSlash = lowerPath.startsWith('/') ? lowerPath : `/${lowerPath}`;
-      const lowerFullUrl = fullUrl ? fullUrl.toLowerCase() : '';
-      
-      redirection = caseInsensitiveRedirects.find(r => 
-        r.sourceUrl.toLowerCase() === lowerPath || 
-        r.sourceUrl.toLowerCase() === lowerPathWithoutSlash ||
-        r.sourceUrl.toLowerCase() === lowerPathWithSlash ||
-        (lowerFullUrl && r.sourceUrl.toLowerCase() === lowerFullUrl)
-      ) || null;
+      return NextResponse.json({ destinationUrl: null });
     }
 
-    if (redirection) {
-      // Fire-and-forget background update for metrics
-      prisma.redirection.update({
-        where: { id: redirection.id },
-        data: {
-          hits: { increment: 1 },
-          lastAccessed: new Date()
-        }
-      }).catch(e => console.error('Failed to update redirect metrics', e));
+    // Do not block the redirect if metrics cannot be updated.
+    prisma.redirection.update({
+      where: { id: redirection.id },
+      data: {
+        hits: { increment: 1 },
+        lastAccessed: new Date(),
+      },
+    }).catch((error) => console.error('Failed to update redirect metrics', error));
 
-      return NextResponse.json({
-        destinationUrl: redirection.destinationUrl,
-        redirectType: redirection.redirectType
-      });
-    }
-
-    return NextResponse.json({ destinationUrl: null });
+    return NextResponse.json({
+      destinationUrl: redirection.destinationUrl,
+      redirectType: redirection.redirectType,
+    });
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to check redirection' }, { status: 500 });
+    console.error('Failed to check redirection:', error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Failed to check redirection' },
+      { status: 500 }
+    );
   }
 }
