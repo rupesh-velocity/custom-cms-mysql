@@ -8,7 +8,6 @@ export const revalidate = 0;
 const allowedKeys = new Set([
   // Add-on toggles
   'addon_google_reviews_enabled',
-  'addon_backup_restore_enabled',
   'addon_maintenance_enabled',
   'addon_analytics_enabled',
   'addon_cookie_consent_enabled',
@@ -17,6 +16,7 @@ const allowedKeys = new Set([
   'addon_twilio_enabled',
   'addon_import_export_enabled',
   'addon_smtp_enabled',
+  'addon_search_replace_enabled',
   'enable_physical_products',
 
   // Google Reviews
@@ -30,8 +30,6 @@ const allowedKeys = new Set([
   'maintenance_message',
 
   // Analytics / Tracking
-  'analytics_ga4_id',
-  'analytics_gtm_id',
 
   // Cookie Consent
   'cookie_consent_message',
@@ -46,6 +44,9 @@ const allowedKeys = new Set([
   'image_keep_originals',
   'image_quality',
   'image_max_width',
+  'image_generate_responsive',
+  'image_auto_srcset',
+  'image_lazy_load',
 
   // Twilio
   'twilio_account_sid',

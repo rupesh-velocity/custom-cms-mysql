@@ -5,7 +5,6 @@ export const dynamic='force-dynamic';
 
 const cards=[
   {slug:'google-reviews',key:'addon_google_reviews_enabled',title:'Google Reviews',description:'Fetch and display Google Business Profile ratings and reviews with local caching.'},
-  {slug:'backup-restore',key:'addon_backup_restore_enabled',title:'Backup & Restore',description:'Download a portable CMS backup and merge it back into the database when needed.'},
   {slug:'maintenance',key:'addon_maintenance_enabled',title:'Maintenance Mode',description:'Temporarily show visitors a maintenance screen while administrators keep access.'},
   {slug:'analytics',key:'addon_analytics_enabled',title:'Analytics / Tracking',description:'Configure GA4, GTM and dedicated head/body tracking snippets separately from site custom JavaScript.'},
   {slug:'cookie-consent',key:'addon_cookie_consent_enabled',title:'Cookie Consent',description:'Display an accept/reject banner and gate built-in analytics until consent is granted.'},
@@ -14,6 +13,7 @@ const cards=[
   {slug:'twilio',key:'addon_twilio_enabled',title:'Twilio OTP Login',description:'Use registered mobile numbers and Twilio Verify codes for password-free CMS login.'},
   {slug:'import-export',key:'addon_import_export_enabled',title:'CMS Import / Export',description:'Move Pages, Posts, Media, Forms and related CMS data between installations.'},
   {slug:'smtp',key:'addon_smtp_enabled',title:'SMTP',description:'Send mail through Gmail, hosting SMTP, Outlook, Zoho, SMTP relays or custom servers.'},
+  {slug:'search-replace',key:'addon_search_replace_enabled',title:'Search & Replace',description:'Find text or URLs across CMS content and safely replace them in bulk with a Dry Run option.'},
   {slug:'physical-products',key:'enable_physical_products',title:'Physical Products',description:'Enable the product catalog, orders and physical-product commerce tools in the CMS.',configureHref:'/admin/settings/ecommerce'},
 ];
 

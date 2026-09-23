@@ -50,13 +50,25 @@ export default async function LocalSeoSchema() {
   const phones = parseJson(settingsObj.seo_local_phones, []);
   const additionalInfo = parseJson(settingsObj.seo_local_additional_info, []);
 
-  // Build the schema object
+  // Build the schema only when the core identity is configured.
+  // Never fall back to localhost or emit empty name/url values on production.
+  const schemaType = settingsObj.seo_local_type === 'person'
+    ? "Person"
+    : (settingsObj.seo_local_business_type || "Organization");
+  const schemaName = settingsObj.seo_local_org_name || settingsObj.seo_local_website_name;
+  const schemaUrl = settingsObj.seo_local_url;
+
+  if (!schemaName || !schemaUrl) {
+    return null;
+  }
+
+  const schemaIdSuffix = schemaType === "Person" ? "person" : "organization";
   const schema: any = {
     "@context": "https://schema.org",
-    "@type": settingsObj.seo_local_type === 'person' ? "Person" : (settingsObj.seo_local_business_type || "Organization"),
-    "@id": `${settingsObj.seo_local_url || 'http://localhost:3000'}#organization`,
-    "name": settingsObj.seo_local_org_name || settingsObj.seo_local_website_name,
-    "url": settingsObj.seo_local_url,
+    "@type": schemaType,
+    "@id": `${schemaUrl.replace(/\/$/, '')}/#${schemaIdSuffix}`,
+    "name": schemaName,
+    "url": schemaUrl,
   };
 
   if (settingsObj.seo_local_website_alt_name) schema.alternateName = settingsObj.seo_local_website_alt_name;

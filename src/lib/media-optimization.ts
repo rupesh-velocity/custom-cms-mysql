@@ -1,4 +1,5 @@
 import sharp from 'sharp';
+import { removeResponsiveImageVariants } from './responsive-images';
 import { dirname, extname, join, basename, resolve, sep } from 'path';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { prisma } from '@/lib/prisma';
@@ -247,7 +248,7 @@ async function replaceMediaReferences(fromUrl: string, toUrl: string) {
 export async function getImageOptimizationSettings() {
   const rows = await prisma.setting.findMany({ where: { key: { in: [
     'addon_image_optimization_enabled', 'image_optimize_new_uploads', 'image_convert_webp',
-    'image_quality', 'image_max_width', 'image_keep_originals'
+    'image_quality', 'image_max_width', 'image_keep_originals', 'image_lazy_load'
   ] } } });
   const map = rows.reduce((a: Record<string, string>, r: any) => { a[r.key] = r.value || ''; return a; }, {});
   return {
@@ -257,6 +258,7 @@ export async function getImageOptimizationSettings() {
     quality: Math.max(30, Math.min(100, Number(map.image_quality || 82))),
     maxWidth: Math.max(0, Number(map.image_max_width || 2560)),
     keepOriginals: map.image_keep_originals !== 'false',
+    lazyLoad: map.image_lazy_load !== 'false',
   };
 }
 
@@ -279,6 +281,33 @@ export async function optimizeBuffer(
   if (mimeType === 'image/jpeg' || mimeType === 'image/jpg') return { buffer: await pipe.jpeg({ quality: cfg.quality, mozjpeg: true }).toBuffer(), mimeType: 'image/jpeg', extension: '.jpg' };
   if (mimeType === 'image/png') return { buffer: await pipe.png({ quality: cfg.quality, compressionLevel: 9 }).toBuffer(), mimeType, extension: '.png' };
   return { buffer: await pipe.toBuffer(), mimeType, extension: extname(meta.format ? `x.${meta.format}` : '') };
+}
+
+export async function regenerateResponsiveVariants(id: number) {
+  const media = await prisma.media.findUnique({
+    where: { id },
+    select: { id: true, filename: true, url: true, mimeType: true },
+  });
+  if (!media) throw new Error('Media not found');
+
+  const cfg = await getImageOptimizationSettings();
+  if (!cfg.enabled) throw new Error('Image Optimization add-on is disabled.');
+  if (!cfg.responsive) throw new Error('Responsive image variants are disabled in Image Optimization settings.');
+
+  const allowed = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+  if (!allowed.includes(media.mimeType)) throw new Error('Only JPG, PNG and WebP images can generate responsive variants.');
+
+  const relativePath = mediaRelativePath(media.url, media.filename);
+  const filePath = safeUploadPath(getUploadRoot(), relativePath);
+  if (!existsSync(filePath)) throw new Error('The current media file is missing from the uploads directory.');
+
+  const buffer = readFileSync(filePath);
+  const manifest = await generateResponsiveImageVariants(buffer, media.mimeType, relativePath, {
+    enabled: true,
+    quality: cfg.quality,
+  });
+
+  return { id: media.id, filename: media.filename, generated: manifest?.variants.length || 0 };
 }
 
 export async function optimizeExistingMedia(id: number) {
@@ -395,6 +424,7 @@ export async function optimizeExistingMedia(id: number) {
     originalSize,
     originalUrl: originalBackupRel || media.originalUrl,
   } });
+    removeResponsiveImageVariants(nextRel)
 
   return { ...updated, referencesUpdated, generatedWebp: outputMime === 'image/webp' };
 }
@@ -418,6 +448,8 @@ export async function restoreExistingMedia(id: number) {
 
   const restoredBuffer = readFileSync(originalPath);
   const restoredUrl = publicUrlForRelativePath(media.url, originalRel);
+  removeResponsiveImageVariants(currentRel);
+  removeResponsiveImageVariants(originalRel);
   await replaceMediaReferences(media.url, restoredUrl);
 
   return prisma.media.update({ where: { id }, data: {

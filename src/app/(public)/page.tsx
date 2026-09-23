@@ -61,7 +61,7 @@ export default async function Home(props: { searchParams: Promise<{ [key: string
   const settingsRecords = await prisma.setting.findMany({
     where: {
       OR: [
-        { key: { in: ['homepage_displays', 'homepage_page_id', 'blog_pages_at_most', 'feed_include', 'site_title', 'site_tagline', 'permalink_post_base', 'permalink_category_base', 'permalink_tag_base', 'permalink_trailing_slash'] } },
+        { key: { in: ['homepage_displays', 'homepage_page_id', 'blog_pages_at_most', 'feed_include', 'site_title', 'site_tagline', 'permalink_post_base', 'permalink_category_base', 'permalink_tag_base', 'permalink_trailing_slash', 'image_auto_srcset', 'image_lazy_load'] } },
         { key: { startsWith: 'seo_' } }
       ]
     }
@@ -161,7 +161,7 @@ export default async function Home(props: { searchParams: Promise<{ [key: string
           <PasswordProtectedForm id={page.id} type="page" title={page.title} />
         ) : (
           <main className="w-full">
-            <ContentRenderer html={optimizeHtmlImages(page.contentHtml, settings, page.title)} className="w-full" />
+            <ContentRenderer html={optimizeHtmlImages(page.contentHtml, settings, page.title, { autoSrcset: settings.image_auto_srcset !== 'false', lazyLoad: settings.image_lazy_load !== 'false' })} className="w-full" />
           </main>
         )}
       </div>

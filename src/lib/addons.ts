@@ -2,7 +2,6 @@ import { prisma } from '@/lib/prisma';
 
 export const ADDON_KEYS = {
   googleReviews: 'addon_google_reviews_enabled',
-  backupRestore: 'addon_backup_restore_enabled',
   maintenance: 'addon_maintenance_enabled',
   analytics: 'addon_analytics_enabled',
   cookieConsent: 'addon_cookie_consent_enabled',
@@ -11,6 +10,7 @@ export const ADDON_KEYS = {
   twilio: 'addon_twilio_enabled',
   importExport: 'addon_import_export_enabled',
   smtp: 'addon_smtp_enabled',
+  searchReplace: 'addon_search_replace_enabled',
 } as const;
 
 export async function getSettingsMap(keys?: string[]) {

@@ -146,7 +146,7 @@ export default async function PublicPage(props: { params: Promise<{ slug: string
       OR: [
         { key: { startsWith: 'seo_' } }, 
         { key: { startsWith: 'breadcrumbs_' } },
-        { key: { in: ['site_title', 'site_tagline', 'site_url', 'permalink_post_base', 'permalink_category_base', 'permalink_tag_base', 'permalink_trailing_slash'] } }
+        { key: { in: ['site_title', 'site_tagline', 'site_url', 'permalink_post_base', 'permalink_category_base', 'permalink_tag_base', 'permalink_trailing_slash', 'image_auto_srcset', 'image_lazy_load'] } }
       ] 
     }
   });
@@ -523,7 +523,7 @@ export default async function PublicPage(props: { params: Promise<{ slug: string
               <div className="p-8 md:p-12 lg:px-16 pt-12 md:pt-16">
                 
                 {(() => {
-                  const optimizedHtml = optimizeHtmlImages(finalHtmlContent, seoSettings, data.title);
+                  const optimizedHtml = optimizeHtmlImages(finalHtmlContent, seoSettings, data.title, { autoSrcset: seoSettings.image_auto_srcset !== 'false', lazyLoad: seoSettings.image_lazy_load !== 'false' });
                   const { processedHtml, headings } = generateToc(optimizedHtml);
                   return (
                     <>
@@ -584,7 +584,7 @@ export default async function PublicPage(props: { params: Promise<{ slug: string
             description={
               finalHtmlContent && finalHtmlContent.trim() !== '<p></p>' ? (
                 <ContentRenderer 
-                  html={optimizeHtmlImages(finalHtmlContent, seoSettings, data.title)} 
+                  html={optimizeHtmlImages(finalHtmlContent, seoSettings, data.title, { autoSrcset: seoSettings.image_auto_srcset !== 'false', lazyLoad: seoSettings.image_lazy_load !== 'false' })} 
                   className="text-xl text-gray-300 max-w-3xl mx-auto font-medium leading-relaxed prose prose-invert prose-p:mb-0 text-center w-full mt-4"
                 />
               ) : undefined
@@ -608,7 +608,7 @@ export default async function PublicPage(props: { params: Promise<{ slug: string
             breadcrumbSettings={initialBreadcrumbSettings}
           />
           
-          <ContentRenderer html={optimizeHtmlImages(finalHtmlContent, seoSettings, data.title)} className="max-w-7xl mx-auto prose prose-lg max-w-none" />
+          <ContentRenderer html={optimizeHtmlImages(finalHtmlContent, seoSettings, data.title, { autoSrcset: seoSettings.image_auto_srcset !== 'false', lazyLoad: seoSettings.image_lazy_load !== 'false' })} className="max-w-7xl mx-auto prose prose-lg max-w-none" />
         </main>
       )}
     </>

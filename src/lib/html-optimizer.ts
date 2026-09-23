@@ -1,37 +1,42 @@
-export function optimizeHtmlImages(html: string | null, seoSettings?: Record<string, string>, contextTitle: string = ''): string {
+export function optimizeHtmlImages(html: string | null, seoSettings?: Record<string, string>, contextTitle: string = '', imageSettings?: { autoSrcset?: boolean; lazyLoad?: boolean }): string {
   if (!html) return '';
   
   let isFirstImage = true;
   let imageCount = 1;
+  const lazyLoad = imageSettings?.lazyLoad !== false;
   
-  let htmlWithOptimizedImages = html.replace(/<img([^>]*)>/gi, (match, attribs) => {
-    let newAttribs = attribs;
-    
-    // 1. Optimize Cloudinary URLs (f_auto,q_auto)
+  const ancestorStack: string[] = [];
+  const voidTags = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr']);
+  const tokenPattern = /<!--[\s\S]*?-->|<[^>]+>/gi;
+  let cursor = 0;
+  let htmlWithOptimizedImages = '';
+
+  const appendProcessedImage = (fullTag: string, attribs: string) => {
+    let newAttribs = attribs.replace(/\s*\/$/, '');
+
     newAttribs = newAttribs.replace(
-      /src="https:\/\/res\.cloudinary\.com\/([^/]+)\/image\/upload\/(v[0-9]+\/[^"]+)"/i,
+      /src="https:\/\/res\.cloudinary\.com\/([^/]+)\/image\/upload\/(v[0-9]+\/[^\"]+)"/i,
       'src="https://res.cloudinary.com/$1/image/upload/f_auto,q_auto/$2"'
     );
-    
-    // 2. Fix LCP priority
-    newAttribs = newAttribs.replace(/loading="[^"]*"/i, '');
-    newAttribs = newAttribs.replace(/fetchpriority="[^"]*"/i, '');
-    
+
+    newAttribs = newAttribs.replace(/\sloading="[^"]*"/i, '');
+    newAttribs = newAttribs.replace(/\sfetchpriority="[^"]*"/i, '');
+    newAttribs = newAttribs.replace(/\ssrcset="[^"]*"/i, '');
+    newAttribs = newAttribs.replace(/\ssizes="[^"]*"/i, '');
+
     if (isFirstImage) {
       isFirstImage = false;
       newAttribs += ' loading="eager" fetchpriority="high"';
-    } else {
+    } else if (lazyLoad) {
       newAttribs += ' loading="lazy"';
     }
 
-    // SEO: Add missing ALT
     if (seoSettings?.seo_add_missing_alt === 'true' && !/alt=/i.test(newAttribs)) {
       let altFormat = seoSettings?.seo_image_alt_format || '%title% %count(title)%';
       altFormat = altFormat.replace(/%title%/gi, contextTitle).replace(/%count\([^)]*\)%/gi, imageCount.toString()).trim() || 'Image';
       newAttribs += ` alt="${altFormat.replace(/"/g, '&quot;')}"`;
     }
 
-    // SEO: Add missing TITLE
     if (seoSettings?.seo_add_missing_title === 'true' && !/title=/i.test(newAttribs)) {
       let titleFormat = seoSettings?.seo_image_title_format || '%title% %count(title)%';
       titleFormat = titleFormat.replace(/%title%/gi, contextTitle).replace(/%count\([^)]*\)%/gi, imageCount.toString()).trim() || 'Image';
@@ -40,7 +45,33 @@ export function optimizeHtmlImages(html: string | null, seoSettings?: Record<str
 
     imageCount++;
     return `<img ${newAttribs}>`;
-  });
+  };
+
+  let match: RegExpExecArray | null;
+  while ((match = tokenPattern.exec(html)) !== null) {
+    htmlWithOptimizedImages += html.slice(cursor, match.index);
+    const token = match[0];
+    if (/^<img\b/i.test(token)) {
+      htmlWithOptimizedImages += appendProcessedImage(token, token.replace(/^<img/i, '').replace(/>$/i, ''));
+    } else {
+      htmlWithOptimizedImages += token;
+      const closing = token.match(/^<\/\s*([a-z0-9:-]+)/i);
+      const opening = token.match(/^<\s*([a-z0-9:-]+)/i);
+      if (closing) {
+        const tag = closing[1].toLowerCase();
+        for (let i = ancestorStack.length - 1; i >= 0; i--) {
+          const stackTag = ancestorStack[i].match(/^<\s*([a-z0-9:-]+)/i)?.[1]?.toLowerCase();
+          ancestorStack.splice(i, 1);
+          if (stackTag === tag) break;
+        }
+      } else if (opening && !token.startsWith('<!--') && !token.endsWith('/>')) {
+        const tag = opening[1].toLowerCase();
+        if (!voidTags.has(tag)) ancestorStack.push(token);
+      }
+    }
+    cursor = match.index + token.length;
+  }
+  htmlWithOptimizedImages += html.slice(cursor);
 
   let optimized = htmlWithOptimizedImages;
 

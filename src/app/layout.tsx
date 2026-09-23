@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import './globals.css';
 import { cookies, headers } from 'next/headers';
 import { prisma } from '@/lib/prisma';
 import { BodyTrackingSnippet, JavaScriptSnippet } from '@/components/CodeSnippet';
@@ -27,8 +26,6 @@ async function readRootSettings(): Promise<SettingsMap> {
     'body_scripts',
     'custom_js',
     'addon_analytics_enabled',
-    'analytics_ga4_id',
-    'analytics_gtm_id',
     'analytics_head_code',
     'analytics_body_code',
     'addon_cookie_consent_enabled',
@@ -54,27 +51,6 @@ function isFrontendPath(pathname: string) {
     pathname.startsWith('/setup') ||
     pathname.startsWith('/_next')
   );
-}
-
-function stripDuplicateGtm(code: string | undefined, gtmId: string): string {
-  const source = String(code || '');
-  if (!source || !gtmId || !source.includes(gtmId)) return source;
-
-  let cleaned = source
-    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, (block) =>
-      block.includes(gtmId) && /googletagmanager\.com|gtm\.js/i.test(block) ? '' : block
-    )
-    .replace(/<noscript\b[^>]*>[\s\S]*?<\/noscript>/gi, (block) =>
-      block.includes(gtmId) && /googletagmanager\.com|ns\.html/i.test(block) ? '' : block
-    );
-
-  // The Custom JS editor also supports plain JavaScript without <script> tags.
-  // If that entire plain snippet is the standard GTM loader, suppress it too.
-  if (cleaned.includes(gtmId) && /googletagmanager\.com|gtm\.js/i.test(cleaned) && !/<script\b/i.test(cleaned)) {
-    cleaned = '';
-  }
-
-  return cleaned.trim();
 }
 
 export default async function RootLayout({
@@ -107,18 +83,14 @@ export default async function RootLayout({
     analyticsAllowed = cookieStore.get('cms_cookie_consent')?.value === 'accepted';
   }
 
-  const ga4 = String(settings.analytics_ga4_id || '').trim();
-  const gtm = String(settings.analytics_gtm_id || '').trim();
-
-  // The dedicated GTM Container ID is the source of truth when populated.
-  // If the same standard GTM snippet was also pasted into Custom JS/Tracking,
-  // strip only those matching GTM blocks so the container executes once.
-  const cleanHeadScripts = stripDuplicateGtm(settings.head_scripts, gtm);
-  const cleanBodyScripts = stripDuplicateGtm(settings.body_scripts, gtm);
-  const cleanFooterScripts = stripDuplicateGtm(settings.custom_js, gtm);
-  const cleanTrackingHead = stripDuplicateGtm(settings.analytics_head_code, gtm);
-  const cleanTrackingBody = stripDuplicateGtm(settings.analytics_body_code, gtm);
-  const renderGeneratedGtm = Boolean(gtm);
+  // Analytics / tracking code is managed through the dedicated Head/Body fields.
+  // GA4/GTM IDs are intentionally not auto-injected here; this prevents a
+  // second GA4 implementation when GA4 is already configured inside GTM.
+  const cleanHeadScripts = settings.head_scripts;
+  const cleanBodyScripts = settings.body_scripts;
+  const cleanFooterScripts = settings.custom_js;
+  const cleanTrackingHead = settings.analytics_head_code;
+  const cleanTrackingBody = settings.analytics_body_code;
 
 
   return (
@@ -155,44 +127,12 @@ export default async function RootLayout({
 
         {frontend ? <JavaScriptSnippet code={cleanHeadScripts} idPrefix="cms-custom-js-head" /> : null}
 
-        {frontend && analyticsAllowed && ga4 ? (
-          <>
-            <script async src={`https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(ga4)}`} />
-            <script
-              id="cms-ga4"
-              dangerouslySetInnerHTML={{
-                __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${ga4.replace(/'/g, '')}');`,
-              }}
-            />
-          </>
-        ) : null}
-
-        {frontend && analyticsAllowed && renderGeneratedGtm ? (
-          <script
-            id="cms-gtm"
-            dangerouslySetInnerHTML={{
-              __html: `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','${gtm.replace(/'/g, '')}');`,
-            }}
-          />
-        ) : null}
-
         {frontend && analyticsAllowed ? (
           <JavaScriptSnippet code={cleanTrackingHead} idPrefix="cms-tracking-head" />
         ) : null}
       </head>
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
         {frontend ? <JavaScriptSnippet code={cleanBodyScripts} idPrefix="cms-custom-js-body" /> : null}
-
-        {frontend && analyticsAllowed && renderGeneratedGtm ? (
-          <noscript>
-            <iframe
-              src={`https://www.googletagmanager.com/ns.html?id=${encodeURIComponent(gtm)}`}
-              height="0"
-              width="0"
-              style={{ display: 'none', visibility: 'hidden' }}
-            />
-          </noscript>
-        ) : null}
 
         {frontend && analyticsAllowed ? (
           <BodyTrackingSnippet code={cleanTrackingBody} idPrefix="cms-tracking-body" />

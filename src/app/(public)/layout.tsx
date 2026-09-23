@@ -1,3 +1,4 @@
+import './public-globals.css';
 import SiteHeader from '@/components/SiteHeader';
 import SiteFooter from '@/components/SiteFooter';
 import { RootHeadSettings, RootBodyScripts } from '@/components/RootSettings';

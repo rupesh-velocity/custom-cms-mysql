@@ -1,3 +1,4 @@
+import './login-globals.css';
 import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
 import type { Metadata } from 'next';

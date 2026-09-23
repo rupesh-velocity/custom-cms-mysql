@@ -53,23 +53,41 @@ interface SeoAnalyzerProps {
 
 const resolveVariables = (str: string, props: Partial<SeoAnalyzerProps>) => {
   if (typeof str !== 'string') return str;
-  
-  const siteName = String(props.globalSettings?.site_title || '').trim();
-  const siteUrl = props.globalSettings?.site_url || 'http://localhost:3000';
-  const siteIcon = props.globalSettings?.site_icon || `${siteUrl}/logo.png`;
-  const defaultThumbnail = props.featuredImage || props.globalSettings?.seo_og_thumbnail || `${siteUrl}/thumbnail.png`;
 
-  return str
-    .replace(/%seo_title%/g, props.seoTitle || props.title || '')
-    .replace(/%seo_description%/g, props.metaDescription || '')
-    .replace(/%url%/g, props.redirectUrl || '')
-    .replace(/%name%/g, siteName)
-    .replace(/%org_name%/g, siteName)
-    .replace(/%org_url%/g, siteUrl)
-    .replace(/%org_logo%/g, siteIcon)
-    .replace(/%post_thumbnail%/g, defaultThumbnail)
-    .replace(/%date\(Y-m-d\)%/g, new Date().toISOString().split('T')[0])
-    .replace(/%keywords%/g, props.focusKeyword || '');
+  const siteName = String(props.globalSettings?.site_title || props.globalSettings?.seo_local_website_name || props.globalSettings?.seo_local_org_name || '').trim();
+  const siteUrl = String(props.globalSettings?.site_url || props.globalSettings?.seo_local_url || 'http://localhost:3000').replace(/\/+$/, '');
+  const currentUrl = `${siteUrl}/${String(props.slug || '').replace(/^\/+|\/+$/g, '')}`.replace(/\/$/, props.slug ? '' : '/');
+  const siteIcon = props.globalSettings?.seo_local_logo || props.globalSettings?.site_icon || '';
+  const defaultThumbnail = props.featuredImage || props.globalSettings?.seo_og_thumbnail || '';
+
+  const now = new Date();
+  const excerpt = props.metaDescription || props.content || '';
+  const values: Record<string, string> = {
+    '%seo_title%': props.seoTitle || props.title || '',
+    '%seo_description%': props.metaDescription || excerpt,
+    '%title%': props.title || '',
+    '%url%': currentUrl,
+    '%name%': siteName,
+    '%sitename%': siteName,
+    '%sitedesc%': String(props.globalSettings?.site_tagline || props.globalSettings?.seo_local_desc || ''),
+    '%sep%': String(props.globalSettings?.seo_separator || '-'),
+    '%org_name%': String(props.globalSettings?.seo_local_org_name || props.globalSettings?.seo_local_website_name || siteName),
+    '%org_url%': String(props.globalSettings?.seo_local_url || siteUrl),
+    '%org_logo%': siteIcon,
+    '%post_thumbnail%': defaultThumbnail,
+    '%keywords%': props.focusKeyword || '',
+    '%date(Y-m-d)%': now.toISOString().split('T')[0],
+    '%currentyear%': String(now.getFullYear()),
+    '%currentmonth%': now.toLocaleDateString('en-US', { month: 'long' }),
+    '%currentday%': now.toLocaleDateString('en-US', { weekday: 'long' }),
+    '%currentdate%': now.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+  };
+
+  let result = str;
+  for (const [key, value] of Object.entries(values)) {
+    result = result.split(key).join(String(value || ''));
+  }
+  return result;
 };
 
 const resolveObjectVariables = (obj: any, props: Partial<SeoAnalyzerProps>): any => {
@@ -606,6 +624,9 @@ export default function SeoAnalyzer({
         const fieldKey = `${selectedSchema}_${field.label}`;
         let val = schemaData[fieldKey];
         if (!val && field.placeholder) val = field.placeholder;
+        if (!val && field.type === 'radio' && selectedSchema === 'Article' && field.label === 'ARTICLE TYPE *') {
+          val = 'Article';
+        }
         
         if (val) {
           const cleanKey = field.label.toLowerCase().replace(/\s*\*\s*$/, '').replace(/ /g, '');
@@ -613,23 +634,78 @@ export default function SeoAnalyzer({
         }
       });
       
-      if (fieldValues.headline && !fieldValues.name) {
+      // Rank Math-style Article fields use `headline`, while most other
+      // schema types use `name`. Do not emit the invalid `articleType` property.
+      if (selectedSchema === 'Article') {
+        // Article, BlogPosting and NewsArticle use `headline`. Never emit the
+        // old invalid `articleType`/`articletype` property.
+        delete graphNode.articletype;
+        delete graphNode.articleType;
+        if (fieldValues.headline) graphNode.headline = fieldValues.headline;
+      } else if (fieldValues.headline && !fieldValues.name) {
         fieldValues.name = fieldValues.headline;
         delete fieldValues.headline;
       }
-      
+
       if (fieldValues.name) graphNode.name = fieldValues.name;
       if (fieldValues.description) graphNode.description = fieldValues.description;
-      
-      if (selectedSchema === 'Service' || selectedSchema === 'Product') {
-        graphNode.offers = { "@type": "Offer", "availability": "InStock" };
-        if (fieldValues.price) graphNode.offers.price = fieldValues.price;
-        if (fieldValues.currency) graphNode.offers.currency = fieldValues.currency;
-        if (fieldValues.availability) graphNode.offers.availability = fieldValues.availability;
+
+      if (selectedSchema === 'Article') {
+        // Rank Math's Article Type selector maps to the Schema.org type itself.
+        // It must never be emitted as an `articleType`/`articletype` property.
+        const articleTypeSelection = String(fieldValues.articletype || 'Article').trim();
+        graphNode['@type'] = articleTypeSelection === 'Blog Post'
+          ? 'BlogPosting'
+          : articleTypeSelection === 'News Article'
+            ? 'NewsArticle'
+            : 'Article';
+        delete graphNode.articletype;
+        delete graphNode.articleType;
+        if (fieldValues.keywords) graphNode.keywords = fieldValues.keywords;
+        if (featuredImage) graphNode.image = resolveObjectVariables(featuredImage, { title, seoTitle, metaDescription, redirectUrl, focusKeyword, featuredImage, globalSettings });
+        if (seoTitle || title) graphNode.headline = fieldValues.headline || seoTitle || title;
+        if (metaDescription) graphNode.description = fieldValues.description || metaDescription;
+        if (globalSettings?.site_url || globalSettings?.seo_local_url) {
+          const baseUrl = String(globalSettings.site_url || globalSettings.seo_local_url).replace(/\/+$/, '');
+          const currentPath = slug ? `/${String(slug).replace(/^\/+/, '')}` : '/';
+          graphNode['@id'] = `${baseUrl}${currentPath}#article`;
+          graphNode.url = `${baseUrl}${currentPath}`;
+          graphNode.mainEntityOfPage = { '@id': `${baseUrl}${currentPath}#webpage` };
+        }
+        if (globalSettings?.seo_local_org_name || globalSettings?.seo_local_website_name || globalSettings?.site_title) {
+          const publisherName = globalSettings.seo_local_org_name || globalSettings.seo_local_website_name || globalSettings.site_title;
+          graphNode.publisher = {
+            '@type': 'Organization',
+            '@id': `${String(globalSettings.site_url || globalSettings.seo_local_url || '').replace(/\/+$/, '')}/#organization`,
+            name: publisherName,
+          };
+        }
+        if (isPost) {
+          if (globalSettings?.seo_local_logo) {
+            const logo = resolveObjectVariables(globalSettings.seo_local_logo, { title, seoTitle, metaDescription, redirectUrl, focusKeyword, featuredImage, globalSettings });
+            if (logo) {
+              graphNode.publisher = graphNode.publisher || { '@type': 'Organization' };
+              const logoUrl = /^https?:\/\//i.test(String(logo))
+                ? String(logo)
+                : `${String(globalSettings.site_url || globalSettings.seo_local_url || 'http://localhost:3000').replace(/\/+$/, '')}/${String(logo).replace(/^\/+/, '')}`;
+              graphNode.publisher.logo = { '@type': 'ImageObject', url: logoUrl };
+            }
+          }
+        }
+        // Author/date fields are added by the frontend resolver when those values are available.
       }
       
-      if (selectedSchema === 'Service' || selectedSchema === 'Article' || selectedSchema === 'Blog Posting') {
-        graphNode.image = { "@type": "ImageObject", "url": "%post_thumbnail%" };
+      if (selectedSchema === 'Service' || selectedSchema === 'Product') {
+        const hasOfferData = !!(fieldValues.price || fieldValues.currency || fieldValues.availability || fieldValues.offerurl || fieldValues.pricevaliduntil || fieldValues.inventorylevel);
+        if (hasOfferData) {
+          graphNode.offers = { "@type": "Offer" };
+          if (fieldValues.price) graphNode.offers.price = fieldValues.price;
+          if (fieldValues.currency) graphNode.offers.priceCurrency = fieldValues.currency;
+          if (fieldValues.availability) graphNode.offers.availability = fieldValues.availability;
+          if (fieldValues.offerurl) graphNode.offers.url = fieldValues.offerurl;
+          if (fieldValues.pricevaliduntil) graphNode.offers.priceValidUntil = fieldValues.pricevaliduntil;
+          if (fieldValues.inventorylevel) graphNode.offers.inventoryLevel = fieldValues.inventorylevel;
+        }
       }
       
       if (selectedSchema === 'FAQ' && fieldValues.questions) {
@@ -672,6 +748,7 @@ export default function SeoAnalyzer({
       
       const schemaPropertyMap: Record<string, string> = {
         'servicetype': 'serviceType',
+        'keywords': 'keywords',
         'pricevaliduntil': 'priceValidUntil',
         'operatingsystem': 'operatingSystem',
         'applicationcategory': 'applicationCategory',
@@ -731,7 +808,7 @@ export default function SeoAnalyzer({
       };
 
       Object.keys(fieldValues).forEach(k => {
-        if (k !== 'name' && k !== 'description' && k !== 'price' && k !== 'currency' && k !== 'availability') {
+        if (k !== 'name' && k !== 'headline' && k !== 'description' && k !== 'price' && k !== 'currency' && k !== 'availability' && k !== 'articletype') {
           const properKey = schemaPropertyMap[k] || k;
           try {
             graphNode[properKey] = JSON.parse(fieldValues[k]);
@@ -740,16 +817,57 @@ export default function SeoAnalyzer({
           }
         }
       });
+      if (selectedSchema === 'Article') {
+        if (focusKeyword && !graphNode.keywords) graphNode.keywords = focusKeyword;
+        if (featuredImage && !graphNode.image) graphNode.image = featuredImage;
+        if (globalSettings?.seo_local_org_name || globalSettings?.seo_local_website_name || globalSettings?.site_title) {
+          const publisherName = globalSettings.seo_local_org_name || globalSettings.seo_local_website_name || globalSettings.site_title;
+          graphNode.publisher = { '@type': 'Organization', name: publisherName };
+        }
+        if (globalSettings?.seo_local_logo) {
+          graphNode.publisher = graphNode.publisher || { '@type': 'Organization' };
+          graphNode.publisher.logo = { '@type': 'ImageObject', url: globalSettings.seo_local_logo };
+        }
+      }
+
       baseObj = schemaObj;
     }
 
     const resolvedObj = resolveObjectVariables(baseObj, { title, seoTitle, metaDescription, redirectUrl, focusKeyword, featuredImage, globalSettings });
     const filteredObj = removeEmptyFields(resolvedObj);
+    // Final defensive cleanup for legacy Article schema fields at every depth.
+    const sanitizeFinalSchema = (value: any): any => {
+      if (Array.isArray(value)) return value.map(sanitizeFinalSchema);
+      if (!value || typeof value !== 'object') return value;
+      const cleanNode: any = {};
+      for (const [key, child] of Object.entries(value)) {
+        if (key.toLowerCase() === 'articletype') continue;
+        cleanNode[key] = sanitizeFinalSchema(child);
+      }
+      const nodeType = cleanNode['@type'];
+      const nodeTypes = Array.isArray(nodeType) ? nodeType : [nodeType];
+      if (nodeTypes.includes('Article') || nodeTypes.includes('BlogPosting') || nodeTypes.includes('NewsArticle')) {
+        if (!cleanNode.headline && cleanNode.name) cleanNode.headline = cleanNode.name;
+        delete cleanNode.name;
+        delete cleanNode.articletype;
+        delete cleanNode.articleType;
+      }
+      if (nodeTypes.includes('Service') && cleanNode.offers && typeof cleanNode.offers === 'object' && !Array.isArray(cleanNode.offers)) {
+        const offerKeys = Object.keys(cleanNode.offers).filter((k) => k !== '@type');
+        if (cleanNode.offers['@type'] === 'Offer' && offerKeys.length === 1 && cleanNode.offers.availability === 'InStock') delete cleanNode.offers;
+      }
+      if (cleanNode.image && typeof cleanNode.image === 'object' && !Array.isArray(cleanNode.image)) {
+        const imageKeys = Object.keys(cleanNode.image).filter((k) => k !== '@type');
+        if (cleanNode.image['@type'] === 'ImageObject' && imageKeys.length === 0) delete cleanNode.image;
+      }
+      return cleanNode;
+    };
+    const fullyCleaned = sanitizeFinalSchema(filteredObj);
     
-    if (filteredObj && filteredObj["@graph"] && Array.isArray(filteredObj["@graph"]) && filteredObj["@graph"].length > 0) {
+    if (fullyCleaned && fullyCleaned["@graph"] && Array.isArray(fullyCleaned["@graph"]) && fullyCleaned["@graph"].length > 0) {
       return {
         "@context": "https://schema.org",
-        "@graph": filteredObj["@graph"]
+        "@graph": fullyCleaned["@graph"]
       };
     }
     
@@ -766,23 +884,6 @@ export default function SeoAnalyzer({
           setSchemas([parsed]);
         }
       } catch(e) {}
-    } else if ((!schemaJson || schemaJson === '[]') && schemas.length === 0 && Object.keys(globalSettings || {}).length > 0) {
-      const defaultSchemaType = isPost ? globalSettings.seo_post_schema_type : globalSettings.seo_page_schema_type;
-      
-      if (defaultSchemaType && defaultSchemaType !== 'None') {
-        const schemaObj = {
-          "@context": "https://schema.org",
-          "@graph": [
-            {
-              "@type": defaultSchemaType
-            }
-          ]
-        };
-        setSchemas([schemaObj]);
-        if (setSchemaJson) {
-          setSchemaJson(JSON.stringify([schemaObj], null, 2));
-        }
-      }
     }
   }, [schemaJson, schemas.length, globalSettings, isPost, setSchemaJson]);
 
@@ -2117,7 +2218,7 @@ export default function SeoAnalyzer({
                                            type="radio" 
                                            name={fieldKey}
                                            value={opt}
-                                           checked={val === opt}
+                                           checked={(val || (selectedSchema === 'Article' && field.label === 'ARTICLE TYPE *' ? 'Article' : '')) === opt}
                                            onChange={(e) => handleSchemaDataChange(field.label, e.target.value)}
                                            className="text-[#5e3fde] focus:ring-[#0085ba]"
                                          /> {opt}
