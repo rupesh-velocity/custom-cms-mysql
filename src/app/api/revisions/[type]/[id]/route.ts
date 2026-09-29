@@ -1,6 +1,13 @@
 import { NextResponse } from 'next/server';
 import { isAdministratorSession } from '@/lib/admin-auth';
 import { prisma } from '@/lib/prisma';
+import {
+  normalizeCarouselHeading,
+  normalizeCarouselSlidesPerView,
+  normalizeCarouselAutoplay,
+  normalizeCarouselAutoplayDelay,
+  normalizeCarouselPagination,
+} from '@/lib/post-carousel';
 
 const ALLOWED = new Set(['page', 'post']);
 
@@ -32,6 +39,21 @@ function cleanSnapshot(snapshot: any, type: string) {
     common.heroDescription = snapshot.heroDescription;
   }
   if (type === 'post') {
+    if ('carouselHeading' in snapshot) {
+      common.carouselHeading = normalizeCarouselHeading(snapshot.carouselHeading);
+    }
+    if ('carouselSlidesPerView' in snapshot) {
+      common.carouselSlidesPerView = normalizeCarouselSlidesPerView(snapshot.carouselSlidesPerView);
+    }
+    if ('carouselAutoplay' in snapshot) {
+      common.carouselAutoplay = normalizeCarouselAutoplay(snapshot.carouselAutoplay);
+    }
+    if ('carouselAutoplayDelay' in snapshot) {
+      common.carouselAutoplayDelay = normalizeCarouselAutoplayDelay(snapshot.carouselAutoplayDelay);
+    }
+    if ('carouselPagination' in snapshot) {
+      common.carouselPagination = normalizeCarouselPagination(snapshot.carouselPagination);
+    }
     if (Array.isArray(snapshot.categories)) {
       common.categories = { set: snapshot.categories.map((x:any) => ({ id: x.id })) };
     }
@@ -69,6 +91,34 @@ export async function POST(req: Request, context: any) {
     if (!revision) return NextResponse.json({ error: 'Revision not found.' }, { status: 404 });
     const snapshot = JSON.parse(revision.snapshot);
     const data = cleanSnapshot(snapshot, type);
+
+    if (type === 'post' && Array.isArray(snapshot.carouselImages)) {
+      const normalized = snapshot.carouselImages
+        .map((item: any, index: number) => ({
+          mediaId: Number(item?.mediaId),
+          sortOrder: Number.isInteger(Number(item?.sortOrder)) ? Number(item.sortOrder) : index,
+          caption: typeof item?.caption === 'string' && item.caption.trim() ? item.caption.trim().slice(0, 2000) : null,
+        }))
+        .filter((item: any) => Number.isInteger(item.mediaId) && item.mediaId > 0)
+        .slice(0, 50);
+
+      const media = normalized.length
+        ? await prisma.media.findMany({ where: { id: { in: normalized.map((item: any) => item.mediaId) } }, select: { id: true } })
+        : [];
+      const validMediaIds = new Set(media.map((item: any) => item.id));
+
+      data.carouselImages = {
+        deleteMany: {},
+        create: normalized
+          .filter((item: any) => validMediaIds.has(item.mediaId))
+          .sort((a: any, b: any) => a.sortOrder - b.sortOrder)
+          .map((item: any, index: number) => ({
+            media: { connect: { id: item.mediaId } },
+            sortOrder: index,
+            caption: item.caption,
+          })),
+      };
+    }
 
     const restored = type === 'page'
       ? await prisma.page.update({ where: { id }, data })

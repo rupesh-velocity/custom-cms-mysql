@@ -5,11 +5,12 @@ import CheckoutClient from './CheckoutClient';
 import { cookies } from 'next/headers';
 import { jwtVerify } from 'jose';
 
-export default async function CheckoutPage({ searchParams }: { searchParams: Promise<{ id?: string, type?: string, productId?: string }> }) {
+export default async function CheckoutPage({ searchParams }: { searchParams: Promise<{ id?: string, type?: string, productId?: string, planId?: string }> }) {
   const params = await searchParams;
   
   const id = params?.id || params.productId;
   const type = params.type || 'product';
+  const planId = params.planId ? parseInt(params.planId) : null;
 
   if (!id) {
     return (
@@ -23,14 +24,27 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
   let itemData: any = null;
 
   if (type === 'course') {
-    const course = await prisma.course.findUnique({ where: { id: parseInt(id) } });
+    const course = await prisma.course.findUnique({ where: { id: parseInt(id) }, include: { accessPlans: { where: { isActive: true }, orderBy: { sortOrder: 'asc' } } } });
     if (course) {
+      const isVariable = course.pricingType === 'VARIABLE' && course.accessPlans.length > 0;
+      const selectedPlan = isVariable ? (course.accessPlans.find((plan) => plan.id === planId) || null) : null;
+      if (isVariable && !selectedPlan) {
+        return (
+          <div className="min-h-[60vh] flex flex-col items-center justify-center p-6 text-center">
+            <h1 className="text-2xl font-bold mb-4 text-gray-900">Select an Access Plan</h1>
+            <p className="text-gray-500">Please go back to the course page and choose a 6 Month or 1 Year plan before checkout.</p>
+          </div>
+        );
+      }
       itemData = {
         id: course.id,
-        title: course.title,
-        price: course.salePrice || course.price || 0,
+        title: selectedPlan ? `${course.title} - ${selectedPlan.name}` : course.title,
+        price: selectedPlan ? (selectedPlan.salePrice || selectedPlan.regularPrice || 0) : (course.salePrice || course.price || 0),
         image: course.featuredImage,
-        type: 'course'
+        type: 'course',
+        planId: selectedPlan?.id || null,
+        planName: selectedPlan?.name || null,
+        durationMonths: selectedPlan?.durationMonths || null,
       };
     }
   } else {
@@ -60,6 +74,7 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
   const token = cookieStore.get('cms_session')?.value;
   let userEmail = '';
   let userName = '';
+  let userPhone = '';
   
   if (token) {
     try {
@@ -69,6 +84,7 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
       if (user) {
         userEmail = user.email;
         userName = user.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : user.username;
+        userPhone = user.phone || '';
       }
     } catch (e) {}
   }
@@ -117,6 +133,7 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
           isAuthenticated={!!userEmail}
           initialEmail={userEmail}
           initialName={userName}
+          initialPhone={userPhone}
         />
       </div>
     </div>

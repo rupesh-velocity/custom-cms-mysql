@@ -10,6 +10,7 @@ import SeoAnalyzer from '@/components/SeoAnalyzer';
 import toast from 'react-hot-toast';
 import { BASE_PATH } from '@/lib/config';
 import RevisionHistory from '@/components/RevisionHistory';
+import PostImageCarouselEditor, { type PostCarouselEditorImage, type PostCarouselEditorSettings } from '@/components/PostImageCarouselEditor';
 
 export default function EditPost() {
   const router = useRouter();
@@ -43,6 +44,14 @@ export default function EditPost() {
   const [isPillar, setIsPillar] = useState(false);
 
   const [featuredImage, setFeaturedImage] = useState<string | null>(null);
+  const [carouselImages, setCarouselImages] = useState<PostCarouselEditorImage[]>([]);
+  const [carouselSettings, setCarouselSettings] = useState<PostCarouselEditorSettings>({
+    heading: '',
+    slidesPerView: 3,
+    autoplay: true,
+    autoplayDelay: 3000,
+    pagination: true,
+  });
   const [categoryIds, setCategoryIds] = useState<number[]>([]);
   const [tagIds, setTagIds] = useState<number[]>([]);
 
@@ -77,6 +86,24 @@ export default function EditPost() {
         setSeoScore(data.seoScore || 0);
         setIsPillar(data.isPillar || false);
         setFeaturedImage(data.featuredImage || null);
+        setCarouselSettings({
+          heading: data.carouselHeading || '',
+          slidesPerView: data.carouselSlidesPerView === 1 || data.carouselSlidesPerView === 2 ? data.carouselSlidesPerView : 3,
+          autoplay: data.carouselAutoplay !== false,
+          autoplayDelay: Math.max(1500, Math.min(15000, Number(data.carouselAutoplayDelay) || 3000)),
+          pagination: data.carouselPagination !== false,
+        });
+        if (Array.isArray(data.carouselImages)) {
+          setCarouselImages(data.carouselImages.flatMap((item: any) => item?.media ? [{
+            mediaId: item.mediaId,
+            url: item.media.url,
+            filename: item.media.filename,
+            altText: item.media.altText || null,
+            caption: item.caption || null,
+          }] : []));
+        } else {
+          setCarouselImages([]);
+        }
         if (data.categories && Array.isArray(data.categories)) {
           setCategoryIds(data.categories.map((c: any) => c.id));
         }
@@ -135,6 +162,12 @@ export default function EditPost() {
           seoScore,
           isPillar,
           featuredImage,
+          carouselImages: carouselImages.map((image) => ({ mediaId: image.mediaId, caption: image.caption || null })),
+          carouselHeading: carouselSettings.heading,
+          carouselSlidesPerView: carouselSettings.slidesPerView,
+          carouselAutoplay: carouselSettings.autoplay,
+          carouselAutoplayDelay: carouselSettings.autoplayDelay,
+          carouselPagination: carouselSettings.pagination,
           categoryIds,
           tagIds
         }),
@@ -185,6 +218,13 @@ export default function EditPost() {
           permalinkBase={postBase}
           trailingSlash={trailingSlash}
           modern={true}
+        />
+
+        <PostImageCarouselEditor
+          images={carouselImages}
+          onChange={setCarouselImages}
+          settings={carouselSettings}
+          onSettingsChange={setCarouselSettings}
         />
         
         {globalSettings?.seo_post_add_seo_controls !== 'false' && (

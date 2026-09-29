@@ -38,7 +38,7 @@ export default async function MyAccountPage() {
   // Fetch courses user has access to
   const accessRecords = await prisma.userCourseAccess.findMany({
     where: { userId: userId },
-    include: { course: true },
+    include: { course: true, courseAccessPlan: true },
     orderBy: { createdAt: 'desc' }
   });
 
@@ -66,12 +66,12 @@ export default async function MyAccountPage() {
       <main className="section-padding relative z-10">
         <div className="container max-w-6xl mx-auto">
           
-          <div className="bg-white rounded-[12px] shadow-[0_10px_40px_rgba(0,0,0,0.04)] border border-[#f0f0f0] overflow-hidden p-8 md:p-12 relative -mt-8">
-            <div className="mb-10 text-left border-b border-[#f0f0f0] pb-6 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg flex items-center justify-center text-[var(--purple)]" style={{ backgroundColor: '#f3e8ff' }}>
+          <div className="relative -mt-8 overflow-hidden rounded-3xl border border-gray-100 bg-white p-8 shadow-xl shadow-gray-200/60 md:p-10">
+            <div className="mb-8 flex items-center gap-3 border-b border-gray-100 pb-5 text-left">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#5e3fde]/10 text-[#5e3fde]" style={{ backgroundColor: '#f3e8ff' }}>
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
               </div>
-              <h2 className="font-heading text-[var(--purple)] text-[24px]">Enrolled Courses</h2>
+              <h2 className="font-heading !text-3xl font-bold !leading-tight text-gray-950">Enrolled Courses</h2>
             </div>
             
             <div className="">
@@ -152,7 +152,7 @@ export default async function MyAccountPage() {
                         </h3>
                         <div className="mt-auto pt-4 border-t border-[#f0f0f0]">
                           <div className="recent-post-date">
-                            Enrolled: {new Date(record.createdAt).toLocaleDateString()}
+                            Plan: {record.courseAccessPlan?.name || 'Course Access'}<br />Started: {new Date(record.startsAt || record.createdAt).toLocaleDateString()}<br />Expires: {record.expiresAt ? new Date(record.expiresAt).toLocaleDateString() : 'Lifetime'}
                           </div>
                         </div>
                       </div>

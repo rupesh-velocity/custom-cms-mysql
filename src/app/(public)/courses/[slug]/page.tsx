@@ -31,7 +31,8 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
   
   // 1. Fetch course details
   const course = await prisma.course.findUnique({
-    where: { slug: resolvedParams.slug }
+    where: { slug: resolvedParams.slug },
+    include: { accessPlans: { orderBy: { sortOrder: 'asc' } } },
   });
   
   if (!course) {
@@ -64,7 +65,8 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
     const access = await prisma.userCourseAccess.findFirst({
       where: {
         userId: userId,
-        courseId: course.id
+        courseId: course.id,
+        OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }]
       }
     });
     if (access) {

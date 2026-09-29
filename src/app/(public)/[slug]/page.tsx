@@ -19,6 +19,8 @@ import BodyClassInjector from '@/components/BodyClassInjector';
 import { BASE_PATH } from '@/lib/config';
 import { buildPostUrl, buildCategoryUrl } from '@/lib/permalinks';
 import { getPermalinkSettings } from '@/lib/permalink-settings';
+import PostImageCarousel from '@/components/PostImageCarousel';
+import { responsiveImageProps } from '@/lib/responsive-images';
 const TwitterIcon = ({ className }: { className?: string }) => (
   <svg className={className} fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
     <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z" />
@@ -48,7 +50,14 @@ async function getPageOrPost(slug: string) {
   
   data = await prisma.post.findUnique({ 
     where: { slug },
-    include: { author: true, categories: true }
+    include: {
+      author: true,
+      categories: true,
+      carouselImages: {
+        orderBy: { sortOrder: 'asc' },
+        include: { media: true },
+      },
+    }
   });
   if (data) {
     return data.status !== 'Draft' ? { ...data, __type: 'post' } : null;
@@ -357,6 +366,39 @@ export default async function PublicPage(props: { params: Promise<{ slug: string
      }
   }
 
+  const publicCarouselImages = data.__type === 'post' && Array.isArray(data.carouselImages)
+    ? data.carouselImages.flatMap((item: any) => {
+        if (!item?.media?.url) return [];
+
+        const desktopCarouselSize = data.carouselSlidesPerView === 1
+          ? '100vw'
+          : data.carouselSlidesPerView === 2
+            ? '50vw'
+            : '33vw';
+        const tabletCarouselSize = data.carouselSlidesPerView === 1 ? '100vw' : '50vw';
+
+        const deliveryProps = seoSettings.image_auto_srcset !== 'false'
+          ? responsiveImageProps(item.media.url, {
+              lazy: seoSettings.image_lazy_load !== 'false',
+              sizes: `(min-width: 1024px) ${desktopCarouselSize}, (min-width: 640px) ${tabletCarouselSize}, 100vw`,
+            })
+          : {
+              ...(seoSettings.image_lazy_load !== 'false' ? { loading: 'lazy' as const } : {}),
+            };
+
+        return [{
+          id: item.id,
+          src: item.media.url,
+          alt: item.media.altText || item.media.filename || data.title,
+          caption: item.caption || null,
+          srcSet: 'srcSet' in deliveryProps ? deliveryProps.srcSet : undefined,
+          sizes: 'sizes' in deliveryProps ? deliveryProps.sizes : undefined,
+          loading: 'loading' in deliveryProps ? deliveryProps.loading : undefined,
+          fetchPriority: 'fetchPriority' in deliveryProps ? deliveryProps.fetchPriority : undefined,
+        }];
+      })
+    : [];
+
   return (
     <>
       <BodyClassInjector type={data.__type} id={data.id} />
@@ -532,6 +574,15 @@ export default async function PublicPage(props: { params: Promise<{ slug: string
                     </>
                   );
                 })()}
+
+                <PostImageCarousel
+                  images={publicCarouselImages}
+                  heading={data.carouselHeading}
+                  slidesPerView={data.carouselSlidesPerView}
+                  autoplay={data.carouselAutoplay}
+                  autoplayDelay={data.carouselAutoplayDelay}
+                  pagination={data.carouselPagination !== false}
+                />
                 
                 {/* Share Buttons */}
                 {(() => {

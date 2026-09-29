@@ -8,6 +8,7 @@ import LinkSuggestionsSidebar from '@/components/LinkSuggestionsSidebar';
 import SeoAnalyzer from '@/components/SeoAnalyzer';
 import toast from 'react-hot-toast';
 import { BASE_PATH } from '@/lib/config';
+import PostImageCarouselEditor, { type PostCarouselEditorImage, type PostCarouselEditorSettings } from '@/components/PostImageCarouselEditor';
 
 export default function NewPost() {
   const router = useRouter();
@@ -38,6 +39,14 @@ export default function NewPost() {
   const [isPillar, setIsPillar] = useState(false);
   
   const [featuredImage, setFeaturedImage] = useState<string | null>(null);
+  const [carouselImages, setCarouselImages] = useState<PostCarouselEditorImage[]>([]);
+  const [carouselSettings, setCarouselSettings] = useState<PostCarouselEditorSettings>({
+    heading: '',
+    slidesPerView: 3,
+    autoplay: true,
+    autoplayDelay: 3000,
+    pagination: true,
+  });
   const [globalSettings, setGlobalSettings] = useState<any>({});
 
   useEffect(() => {
@@ -86,6 +95,12 @@ export default function NewPost() {
           seoScore,
           isPillar,
           featuredImage,
+          carouselImages: carouselImages.map((image) => ({ mediaId: image.mediaId, caption: image.caption || null })),
+          carouselHeading: carouselSettings.heading,
+          carouselSlidesPerView: carouselSettings.slidesPerView,
+          carouselAutoplay: carouselSettings.autoplay,
+          carouselAutoplayDelay: carouselSettings.autoplayDelay,
+          carouselPagination: carouselSettings.pagination,
           categoryIds,
           tagIds
         }),
@@ -123,6 +138,13 @@ export default function NewPost() {
           permalinkBase={postBase}
           trailingSlash={trailingSlash}
           modern={true}
+        />
+
+        <PostImageCarouselEditor
+          images={carouselImages}
+          onChange={setCarouselImages}
+          settings={carouselSettings}
+          onSettingsChange={setCarouselSettings}
         />
         
         {globalSettings?.seo_post_add_seo_controls !== 'false' && (

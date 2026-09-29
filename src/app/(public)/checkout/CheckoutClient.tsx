@@ -15,6 +15,9 @@ interface ItemData {
   price: number;
   image: string | null;
   type: 'course' | 'product';
+  planId?: number | null;
+  planName?: string | null;
+  durationMonths?: number | null;
 }
 
 interface CheckoutClientProps {
@@ -22,9 +25,10 @@ interface CheckoutClientProps {
   isAuthenticated: boolean;
   initialEmail: string;
   initialName: string;
+  initialPhone?: string;
 }
 
-function CheckoutForm({ item, isAuthenticated, initialEmail, initialName, clientSecret, allowedCountries, zelleEnabled, zellePhone, zelleQrCodeUrl }: CheckoutClientProps & { clientSecret: string, allowedCountries?: string[], zelleEnabled?: boolean, zellePhone?: string, zelleQrCodeUrl?: string }) {
+function CheckoutForm({ item, isAuthenticated, initialEmail, initialName, initialPhone = '', clientSecret, allowedCountries, zelleEnabled, zellePhone, zelleQrCodeUrl }: CheckoutClientProps & { clientSecret: string, allowedCountries?: string[], zelleEnabled?: boolean, zellePhone?: string, zelleQrCodeUrl?: string }) {
   const stripe = useStripe();
   const elements = useElements();
   const router = useRouter();
@@ -38,6 +42,7 @@ function CheckoutForm({ item, isAuthenticated, initialEmail, initialName, client
   const [formData, setFormData] = useState({
     name: initialName,
     email: initialEmail,
+    phone: initialPhone,
     password: ''
   });
 
@@ -85,8 +90,10 @@ function CheckoutForm({ item, isAuthenticated, initialEmail, initialName, client
         body: JSON.stringify({ 
           itemId: item.id,
           type: item.type,
+          planId: item.planId || undefined,
           name: formData.name,
           email: formData.email,
+          phone: formData.phone,
           password: formData.password,
           paymentIntentId: paymentIntentId,
           paymentMethod: paymentMethod === 'zelle' ? 'ZELLE' : 'STRIPE',
@@ -155,19 +162,27 @@ function CheckoutForm({ item, isAuthenticated, initialEmail, initialName, client
                   placeholder="john@example.com"
                 />
               </div>
-            </div>
-            
-            {!isAuthenticated && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Create a Password (to access your {item.type} later)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
                 <input 
-                  type="password" name="password" required
-                  value={formData.password} onChange={handleChange}
+                  type="tel" name="phone" required
+                  value={formData.phone} onChange={handleChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#773dbe] outline-none"
-                  placeholder="••••••••"
+                  placeholder="5201234567"
                 />
               </div>
-            )}
+              {!isAuthenticated && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Create a Password</label>
+                  <input 
+                    type="password" name="password" required
+                    value={formData.password} onChange={handleChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#773dbe] outline-none"
+                    placeholder="••••••••"
+                  />
+                </div>
+              )}
+            </div>
           </div>
 
           <hr className="border-gray-100" />
@@ -297,7 +312,7 @@ function CheckoutForm({ item, isAuthenticated, initialEmail, initialName, client
             </div>
             <div className="flex-1 min-w-0">
               <h3 className="!text-base font-semibold text-gray-900 break-words">{item.title}</h3>
-              <p className="text-[#773dbe] font-bold mt-1">${item.price}</p>
+              <p className="text-[#773dbe] font-bold mt-1">${item.price}</p>{item.planName ? <p className="text-xs text-gray-500 mt-1">Plan: {item.planName}{item.durationMonths ? ` · ${item.durationMonths} months` : ''}</p> : null}
             </div>
           </div>
           <hr className="border-gray-100 mb-4" />
@@ -334,7 +349,7 @@ export default function CheckoutClient(props: CheckoutClientProps) {
     fetch(`${BASE_PATH}/api/checkout/stripe`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ itemId: props.item.id, type: props.item.type })
+      body: JSON.stringify({ itemId: props.item.id, type: props.item.type, planId: props.item.planId || undefined })
     })
       .then(res => res.json())
       .then(data => {
@@ -350,7 +365,7 @@ export default function CheckoutClient(props: CheckoutClientProps) {
         }
       })
       .catch(() => setError('Failed to initialize payment system'));
-  }, [props.item.id, props.item.type]);
+  }, [props.item.id, props.item.type, props.item.planId]);
 
   if (error) {
     return (

@@ -319,7 +319,7 @@ export default function AdminListClient({ items, type }: { items: any[], type: '
                     </div>
                     {(type === 'pages' || type === 'posts' || type === 'courses') && item.status !== 'Trash' && (
                       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Link href={type === 'courses' ? `/admin/courses/${item.id}/edit` : `/admin/${type}/${item.id}`} className="text-[#5e3fde] hover:underline font-medium">Edit</Link>
+                        <Link href={type === 'courses' ? `/admin/courses/${item.id}/edit` : `/admin/${type}/${item.id}`} className="text-[#5e3fde] hover:underline font-medium">Edit</Link>{type === 'courses' && <><span className="text-gray-300">|</span><Link href={`/admin/courses/${item.id}/students`} className="text-[#5e3fde] hover:underline font-medium">Students</Link></>}
                         {(type === 'pages' || type === 'posts') && <><span className="text-gray-300">|</span><button onClick={() => handleDuplicate(item.id)} className="text-[#5e3fde] hover:underline font-medium">Duplicate</button></>}
                         {item.status !== 'Published' && <><span className="text-gray-300">|</span><button onClick={() => handlePublish(item.id)} className="text-green-700 hover:underline font-medium">Publish</button></>}
                         <span className="text-gray-300">|</span>

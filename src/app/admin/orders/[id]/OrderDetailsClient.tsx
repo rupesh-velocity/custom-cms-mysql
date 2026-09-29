@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Save, Mail, Calendar, CreditCard, ShoppingBag, Package, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Save, Mail, Calendar, CreditCard, ShoppingBag, Package, CheckCircle, Trash2, RotateCcw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 import { BASE_PATH } from '@/lib/config';
@@ -11,6 +11,7 @@ export default function OrderDetailsClient({ order }: { order: any }) {
   const router = useRouter();
   const [status, setStatus] = useState(order.status);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   let billing = {} as any;
   let shipping = {} as any;
@@ -45,17 +46,54 @@ export default function OrderDetailsClient({ order }: { order: any }) {
     }
   };
 
+
+  const handleMoveToTrash = async () => {
+    if (!window.confirm('Move this order to trash? If this order granted course access, access linked to this order will be revoked.')) {
+      return;
+    }
+    await handleUpdateStatus('TRASH');
+  };
+
+  const handleRestoreOrder = async () => {
+    await handleUpdateStatus('PENDING');
+  };
+
+  const handleDeletePermanently = async () => {
+    if (!window.confirm('Permanently delete this order? This cannot be undone. Course access linked to this order will also be removed.')) {
+      return;
+    }
+    setIsDeleting(true);
+    try {
+      const res = await fetch(`${BASE_PATH}/api/orders/${order.id}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        toast.success('Order permanently deleted');
+        router.push('/admin/orders?status=trash');
+        router.refresh();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        toast.error(data.error || 'Failed to delete order');
+      }
+    } catch(e) {
+      toast.error('An error occurred');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const statusColors: any = {
     COMPLETED: 'bg-green-100 text-green-800',
     PROCESSING: 'bg-blue-100 text-blue-800',
     PENDING: 'bg-yellow-100 text-yellow-800',
     CANCELLED: 'bg-red-100 text-red-800',
+    TRASH: 'bg-gray-200 text-gray-700',
   };
 
   return (
     <div className="text-[#2c3338]">
       <div className="mb-6">
-        <Link href="/admin/orders" className="inline-flex items-center gap-2 text-sm text-[#5e3fde] hover:underline mb-4">
+        <Link href={order.status === 'TRASH' ? '/admin/orders?status=trash' : '/admin/orders'} className="inline-flex items-center gap-2 text-sm text-[#5e3fde] hover:underline mb-4">
           <ArrowLeft size={16} /> Back to Orders
         </Link>
         <div className="flex items-center justify-between">
@@ -220,6 +258,7 @@ export default function OrderDetailsClient({ order }: { order: any }) {
                   <option value="PROCESSING">Processing</option>
                   <option value="COMPLETED">Completed</option>
                   <option value="CANCELLED">Cancelled</option>
+                  <option value="TRASH">Trash</option>
                 </select>
                 <button 
                   onClick={() => handleUpdateStatus()}
@@ -228,6 +267,38 @@ export default function OrderDetailsClient({ order }: { order: any }) {
                 >
                   <Save size={16} /> Update Status
                 </button>
+              </div>
+
+              <div className="pt-4 border-t border-gray-100">
+                {order.status === 'TRASH' ? (
+                  <div className="space-y-3">
+                    <button
+                      onClick={handleRestoreOrder}
+                      disabled={isUpdating || isDeleting}
+                      className="w-full flex items-center justify-center gap-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-4 py-2 rounded text-sm font-medium transition-colors disabled:opacity-50"
+                    >
+                      <RotateCcw size={16} /> Restore to Pending
+                    </button>
+                    <button
+                      onClick={handleDeletePermanently}
+                      disabled={isDeleting || isUpdating}
+                      className="w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm font-semibold transition-colors disabled:opacity-50"
+                    >
+                      <Trash2 size={16} /> Delete Permanently
+                    </button>
+                    <p className="text-xs text-gray-500 leading-relaxed">
+                      Permanent delete removes the order, order items, notes, and course access records linked to this order.
+                    </p>
+                  </div>
+                ) : (
+                  <button
+                    onClick={handleMoveToTrash}
+                    disabled={isUpdating || isDeleting}
+                    className="w-full flex items-center justify-center gap-2 bg-white border border-red-200 hover:bg-red-50 text-red-700 px-4 py-2 rounded text-sm font-semibold transition-colors disabled:opacity-50"
+                  >
+                    <Trash2 size={16} /> Move to Trash
+                  </button>
+                )}
               </div>
             </div>
           </div>

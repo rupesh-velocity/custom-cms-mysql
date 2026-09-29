@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { BASE_PATH } from '@/lib/config';
+import UserCourseAccessManager from '@/components/UserCourseAccessManager';
 
 interface User {
   id?: number;
@@ -81,6 +82,7 @@ const res = await fetch(url, {
   };
 
   return (
+    <div className="max-w-4xl">
     <form onSubmit={handleSubmit} className="max-w-2xl bg-white rounded-xl border border-gray-200 p-8 shadow-sm">
       {error && (
         <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-lg border border-red-200">
@@ -208,5 +210,7 @@ const res = await fetch(url, {
         </button>
       </div>
     </form>
+    {isEdit && initialData?.id ? <UserCourseAccessManager userId={initialData.id} /> : null}
+    </div>
   );
 }

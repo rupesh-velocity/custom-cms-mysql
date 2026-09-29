@@ -10,6 +10,16 @@ import toast from 'react-hot-toast';
 import { BASE_PATH } from '@/lib/config';
 
 type VideoItem = { title:string; url:string };
+type AccessPlanItem = { id?: number; name: string; durationMonths: number | ''; regularPrice: number | ''; salePrice: number | ''; isActive: boolean; isDefault: boolean; sortOrder?: number };
+
+const emptyPlan = (name = '', durationMonths: number | '' = '', regularPrice: number | '' = ''): AccessPlanItem => ({
+  name,
+  durationMonths,
+  regularPrice,
+  salePrice: '',
+  isActive: true,
+  isDefault: false,
+});
 
 export default function CourseEditorForm({ courseId }:{ courseId?:string }) {
   const router=useRouter();
@@ -27,8 +37,13 @@ export default function CourseEditorForm({ courseId }:{ courseId?:string }) {
   const [visibility,setVisibility]=useState('Public');
   const [password,setPassword]=useState('');
   const [publishDate,setPublishDate]=useState('');
+  const [pricingType,setPricingType]=useState<'SIMPLE'|'VARIABLE'>('SIMPLE');
   const [price,setPrice]=useState<number|''>('');
   const [salePrice,setSalePrice]=useState<number|''>('');
+  const [accessPlans,setAccessPlans]=useState<AccessPlanItem[]>([
+    { ...emptyPlan('6 Months', 6), isDefault: true },
+    emptyPlan('1 Year', 12),
+  ]);
   const [seoScore,setSeoScore]=useState(0);
   const [featuredImage,setFeaturedImage]=useState<string|null>(null);
 
@@ -41,7 +56,13 @@ export default function CourseEditorForm({ courseId }:{ courseId?:string }) {
         setTitle(data.title||'');setSlug(data.slug||'');setContentHtml(data.contentHtml||'');setContentText(data.contentText||'');
         setVideos(Array.isArray(data.videos)&&data.videos.length?data.videos:[{title:'',url:''}]);
         setMetaDescription(data.metaDescription||'');setFocusKeyword(data.focusKeyword||'');setStatus(data.status||'Draft');
+        setPricingType(data.pricingType === 'VARIABLE' ? 'VARIABLE' : 'SIMPLE');
         setPrice(data.price||'');setSalePrice(data.salePrice||'');setFeaturedImage(data.featuredImage||null);
+        if(Array.isArray(data.accessPlans)&&data.accessPlans.length){
+          setAccessPlans(data.accessPlans.map((plan:any)=>({
+            id:plan.id,name:plan.name||'',durationMonths:plan.durationMonths||'',regularPrice:plan.regularPrice ?? '',salePrice:plan.salePrice ?? '',isActive:plan.isActive!==false,isDefault:!!plan.isDefault,sortOrder:plan.sortOrder
+          })));
+        }
         if(data.createdAt){const d=new Date(data.createdAt);const local=new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16);setPublishDate(local);}
       })
       .catch(()=>toast.error('Failed to load course'))
@@ -51,15 +72,31 @@ export default function CourseEditorForm({ courseId }:{ courseId?:string }) {
   const effectiveSlug=slug || title.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)+/g,'');
   const previewUrl=`${BASE_PATH}/courses/${effectiveSlug}${effectiveSlug?'/':''}`;
   const addVideo=()=>setVideos(x=>[...x,{title:'',url:''}]);
+  const addAccessPlan=()=>setAccessPlans(x=>[...x,emptyPlan()]);
+  const updateAccessPlan=(index:number,patch:Partial<AccessPlanItem>)=>setAccessPlans(x=>x.map((plan,i)=>i===index?{...plan,...patch}:plan));
+  const setDefaultAccessPlan=(index:number)=>setAccessPlans(x=>x.map((plan,i)=>({...plan,isDefault:i===index})));
+  const removeAccessPlan=(index:number)=>setAccessPlans(x=>{
+    const next=x.filter((_,i)=>i!==index);
+    if(next.length&&!next.some(p=>p.isDefault)) next[0]={...next[0],isDefault:true};
+    return next;
+  });
 
   const saveCourse=async(overrideStatus?:string)=>{
     if(!title.trim()){toast.error('Please enter a title');return;}
     setSaving(true);
     try{
+      const cleanedPlans=accessPlans.map((plan,index)=>({
+        ...plan,
+        durationMonths:plan.durationMonths?Number(plan.durationMonths):0,
+        regularPrice:plan.regularPrice?Number(plan.regularPrice):0,
+        salePrice:plan.salePrice===''?null:Number(plan.salePrice),
+        sortOrder:index,
+      })).filter(plan=>plan.name.trim()&&plan.durationMonths>0);
+      if(pricingType==='VARIABLE'&&cleanedPlans.length===0){toast.error('Add at least one course variation/access plan.');return;}
       const payload={
         title,slug:effectiveSlug,contentHtml,contentText,videos:videos.filter(v=>v.title.trim()&&v.url.trim()),
-        metaDescription,focusKeyword,status:overrideStatus||status,price:price?Number(price):0,salePrice:salePrice?Number(salePrice):null,
-        featuredImage,createdAt:publishDate||undefined,
+        metaDescription,focusKeyword,status:overrideStatus||status,pricingType,price:price?Number(price):0,salePrice:salePrice?Number(salePrice):null,
+        accessPlans:cleanedPlans,featuredImage,createdAt:publishDate||undefined,
       };
       const res=await fetch(courseId?`${BASE_PATH}/api/courses/${courseId}`:`${BASE_PATH}/api/courses`,{
         method:courseId?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)
@@ -80,8 +117,47 @@ export default function CourseEditorForm({ courseId }:{ courseId?:string }) {
         <ClassicEditor title={title} setTitle={setTitle} slug={slug} setSlug={setSlug} contentHtml={contentHtml} setContentHtml={setContentHtml} setContentText={setContentText} permalinkBase="courses" trailingSlash={true} modern={true}/>
 
         <section className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-          <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-3"><span className="w-9 h-9 rounded-lg bg-[#5e3fde]/10 text-[#5e3fde] flex items-center justify-center"><BadgeDollarSign size={18}/></span><div><h2 className="text-sm font-semibold text-gray-900">Course Pricing</h2><p className="text-xs text-gray-500 mt-0.5">Set the regular price and an optional promotional price.</p></div></div>
-          <div className="p-5 grid md:grid-cols-2 gap-5 bg-gradient-to-b from-white to-gray-50/50"><div><label className="block text-sm font-semibold text-gray-900 mb-1.5">Regular Price ($)</label><input type="number" step="0.01" min="0" value={price} onChange={e=>setPrice(e.target.value?Number(e.target.value):'')} className="w-full border border-gray-300 rounded-lg px-3.5 py-2.5 text-sm outline-none focus:border-[#5e3fde]" placeholder="99.00"/></div><div><label className="block text-sm font-semibold text-gray-900 mb-1.5">Sale Price ($) <span className="font-normal text-gray-400">Optional</span></label><input type="number" step="0.01" min="0" value={salePrice} onChange={e=>setSalePrice(e.target.value?Number(e.target.value):'')} className="w-full border border-gray-300 rounded-lg px-3.5 py-2.5 text-sm outline-none focus:border-[#5e3fde]" placeholder="49.00"/></div></div>
+          <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3"><span className="w-9 h-9 rounded-lg bg-[#5e3fde]/10 text-[#5e3fde] flex items-center justify-center"><BadgeDollarSign size={18}/></span><div><h2 className="text-sm font-semibold text-gray-900">Course Pricing</h2><p className="text-xs text-gray-500 mt-0.5">Use a simple price or add access plan variations such as 6 Months and 1 Year.</p></div></div>
+          </div>
+          <div className="p-5 bg-gradient-to-b from-white to-gray-50/50 space-y-5">
+            <div className="grid md:grid-cols-2 gap-3">
+              <label className={`cursor-pointer border rounded-xl p-4 flex items-start gap-3 ${pricingType==='SIMPLE'?'border-[#5e3fde] bg-[#5e3fde]/5':'border-gray-200 bg-white'}`}>
+                <input type="radio" name="pricingType" checked={pricingType==='SIMPLE'} onChange={()=>setPricingType('SIMPLE')} className="mt-1"/>
+                <span><span className="block text-sm font-semibold text-gray-900">Simple Course</span><span className="block text-xs text-gray-500 mt-1">Single regular/sale price. Existing courses keep this behavior.</span></span>
+              </label>
+              <label className={`cursor-pointer border rounded-xl p-4 flex items-start gap-3 ${pricingType==='VARIABLE'?'border-[#5e3fde] bg-[#5e3fde]/5':'border-gray-200 bg-white'}`}>
+                <input type="radio" name="pricingType" checked={pricingType==='VARIABLE'} onChange={()=>setPricingType('VARIABLE')} className="mt-1"/>
+                <span><span className="block text-sm font-semibold text-gray-900">Variable Course</span><span className="block text-xs text-gray-500 mt-1">Customer chooses an access plan before checkout.</span></span>
+              </label>
+            </div>
+
+            {pricingType==='SIMPLE' ? (
+              <div className="grid md:grid-cols-2 gap-5"><div><label className="block text-sm font-semibold text-gray-900 mb-1.5">Regular Price ($)</label><input type="number" step="0.01" min="0" value={price} onChange={e=>setPrice(e.target.value?Number(e.target.value):'')} className="w-full border border-gray-300 rounded-lg px-3.5 py-2.5 text-sm outline-none focus:border-[#5e3fde]" placeholder="99.00"/></div><div><label className="block text-sm font-semibold text-gray-900 mb-1.5">Sale Price ($) <span className="font-normal text-gray-400">Optional</span></label><input type="number" step="0.01" min="0" value={salePrice} onChange={e=>setSalePrice(e.target.value?Number(e.target.value):'')} className="w-full border border-gray-300 rounded-lg px-3.5 py-2.5 text-sm outline-none focus:border-[#5e3fde]" placeholder="49.00"/></div></div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between gap-3"><div><h3 className="text-sm font-semibold text-gray-900">Course Variations / Access Plans</h3><p className="text-xs text-gray-500 mt-1">Add the available purchase options for this course.</p></div><button type="button" onClick={addAccessPlan} className="inline-flex items-center gap-1.5 bg-[#5e3fde] text-white rounded-lg px-3.5 py-2 text-sm font-semibold hover:bg-[#4f32c9]"><Plus size={15}/> Add Variation</button></div>
+                {accessPlans.map((plan,index)=>(
+                  <div key={index} className="border border-gray-200 rounded-xl bg-white p-4">
+                    <div className="flex items-center justify-between gap-3 mb-4">
+                      <div className="font-semibold text-gray-900">{plan.name || `Variation #${index+1}`}</div>
+                      <button type="button" onClick={()=>removeAccessPlan(index)} disabled={accessPlans.length===1} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg disabled:opacity-30"><Trash2 size={16}/></button>
+                    </div>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div><label className="block text-xs font-semibold text-gray-700 mb-1.5">Plan Name</label><input value={plan.name} onChange={e=>updateAccessPlan(index,{name:e.target.value})} className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-[#5e3fde]" placeholder="6 Months"/></div>
+                      <div><label className="block text-xs font-semibold text-gray-700 mb-1.5">Duration (months)</label><input type="number" min="1" value={plan.durationMonths} onChange={e=>updateAccessPlan(index,{durationMonths:e.target.value?Number(e.target.value):''})} className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-[#5e3fde]" placeholder="6"/></div>
+                      <div><label className="block text-xs font-semibold text-gray-700 mb-1.5">Regular Price ($)</label><input type="number" step="0.01" min="0" value={plan.regularPrice} onChange={e=>updateAccessPlan(index,{regularPrice:e.target.value?Number(e.target.value):''})} className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-[#5e3fde]" placeholder="199.00"/></div>
+                      <div><label className="block text-xs font-semibold text-gray-700 mb-1.5">Sale Price ($) <span className="font-normal text-gray-400">Optional</span></label><input type="number" step="0.01" min="0" value={plan.salePrice} onChange={e=>updateAccessPlan(index,{salePrice:e.target.value?Number(e.target.value):''})} className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-[#5e3fde]" placeholder="149.00"/></div>
+                    </div>
+                    <div className="flex flex-wrap gap-4 mt-4 pt-4 border-t border-gray-100 text-sm">
+                      <label className="inline-flex items-center gap-2"><input type="checkbox" checked={plan.isActive} onChange={e=>updateAccessPlan(index,{isActive:e.target.checked})}/> Active</label>
+                      <label className="inline-flex items-center gap-2"><input type="radio" name="defaultAccessPlan" checked={plan.isDefault} onChange={()=>setDefaultAccessPlan(index)}/> Default plan</label>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </section>
 
         <section className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">

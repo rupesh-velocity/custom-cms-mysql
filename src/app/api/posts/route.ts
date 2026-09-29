@@ -3,12 +3,33 @@ import { isAdministratorSession } from '@/lib/admin-auth';
 import { prisma } from '@/lib/prisma';
 import { cookies } from 'next/headers';
 import { jwtVerify } from 'jose';
+import { normalizePostCarouselImages, normalizePostCarouselSettings } from '@/lib/post-carousel';
+
+async function validCarouselImages(value: unknown) {
+  const normalized = normalizePostCarouselImages(value);
+  if (!normalized.length) return [];
+
+  const existing = await prisma.media.findMany({
+    where: { id: { in: normalized.map((item) => item.mediaId) } },
+    select: { id: true },
+  });
+  const validIds = new Set(existing.map((item) => item.id));
+  return normalized.filter((item) => validIds.has(item.mediaId));
+}
 
 export async function POST(req: Request) {
   if (!(await isAdministratorSession())) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   try {
     const data = await req.json();
-    
+    const carouselImages = await validCarouselImages(data.carouselImages);
+    const carouselSettings = normalizePostCarouselSettings({
+      heading: data.carouselHeading,
+      slidesPerView: data.carouselSlidesPerView,
+      autoplay: data.carouselAutoplay ?? true,
+      autoplayDelay: data.carouselAutoplayDelay,
+      pagination: data.carouselPagination ?? true,
+    });
+
     let authorId: any = null;
     try {
       const cookieStore = await cookies();
@@ -19,7 +40,7 @@ export async function POST(req: Request) {
         authorId = payload.id as number;
       }
     } catch (e) {}
-    
+
     if (!authorId) {
       const firstUser = await prisma.user.findFirst();
       authorId = firstUser?.id || null;
@@ -55,6 +76,11 @@ export async function POST(req: Request) {
         isPillar: data.isPillar || false,
         authorId: authorId,
         featuredImage: data.featuredImage || null,
+        carouselHeading: carouselSettings.heading,
+        carouselSlidesPerView: carouselSettings.slidesPerView,
+        carouselAutoplay: carouselSettings.autoplay,
+        carouselAutoplayDelay: carouselSettings.autoplayDelay,
+        carouselPagination: carouselSettings.pagination,
         ...(data.categoryIds !== undefined && {
           categories: {
             connect: data.categoryIds.map((id: number) => ({ id }))
@@ -64,7 +90,16 @@ export async function POST(req: Request) {
           tags: {
             connect: data.tagIds.map((id: number) => ({ id }))
           }
-        })
+        }),
+        ...(carouselImages.length > 0 && {
+          carouselImages: {
+            create: carouselImages.map((item, index) => ({
+              media: { connect: { id: item.mediaId } },
+              sortOrder: index,
+              caption: item.caption,
+            })),
+          },
+        }),
       },
     });
     return NextResponse.json(post);

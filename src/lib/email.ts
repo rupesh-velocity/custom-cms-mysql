@@ -53,7 +53,11 @@ export async function sendCoursePurchaseEmail(userEmail: string, userName: strin
   }, {} as Record<string, string>);
 
   const senderName = settingsMap.emailSenderName || 'Website';
-  const logoUrl = settingsMap.emailLogoUrl;
+  const logoUrl = settingsMap.emailLogoUrl
+  ? settingsMap.emailLogoUrl.startsWith('http')
+    ? settingsMap.emailLogoUrl
+    : `https://fitnessarts.com/${settingsMap.emailLogoUrl.replace(/^\/+/, '')}`
+  : '';
   const primaryColor = settingsMap.emailPrimaryColor || '#5e3fde';
   
   // Default template if none exists

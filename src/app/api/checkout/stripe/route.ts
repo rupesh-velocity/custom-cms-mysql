@@ -4,7 +4,7 @@ import Stripe from 'stripe';
 
 export async function POST(req: Request) {
   try {
-    const { itemId, type } = await req.json();
+    const { itemId, type, planId } = await req.json();
 
     if (!itemId || !type) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -13,9 +13,15 @@ export async function POST(req: Request) {
     // 1. Fetch item details
     let amount = 0;
     if (type === 'course') {
-      const course = await prisma.course.findUnique({ where: { id: parseInt(itemId) } });
+      const course = await prisma.course.findUnique({ where: { id: parseInt(itemId) }, include: { accessPlans: { where: { isActive: true } } } });
       if (!course) return NextResponse.json({ error: 'Course not found' }, { status: 404 });
-      amount = course.salePrice || course.price || 0;
+      if (course.pricingType === 'VARIABLE' && course.accessPlans.length > 0) {
+        const selectedPlan = course.accessPlans.find((plan) => plan.id === Number(planId));
+        if (!selectedPlan) return NextResponse.json({ error: 'Please select a valid access plan.' }, { status: 400 });
+        amount = selectedPlan.salePrice || selectedPlan.regularPrice || 0;
+      } else {
+        amount = course.salePrice || course.price || 0;
+      }
     } else {
       const product = await prisma.product.findUnique({ where: { id: parseInt(itemId) } });
       if (!product) return NextResponse.json({ error: 'Product not found' }, { status: 404 });
@@ -61,6 +67,7 @@ export async function POST(req: Request) {
       metadata: {
         itemId: itemId.toString(),
         itemType: type,
+        planId: planId ? String(planId) : '',
       },
     });
 

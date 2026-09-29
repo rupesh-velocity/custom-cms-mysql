@@ -31,8 +31,14 @@ model Post {
   author            User?      @relation(fields: [authorId], references: [id])
   categories        Category[]
   tags              Tag[]
-  featuredImage     String?
-  createdAt         DateTime   @default(now())
+  featuredImage          String?
+  carouselHeading        String?
+  carouselSlidesPerView  Int        @default(3)
+  carouselAutoplay       Boolean    @default(true)
+  carouselAutoplayDelay  Int        @default(3000)
+  carouselPagination     Boolean    @default(true)
+  carouselImages         PostCarouselImage[]
+  createdAt              DateTime   @default(now())
   updatedAt         DateTime   @updatedAt
   publishedAt       DateTime?
 }
@@ -99,6 +105,7 @@ model Course {
   metaDescription String? @db.LongText
   focusKeyword    String?
   status          String             @default("Draft")
+  pricingType     String             @default("SIMPLE") // SIMPLE or VARIABLE
   price           Float              @default(0)
   salePrice       Float?
   featuredImage   String?
@@ -107,18 +114,50 @@ model Course {
   authorId        Int?
   author          User?              @relation(fields: [authorId], references: [id])
   products        Product[]
+  accessPlans     CourseAccessPlan[]
   userAccess      UserCourseAccess[]
+  orderItems      OrderItem[]
+}
+
+model CourseAccessPlan {
+  id             Int                @id @default(autoincrement())
+  courseId       Int
+  course         Course             @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  name           String
+  durationMonths Int
+  regularPrice   Float
+  salePrice      Float?
+  isActive       Boolean            @default(true)
+  isDefault      Boolean            @default(false)
+  sortOrder      Int                @default(0)
+  userAccess     UserCourseAccess[]
+  orderItems     OrderItem[]
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  @@index([courseId, sortOrder])
 }
 
 model UserCourseAccess {
-  id        Int      @id @default(autoincrement())
-  userId    Int
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  courseId  Int
-  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
+  id                 Int               @id @default(autoincrement())
+  userId             Int
+  user               User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseId           Int
+  course             Course            @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  courseAccessPlanId Int?
+  courseAccessPlan   CourseAccessPlan? @relation(fields: [courseAccessPlanId], references: [id], onDelete: SetNull)
+  orderId            Int?
+  order              Order?            @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  startsAt           DateTime          @default(now())
+  expiresAt          DateTime?
+  source             String            @default("legacy") // legacy, online, manual, free
+  adminNote          String?           @db.LongText
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
 
   @@unique([userId, courseId])
+  @@index([courseAccessPlanId])
+  @@index([orderId])
 }
 
 model Setting {
@@ -163,7 +202,24 @@ model Media {
   originalSize     Int?
   originalUrl      String?
   optimized        Boolean  @default(false)
+  postCarouselImages PostCarouselImage[]
   createdAt        DateTime @default(now())
+}
+
+model PostCarouselImage {
+  id        Int      @id @default(autoincrement())
+  postId    Int
+  mediaId   Int
+  sortOrder Int      @default(0)
+  caption   String?  @db.LongText
+  createdAt DateTime @default(now())
+
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  media     Media    @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, mediaId])
+  @@index([postId, sortOrder])
+  @@index([mediaId])
 }
 
 model Redirection {
@@ -322,6 +378,7 @@ model Order {
 
   items OrderItem[]
   notes OrderNote[]
+  courseAccessRecords UserCourseAccess[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -338,10 +395,19 @@ model OrderItem {
   variationId Int?
   variation   ProductVariation? @relation(fields: [variationId], references: [id], onDelete: SetNull)
 
-  name     String // Snapshot of product name at purchase
+  courseId Int?
+  course   Course? @relation(fields: [courseId], references: [id], onDelete: SetNull)
+
+  courseAccessPlanId Int?
+  courseAccessPlan   CourseAccessPlan? @relation(fields: [courseAccessPlanId], references: [id], onDelete: SetNull)
+
+  name     String // Snapshot of product/course name at purchase
   quantity Int
   price    Float // Snapshot of price at purchase
   total    Float
+
+  @@index([courseId])
+  @@index([courseAccessPlanId])
 }
 
 model OrderNote {
