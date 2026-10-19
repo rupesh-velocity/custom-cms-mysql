@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { isAdministratorSession } from '@/lib/admin-auth';
 import { prisma } from '@/lib/prisma';
 import { addMonths } from '@/lib/course-access';
+import { sendManualCourseAccessEmail } from '@/lib/email';
 
 export async function GET(req: Request, context: any) {
   if (!(await isAdministratorSession())) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -72,7 +73,34 @@ export async function POST(req: Request, context: any) {
       include: { course: true, courseAccessPlan: true },
     });
 
-    return NextResponse.json(access);
+    let emailWarning: string | null = null;
+
+    if (data.sendAccessEmail) {
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { email: true, firstName: true, lastName: true, username: true },
+      });
+
+      if (!user?.email) {
+        emailWarning = 'Course access was saved, but no email address is available for this user.';
+      } else {
+        const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim();
+        const emailResult = await sendManualCourseAccessEmail({
+          userEmail: user.email,
+          userName: fullName || user.username || user.email,
+          courseTitle: access.course.title,
+          courseSlug: access.course.slug,
+          planName: access.courseAccessPlan?.name || 'Course Access',
+          expiresAt: access.expiresAt ? access.expiresAt.toISOString() : null,
+        });
+
+        if (!emailResult.success) {
+          emailWarning = 'Course access was saved, but the access email could not be sent.';
+        }
+      }
+    }
+
+    return NextResponse.json({ ...access, emailWarning });
   } catch (error: any) {
     console.error('Course access update error:', error);
     return NextResponse.json({ error: error?.message || 'Failed to update course access' }, { status: 500 });

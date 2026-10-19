@@ -15,6 +15,7 @@ import { BASE_PATH } from '@/lib/config';
 export default function EcommerceSettingsPage() {
   const [settings, setSettings] = useState({
     stripeEnabled: 'false',
+    subscriptionEnabled: 'true',
     stripeMode: 'test',
     stripeTestPublicKey: '',
     stripeTestSecretKey: '',
@@ -332,6 +333,23 @@ export default function EcommerceSettingsPage() {
                     <input type="checkbox" name="stripeEnabled" checked={settings.stripeEnabled === 'true'} onChange={handleChange} className="w-4 h-4 rounded text-[#5e3fde] focus:ring-[#5e3fde]" />
                   </td>
                   <td className="py-4 space-y-4">
+
+                    <div className="rounded-lg border border-purple-100 bg-purple-50 p-4">
+                      <label className="flex items-start gap-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          name="subscriptionEnabled"
+                          checked={(settings as any).subscriptionEnabled !== 'false'}
+                          onChange={handleChange}
+                          className="mt-1 w-4 h-4 rounded text-[#5e3fde] focus:ring-[#5e3fde]"
+                        />
+                        <span>
+                          <span className="block text-sm font-bold text-gray-900">Enable auto-renew subscriptions</span>
+                          <span className="block text-xs text-gray-600 mt-1">When disabled, checkout will only allow one-time access. Existing Stripe subscriptions and webhooks are not removed.</span>
+                        </span>
+                      </label>
+                    </div>
+
                     {/* Stripe Mode Toggle */}
                     <div className="flex items-center gap-4 bg-gray-50 p-3 rounded-lg border border-gray-200">
                       <span className="font-semibold text-gray-700">Mode:</span>

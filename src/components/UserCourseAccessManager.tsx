@@ -19,6 +19,7 @@ export default function UserCourseAccessManager({ userId }: { userId: number }) 
   const [planId,setPlanId]=useState('');
   const [source,setSource]=useState<'manual'|'free'>('manual');
   const [adminNote,setAdminNote]=useState('');
+  const [sendAccessEmail,setSendAccessEmail]=useState(false);
   const [saving,setSaving]=useState(false);
 
   const load=()=>{
@@ -40,11 +41,12 @@ export default function UserCourseAccessManager({ userId }: { userId: number }) 
     if(!courseId){ toast.error('Select a course'); return; }
     setSaving(true);
     try{
-      const res=await fetch(`${BASE_PATH}/api/users/${userId}/course-access`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({courseId:Number(courseId),courseAccessPlanId:planId?Number(planId):null,source,adminNote})});
+      const res=await fetch(`${BASE_PATH}/api/users/${userId}/course-access`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({courseId:Number(courseId),courseAccessPlanId:planId?Number(planId):null,source,adminNote,sendAccessEmail})});
       const data=await res.json().catch(()=>({}));
       if(!res.ok) throw new Error(data.error||'Could not grant access');
-      toast.success('Course access saved');
-      setAdminNote(''); load();
+      if(data.emailWarning) toast.error(data.emailWarning);
+      else toast.success(sendAccessEmail ? 'Course access saved and access email sent' : 'Course access saved');
+      setAdminNote(''); setSendAccessEmail(false); load();
     }catch(error:any){ toast.error(error.message||'Could not grant access'); }
     finally{ setSaving(false); }
   };
@@ -69,6 +71,18 @@ export default function UserCourseAccessManager({ userId }: { userId: number }) 
       <div><label className="block text-sm font-medium text-gray-700 mb-1">Source</label><select value={source} onChange={e=>setSource(e.target.value as any)} className="w-full h-[42px] border border-gray-300 rounded-lg px-3 py-2 bg-white"><option value="manual">Manual / Offline Payment</option><option value="free">Free / Complimentary</option></select></div>
       <div><label className="block text-sm font-medium text-gray-700 mb-1">Admin Note</label><input value={adminNote} onChange={e=>setAdminNote(e.target.value)} placeholder="Paid cash, phone order, etc." className="w-full h-[42px] border border-gray-300 rounded-lg px-3 py-2"/></div>
     </div>
+    <label className="mb-4 flex items-start gap-3 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700">
+      <input
+        type="checkbox"
+        checked={sendAccessEmail}
+        onChange={e=>setSendAccessEmail(e.target.checked)}
+        className="mt-1 h-4 w-4 rounded border-gray-300 text-[#5e3fde] focus:ring-[#5e3fde]"
+      />
+      <span>
+        <span className="font-semibold text-gray-900">Send access email to user</span>
+        <span className="block text-gray-500">Email login link, course link, plan and expiry details after saving access.</span>
+      </span>
+    </label>
     <button type="button" onClick={grant} disabled={saving} className="inline-flex items-center gap-2 bg-[#5e3fde] text-white px-4 py-2 rounded-lg text-sm font-semibold disabled:opacity-50"><Plus size={16}/> Grant / Update Access</button>
 
     <div className="mt-6 border-t border-gray-100 pt-5 space-y-3">

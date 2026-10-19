@@ -36,14 +36,15 @@ export default function UserForm({ initialData, isEdit }: UserFormProps) {
     bio: initialData?.bio || '',
     phone: initialData?.phone || '',
     role: initialData?.role || 'Subscriber',
+    sendLoginDetails: false,
   });
 
   const roles = ['Administrator', 'Editor', 'Author', 'Contributor', 'Subscriber', 'Customer'];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.username || !formData.email || (!isEdit && !formData.password)) {
-      setError('Please fill in all required fields.');
+    if (!formData.username || !formData.email || (!isEdit && !formData.password && !formData.sendLoginDetails)) {
+      setError('Please fill in all required fields. Add a password, or check Send login details to auto-generate one.');
       return;
     }
 
@@ -64,7 +65,7 @@ const res = await fetch(url, {
 
       if (res.ok) {
         if (!isEdit) {
-          toast.success('User created successfully!');
+          toast.success(data.loginEmailSent ? 'User created and login email sent!' : 'User created successfully!');
           router.push(`/admin/users/${data.id}`);
         } else {
           toast.success('User updated successfully!');
@@ -169,14 +170,14 @@ const res = await fetch(url, {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            {isEdit ? 'New Password (leave blank to keep current)' : 'Password *'}
+            {isEdit ? 'New Password (leave blank to keep current)' : formData.sendLoginDetails ? 'Password (optional - auto-generated if blank)' : 'Password *'}
           </label>
           <input
             type="password"
             className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
             value={formData.password}
             onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-            required={!isEdit}
+            required={!isEdit && !formData.sendLoginDetails}
           />
         </div>
         <div>
@@ -192,6 +193,25 @@ const res = await fetch(url, {
           </select>
         </div>
       </div>
+
+      {!isEdit && (
+        <div className="mb-8 rounded-lg border border-purple-100 bg-purple-50 px-4 py-4">
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={formData.sendLoginDetails}
+              onChange={(e) => setFormData({ ...formData, sendLoginDetails: e.target.checked })}
+              className="mt-1 h-4 w-4 rounded border-gray-300 text-[#5e3fde] focus:ring-[#5e3fde]"
+            />
+            <span>
+              <span className="block text-sm font-semibold text-gray-900">Send login details to user</span>
+              <span className="mt-1 block text-sm text-gray-600">
+                Email the login link, email address, and temporary password after creating this user. If the password field is blank, the system will auto-generate a temporary password.
+              </span>
+            </span>
+          </label>
+        </div>
+      )}
 
       <div className="flex justify-end gap-3 pt-6 border-t border-gray-100">
         <button

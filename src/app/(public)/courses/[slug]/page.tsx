@@ -62,15 +62,61 @@ export default async function CoursePage({ params }: { params: Promise<{ slug: s
   // 3. Verify Access
   let hasAccess = ['Administrator', 'Admin'].includes(userRole);
   if (userId && !hasAccess) {
+    const now = new Date();
+
     const access = await prisma.userCourseAccess.findFirst({
       where: {
-        userId: userId,
+        userId,
         courseId: course.id,
-        OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }]
+        OR: [{ expiresAt: null }, { expiresAt: { gt: now } }]
       }
     });
+
     if (access) {
       hasAccess = true;
+    }
+
+    // Active Stripe auto-renew subscriptions must also grant access.
+    // This prevents an old UserCourseAccess.expiresAt value from blocking
+    // users whose CourseSubscription is still ACTIVE and auto-renew is ON.
+    if (!hasAccess) {
+      const activeSubscription = await prisma.courseSubscription.findFirst({
+        where: {
+          userId,
+          courseId: course.id,
+          cancelAtPeriodEnd: false,
+          status: { in: ['ACTIVE', 'TRIALING', 'PAST_DUE', 'UNPAID'] },
+        },
+        orderBy: [
+          { currentPeriodEnd: 'desc' },
+          { updatedAt: 'desc' },
+        ],
+      });
+
+      if (activeSubscription) {
+        hasAccess = true;
+      }
+    }
+
+    // Cancelled auto-renew subscriptions should still grant access only until
+    // their current paid period ends.
+    if (!hasAccess) {
+      const paidThroughSubscription = await prisma.courseSubscription.findFirst({
+        where: {
+          userId,
+          courseId: course.id,
+          currentPeriodEnd: { gt: now },
+          status: { in: ['ACTIVE', 'TRIALING', 'PAST_DUE', 'UNPAID'] },
+        },
+        orderBy: [
+          { currentPeriodEnd: 'desc' },
+          { updatedAt: 'desc' },
+        ],
+      });
+
+      if (paidThroughSubscription) {
+        hasAccess = true;
+      }
     }
   }
 

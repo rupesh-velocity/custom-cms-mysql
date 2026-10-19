@@ -90,6 +90,7 @@ model User {
   pages           Page[]
   orders          Order[]
   courses         UserCourseAccess[]
+  subscriptions   CourseSubscription[]
   createdCourses  Course[]
   createdProducts Product[]
   forms           Form[]
@@ -116,6 +117,7 @@ model Course {
   products        Product[]
   accessPlans     CourseAccessPlan[]
   userAccess      UserCourseAccess[]
+  subscriptions   CourseSubscription[]
   orderItems      OrderItem[]
 }
 
@@ -131,6 +133,7 @@ model CourseAccessPlan {
   isDefault      Boolean            @default(false)
   sortOrder      Int                @default(0)
   userAccess     UserCourseAccess[]
+  subscriptions  CourseSubscription[]
   orderItems     OrderItem[]
   createdAt      DateTime           @default(now())
   updatedAt      DateTime           @updatedAt
@@ -152,12 +155,42 @@ model UserCourseAccess {
   expiresAt          DateTime?
   source             String            @default("legacy") // legacy, online, manual, free
   adminNote          String?           @db.LongText
+  renewalReminderSentAt DateTime?
+  
   createdAt          DateTime          @default(now())
   updatedAt          DateTime          @updatedAt
 
   @@unique([userId, courseId])
   @@index([courseAccessPlanId])
-  @@index([orderId])
+}
+
+
+model CourseSubscription {
+  id                   Int               @id @default(autoincrement())
+  userId               Int
+  user                 User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseId             Int
+  course               Course            @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  courseAccessPlanId   Int?
+  courseAccessPlan     CourseAccessPlan? @relation(fields: [courseAccessPlanId], references: [id], onDelete: SetNull)
+  stripeCustomerId     String?
+  stripeSubscriptionId String            @unique
+  stripePriceId        String?
+  status               String            @default("INCOMPLETE")
+  currentPeriodStart   DateTime?
+  currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean           @default(false)
+  canceledAt           DateTime?
+  latestInvoiceId      String?
+  latestPaymentIntentId String?
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+
+  @@index([userId])
+  @@index([courseId])
+  @@index([courseAccessPlanId])
+  @@index([status])
+  @@index([currentPeriodEnd])
 }
 
 model Setting {

@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   try {
     const allowedKeys = [
-      'stripeEnabled', 'stripeMode', 'stripeTestPublicKey', 'stripeTestSecretKey',
+      'stripeEnabled', 'subscriptionEnabled', 'stripeMode', 'stripeTestPublicKey', 'stripeTestSecretKey',
       'stripeLivePublicKey', 'stripeLiveSecretKey', 'paypalEnabled', 'paypalClientId',
       'zelleEnabled', 'zellePhone', 'zelleQrCodeUrl',
       'currency', 'adminEmail', 'storeAddress1', 'storeAddress2', 'storeCity',

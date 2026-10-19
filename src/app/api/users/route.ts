@@ -3,6 +3,7 @@ import { isAdministratorSession } from '@/lib/admin-auth';
 import { prisma } from '@/lib/prisma';
 import { normalizePhone } from '@/lib/phone';
 import bcrypt from 'bcryptjs';
+import { sendSubscriberLoginEmail } from '@/lib/email';
 
 async function validatePhone(raw: unknown, excludeId?: number) {
   if (!String(raw ?? '').trim()) return { phone: null as string | null, error: '' };
@@ -18,6 +19,10 @@ async function validatePhone(raw: unknown, excludeId?: number) {
   const duplicate = users.some((user) => user.id !== excludeId && normalizePhone(user.phone) === phone);
   if (duplicate) return { phone: null, error: 'This mobile number is already assigned to another user.' };
   return { phone, error: '' };
+}
+
+function makePassword() {
+  return `Fit${Math.random().toString(36).slice(2, 8)}${Math.floor(1000 + Math.random() * 9000)}!`;
 }
 
 export async function POST(req: Request) {
@@ -67,7 +72,14 @@ export async function POST(req: Request) {
     const phoneResult = await validatePhone(data.phone);
     if (phoneResult.error) return NextResponse.json({ error: phoneResult.error }, { status: 400 });
 
-    const hashedPassword = await bcrypt.hash(data.password, 10);
+    const shouldSendLoginDetails = Boolean(data.sendLoginDetails);
+    const plainPassword = String(data.password || '').trim() || (shouldSendLoginDetails ? makePassword() : '');
+
+    if (!plainPassword) {
+      return NextResponse.json({ error: 'Password is required unless Send login details is enabled.' }, { status: 400 });
+    }
+
+    const hashedPassword = await bcrypt.hash(plainPassword, 10);
     const user = await prisma.user.create({
       data: {
         username: data.username,
@@ -80,7 +92,18 @@ export async function POST(req: Request) {
         role: data.role || 'Subscriber',
       },
     });
-    return NextResponse.json(user);
+
+    let loginEmailSent = false;
+    if (shouldSendLoginDetails) {
+      const emailResult = await sendSubscriberLoginEmail({
+        userEmail: user.email,
+        userName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username,
+        temporaryPassword: plainPassword,
+      });
+      loginEmailSent = Boolean(emailResult.success);
+    }
+
+    return NextResponse.json({ ...user, loginEmailSent });
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: 'Error processing user' }, { status: 500 });

@@ -12,7 +12,7 @@ export default function Sidebar({ enableProducts = false, siteTitle = "Website",
   // Settings is considered active if we are on /admin/settings or any of its subpages
   const isSettingsActive = pathname.startsWith('/admin/settings') && pathname !== '/admin/settings/ecommerce';
   const isSeoActive = pathname.startsWith('/admin/seo');
-  const isWooActive = pathname.startsWith('/admin/orders') || pathname === '/admin/settings/ecommerce' || pathname.startsWith('/admin/customers');
+  const isWooActive = pathname.startsWith('/admin/orders') || pathname.startsWith('/admin/subscriptions') || pathname === '/admin/settings/ecommerce' || pathname.startsWith('/admin/customers');
   const isProductsActive = pathname.startsWith('/admin/products');
 
   return (
@@ -170,6 +170,9 @@ export default function Sidebar({ enableProducts = false, siteTitle = "Website",
               </Link>
               <Link href="/admin/customers" className={clsx("flex items-center gap-2 px-3 py-2 rounded-lg text-[13px] transition-colors whitespace-nowrap", pathname.startsWith('/admin/customers') ? "bg-[#5e3fde]/10 text-[#5e3fde] font-medium" : "text-gray-500 hover:text-gray-900 hover:bg-gray-50")}>
                 Customers
+              </Link>
+              <Link href="/admin/subscriptions" className={clsx("flex items-center gap-2 px-3 py-2 rounded-lg text-[13px] transition-colors whitespace-nowrap", pathname.startsWith('/admin/subscriptions') ? "bg-[#5e3fde]/10 text-[#5e3fde] font-medium" : "text-gray-500 hover:text-gray-900 hover:bg-gray-50")}>
+                Subscriptions
               </Link>
               <Link href="/admin/settings/ecommerce" className={clsx("flex items-center gap-2 px-3 py-2 rounded-lg text-[13px] transition-colors whitespace-nowrap", pathname === '/admin/settings/ecommerce' ? "bg-[#5e3fde]/10 text-[#5e3fde] font-medium" : "text-gray-500 hover:text-gray-900 hover:bg-gray-50")}>
                 Settings

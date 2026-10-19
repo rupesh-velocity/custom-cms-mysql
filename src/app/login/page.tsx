@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   ArrowRight,
   Eye,
@@ -19,6 +19,7 @@ type LoginMode = 'password' | 'phone_otp' | 'both';
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [loginMode, setLoginMode] = useState<LoginMode | null>(null);
   const [activeLoginMode, setActiveLoginMode] = useState<'password' | 'phone_otp'>('password');
@@ -69,6 +70,27 @@ export default function LoginPage() {
     return () => window.clearInterval(timer);
   }, [resendCooldown]);
 
+
+  const redirectAfterLogin = async () => {
+    const requestedRedirect = searchParams.get('redirect');
+
+    if (requestedRedirect && requestedRedirect.startsWith('/') && !requestedRedirect.startsWith('//') && requestedRedirect !== '/my-account') {
+      router.push(requestedRedirect);
+      router.refresh();
+      return;
+    }
+
+    try {
+      const res = await fetch(`${BASE_PATH}/api/account/login-redirect`, { cache: 'no-store' });
+      const data = await res.json();
+      router.push(data.redirectUrl || '/my-account');
+    } catch {
+      router.push('/my-account');
+    }
+
+    router.refresh();
+  };
+
   const handlePasswordLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -83,8 +105,7 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (res.ok) {
-        router.push('/admin');
-        router.refresh();
+        await redirectAfterLogin();
       } else {
         setError(data.error || 'Invalid username or password');
       }
@@ -137,8 +158,7 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (res.ok) {
-        router.push('/admin');
-        router.refresh();
+        await redirectAfterLogin();
       } else {
         setError(data.error || 'Invalid verification code');
       }
